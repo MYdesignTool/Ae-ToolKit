@@ -1,3 +1,4 @@
+﻿/* ===== 自定义属性（暗色主题变量） ===== */
 :root {
   color-scheme: dark;
   --bg: #171717;
@@ -12,10 +13,12 @@
   --radius: 8px;
 }
 
+/* ===== 全局重置 ===== */
 * {
   box-sizing: border-box;
 }
 
+/* ===== 页面基础样式 ===== */
 body {
   margin: 0;
   background: var(--bg);
@@ -30,10 +33,12 @@ body {
 button,
 input,
 select,
+/* ===== 多行文本框（表达式代码编辑区） ===== */
 textarea {
   font: inherit;
 }
 
+/* ===== 应用容器（全屏弹性列布局） ===== */
 .app {
   height: 100vh;
   max-height: 100vh;
@@ -43,6 +48,7 @@ textarea {
   gap: 14px;
 }
 
+/* ===== 顶部标题栏 ===== */
 .topbar {
   display: flex;
   align-items: flex-start;
@@ -50,6 +56,7 @@ textarea {
   gap: 12px;
 }
 
+/* ===== 标题通用样式 ===== */
 h1,
 h2,
 p {
@@ -72,6 +79,7 @@ h2 {
   margin-top: 4px;
 }
 
+/* ===== 版本号标签（右上角胶囊按钮） ===== */
 .version {
   color: var(--muted);
   border: 1px solid var(--line);
@@ -79,6 +87,7 @@ h2 {
   padding: 4px 9px;
 }
 
+/* ===== 标签页导航栏 ===== */
 .tabs {
   display: grid;
   grid-template-columns: repeat(5, 1fr);
@@ -89,6 +98,7 @@ h2 {
   gap: 3px;
 }
 
+/* ===== 单个标签按钮 ===== */
 .tab {
   height: 30px;
   border: 0;
@@ -103,12 +113,14 @@ h2 {
   color: var(--text);
 }
 
+/* ===== 视图面板容器（默认隐藏） ===== */
 .view {
   display: none;
   flex: 1;
   min-height: 0;
 }
 
+/* ===== 视图激活状态 ===== */
 .view.active {
   display: flex;
   flex-direction: column;
@@ -117,6 +129,7 @@ h2 {
   gap: 14px;
 }
 
+/* ===== 区块标题与按钮行 ===== */
 .section-head,
 .button-row {
   display: flex;
@@ -130,6 +143,7 @@ h2 {
   gap: 8px;
 }
 
+/* ===== 通用按钮样式 ===== */
 button {
   height: 32px;
   min-width: 84px;
@@ -144,20 +158,24 @@ button:hover {
   border-color: #4a4a4a;
 }
 
+/* ===== 主要操作按钮 ===== */
 .primary {
   background: var(--accent-strong);
   border-color: var(--accent-strong);
   color: white;
 }
 
+/* ===== 危险操作按钮 ===== */
 .danger {
   color: var(--danger);
 }
 
+/* ===== 次要/幽灵按钮 ===== */
 .ghost {
   color: var(--accent);
 }
 
+/* ===== 表单字段容器 ===== */
 .field {
   display: flex;
   flex-direction: column;
@@ -167,6 +185,7 @@ button:hover {
 
 input,
 select,
+/* ===== 多行文本框（表达式代码编辑区） ===== */
 textarea {
   width: 100%;
   border: 1px solid var(--line);
@@ -186,6 +205,7 @@ select {
   padding: 0 10px;
 }
 
+/* ===== 多行文本框（表达式代码编辑区） ===== */
 textarea {
   min-height: 150px;
   resize: vertical;
@@ -194,6 +214,7 @@ textarea {
   font-family: Consolas, "Cascadia Mono", monospace;
 }
 
+/* ===== 网格列表容器 ===== */
 .rule-grid,
 .expression-list,
 .changelog,
@@ -203,6 +224,7 @@ textarea {
   overflow: auto;
 }
 
+/* ===== 列表项卡片通用样式 ===== */
 .rule-item,
 .expression-item,
 .changelog-item,
@@ -230,6 +252,7 @@ textarea {
   color: var(--accent);
 }
 
+/* ===== 规则项卡片编辑布局 ===== */
 .rule-item {
   display: grid;
   gap: 8px;
@@ -276,10 +299,12 @@ textarea {
   cursor: pointer;
 }
 
+/* ===== 表达式列表项选中状态 ===== */
 .expression-item.active {
   border-color: var(--accent-strong);
 }
 
+/* ===== 底部状态栏 ===== */
 .status {
   min-height: 28px;
   border-top: 1px solid var(--line);
@@ -287,6 +312,7 @@ textarea {
   color: var(--muted);
 }
 
+/* ===== Toast 通知容器（屏幕顶部居中） ===== */
 .toast-container {
   position: fixed;
   top: 0; left: 0; right: 0;
@@ -297,6 +323,7 @@ textarea {
   pointer-events: none;
   padding: 8px 16px 0;
 }
+/* ===== Toast 消息条目 ===== */
 .toast {
   background: #2a2a2a;
   border: 1px solid #353535;
@@ -316,6 +343,7 @@ textarea {
 @keyframes toastIn { from { transform: translateY(-100%); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
 @keyframes toastOut { from { transform: translateY(0); opacity: 1; } to { transform: translateY(-100%); opacity: 0; } }
 
+/* ===== 弹窗遮罩层 ===== */
 .modal-overlay {
   position: fixed; inset: 0;
   background: rgba(0,0,0,.6);
@@ -324,11 +352,13 @@ textarea {
   justify-content: center;
   z-index: 100;
 }
+/* ===== 弹窗内容面板 ===== */
 .modal-content {
   background: #202020; border: 1px solid #353535; border-radius: 8px;
   max-width: 500px; width: 90%; max-height: 80vh;
   display: flex; flex-direction: column;
 }
+/* ===== 弹窗头部 ===== */
 .modal-header {
   display: flex; justify-content: space-between; align-items: center;
   padding: 16px; border-bottom: 1px solid #353535;
@@ -349,6 +379,7 @@ textarea {
   padding: 4px 8px; background: #121212; color: #eee;
 }
 
+/* ===== 规则项卡片编辑布局 ===== */
 .rule-item {
   display: flex; flex-direction: column; gap: 4px;
   padding: 8px 10px;
@@ -358,6 +389,7 @@ textarea {
 }
 .rule-header .field { flex: 1; }
 .rule-header .field input { height: 30px; }
+/* ===== 图标按钮（删除规则等） ===== */
 .icon-btn {
   min-width: 26px; width: 26px; height: 26px;
   padding: 0; display: flex; align-items: center; justify-content: center;
@@ -377,6 +409,7 @@ textarea {
   width: 14px; height: 14px; margin: 0; padding: 0;
   cursor: pointer; accent-color: #4f8cff;
 }
+/* ===== AE 类型复选框标签 ===== */
 .check-label {
   display: flex; align-items: center; gap: 6px;
   color: #9d9d9d; cursor: pointer; padding: 2px 0; font-size: 12px;
@@ -387,7 +420,7 @@ textarea {
 .rule-grid { max-height: 320px; overflow-y: auto; }
 
 
-/* Settings view */
+/* ===== 设置页面 ===== */
 .settings-list, .settings-about { display: flex; flex-direction: column; gap: 12px; }
 .settings-item { display: flex; align-items: center; justify-content: space-between; background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); padding: 12px 16px; }
 .settings-item-info { display: flex; flex-direction: column; gap: 3px; }
@@ -395,7 +428,7 @@ textarea {
 .settings-about { margin-top: 20px; align-items: center; }
 .settings-about p { margin: 0; }
 
-/* Toggle switch */
+/* ===== 开关切换控件 ===== */
 .switch { position: relative; display: inline-block; width: 44px; height: 24px; flex-shrink: 0; }
 .switch input { opacity: 0; width: 0; height: 0; }
 .slider { position: absolute; cursor: pointer; inset: 0; background: #353535; border-radius: 24px; transition: .2s; }
@@ -403,7 +436,7 @@ textarea {
 .switch input:checked + .slider { background: var(--accent-strong); }
 .switch input:checked + .slider::before { transform: translateX(20px); background: white; }
 
-/* Script launcher */
+/* ===== 脚本启动器 ===== */
 .script-list {
   flex: 1;
   min-height: 0;

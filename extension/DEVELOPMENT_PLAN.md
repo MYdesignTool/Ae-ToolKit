@@ -1,4 +1,4 @@
-﻿# AE Local Toolkit V1 Development Plan
+# AE Local Toolkit V1 Development Plan
 
 ## Product Direction
 
@@ -221,6 +221,7 @@ ew File().
 6. ~~Add a settings view for quiet mode and future custom organizer rules.~~ (v0.1.3 已完成)
 7. ~~Host module splitting.~~ (v0.1.3 已完成)
 8. ~~Script launcher module.~~ (v0.2.1 已完成)
+9. 修复: 表达式下拉选择框在自定义表达式过多时过长。 (待办)
 
 ### v0.1.3 (2026-06-23)
 

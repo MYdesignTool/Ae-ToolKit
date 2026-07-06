@@ -37,7 +37,7 @@
         <span>搜索脚本</span>
         <div class="search-row">
           <input id="scriptSearch" type="search" placeholder="按名称过滤..." />
-          <button id="favFilterBtn" class="fav-toggle" title="仅显示收藏脚本">\u2606</button>
+          <button id="favFilterBtn" class="fav-toggle" title="仅显示收藏脚本">☆</button>
         </div>
       </label>
         <div class="script-list" id="scriptList"></div>
@@ -168,6 +168,13 @@
    </div>
 
     <div class="toast-container" id="toastContainer"></div>
-    <script src="./app.js"></script>
+    <!-- 按依赖顺序加载前端模块：core 必须先于其它模块，app 入口最后。 -->
+    <script src="./js/core.js"></script>
+    <script src="./js/util.js"></script>
+    <script src="./js/ui.js"></script>
+    <script src="./js/organizer.js"></script>
+    <script src="./js/expressions.js"></script>
+    <script src="./js/scripts.js"></script>
+    <script src="./js/app.js"></script>
   </body>
 </html>

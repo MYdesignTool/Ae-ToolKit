@@ -1,0 +1,111 @@
+﻿// ============================================================================
+// AE Local Toolkit — 面板/调试/设置模块 (client/js/ui.js)
+// 负责 Debug 选项卡可见性、设置读取、更新日志弹窗、AE 连接检测与本地存储
+// 检测。依赖 core.js 的 state/els 与 util.js 的辅助函数。
+// ============================================================================
+
+ function syncDebugTabVisibility() {
+    var debugTab = document.querySelector('.tab[data-view="debug"]');
+    var debugView = document.getElementById("debugView");
+    if (!debugTab || !debugView) return;
+    if (state.debugMode) {
+      debugTab.style.display = "";
+    } else {
+      debugTab.style.display = "none";
+      if (debugView.classList.contains("active")) {
+        var orgTab = document.querySelector('.tab[data-view="organizer"]');
+        if (orgTab) orgTab.click();
+      }
+      debugView.classList.remove("active");
+    }
+    var visibleTabs = document.querySelectorAll('.tab:not([style*="display: none"])').length;
+    var tabsEl = document.querySelector(".tabs");
+    if (tabsEl && visibleTabs > 0) tabsEl.style.gridTemplateColumns = "repeat(" + visibleTabs + ", 1fr)";
+  }
+
+  function loadSettings() {
+    try {
+      var value = localStorage.getItem("aelt.quietMode");
+      state.quietMode = value === "true";
+      if (els.quietModeToggle) els.quietModeToggle.checked = state.quietMode;
+    } catch (e) {}
+    try {
+      var debugVal = localStorage.getItem("aelt.debugMode");
+      state.debugMode = debugVal === "true";
+      if (els.debugModeToggle) els.debugModeToggle.checked = state.debugMode;
+    } catch (e) {}
+    syncDebugTabVisibility();
+  }
+
+  function renderChangelog() {
+   els.versionLabel.textContent = state.changelog.version;
+   els.versionLabel.style.cursor = "pointer";
+   els.versionLabel.title = "更新日志";
+   els.versionLabel.onclick = showChangelog;
+   addDebug("changelog", state.changelog);
+ }
+
+ function showChangelog() {
+   var modal = document.getElementById("changelogModal");
+   var body = document.getElementById("changelogBody");
+   if (!modal || !body) return;
+   var entries = state.changelog.entries || [];
+   body.innerHTML = entries.map(function (entry) {
+     return '<div class="changelog-item"><strong>v' + entry.version + '</strong> <span class="muted">' + entry.date + '</span><ul>' +
+       (entry.changes || []).map(function (c) { return "<li>" + escapeHtml(c) + "</li>"; }).join("") + "</ul></div>";
+   }).join("") || '<p class="muted">暂无更新日志</p>';
+   modal.style.display = "flex";
+   var closeBtn = document.getElementById("closeChangelogBtn");
+   if (closeBtn) closeBtn.onclick = hideChangelog;
+   modal.onclick = function (e) { if (e.target === this) hideChangelog(); };
+ }
+
+ function hideChangelog() {
+   var modal = document.getElementById("changelogModal");
+   if (modal) modal.style.display = "none";
+ }
+
+  function pingHost() {
+    evalAe("AELT_ping()", function (result) {
+      if (result.ok) {
+        setStatus("AE host 已连接：" + result.appVersion);
+        showToast("AE host 已连接", "success");
+      } else {
+        setStatus("AE host 检测失败。");
+        showToast("AE host 检测失败", "error");
+      }
+    });
+  }
+
+  function testStorage() {
+    try {
+      var key = "aelt.storageTest";
+      var value = "ok-" + Date.now();
+      localStorage.setItem(key, value);
+      var stored = localStorage.getItem(key);
+      localStorage.removeItem(key);
+      if (stored === value) {
+        setStatus("本地存储可用。");
+      showToast("本地存储可用", "success");
+      } else {
+        setStatus("本地存储读取结果异常。");
+      showToast("本地存储读取结果异常", "error");
+      }
+      addDebug("storage test", { written: value, read: stored });
+    } catch (e) {
+      setStatus("本地存储不可用。");
+      showToast("本地存储不可用", "error");
+      addDebug("storage test failed", e.toString());
+    }
+  }
+
+
+AELT.ui = {
+  syncDebugTabVisibility: syncDebugTabVisibility,
+  loadSettings: loadSettings,
+  renderChangelog: renderChangelog,
+  showChangelog: showChangelog,
+  hideChangelog: hideChangelog,
+  pingHost: pingHost,
+  testStorage: testStorage
+};
