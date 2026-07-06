@@ -1,3 +1,4 @@
+# 安装说明
 # Install Notes
 
 This project is a CEP extension scaffold for After Effects 2020+.
@@ -42,3 +43,17 @@ Newer AE versions may use a newer `CSXS.x` key. If the panel does not appear, ch
 ## Offline Behavior
 
 V1 stores all data locally and does not call any network API.
+
+---
+
+## 说明
+
+> 本文档为安装指南，中英文对照版本。
+
+### 安装要点
+
+- 将 AeLocalToolkit/ 文件夹复制到 CEP 扩展目录即可完成安装
+- Windows 系统目录：C:\Program Files (x86)\Common Files\Adobe\CEP\extensions\
+- 用户级开发目录：%APPDATA%\Adobe\CEP\extensions\
+- 开发调试需开启 PlayerDebugMode=1（注册表 HKCU\Software\Adobe\CSXS.9）
+- V1 版本所有数据本地存储，不依赖任何网络 API

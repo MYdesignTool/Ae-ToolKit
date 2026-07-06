@@ -1,3 +1,8 @@
+/**
+ * AE Local Toolkit - 主机脚本入口
+ * 作为 CEP 面板的后端，运行在 AE ExtendScript 环境中
+ * 提供工程整理、表达式管理、脚本启动等功能 API
+ */
 var AELocalToolkit = AELocalToolkit || {};
 
 (function() {
@@ -208,6 +213,7 @@ var AELocalToolkit = AELocalToolkit || {};
   }
 })();
 
+// ===== 脚本启动器模块 =====
 AELocalToolkit.launcher = (function() {
   function scanScripts(folderPath) {
     var result = { ok: true, folder: folderPath, scripts: [], messages: [] };
@@ -275,6 +281,7 @@ AELocalToolkit.launcher = (function() {
   return { scanScripts: scanScripts, launchScript: launchScript };
 })();
 
+// ===== JSON 安全序列化工具 =====
 AELocalToolkit.safeStringify = function (value) {
   function escapeString(str) {
     return String(str)
@@ -307,10 +314,12 @@ AELocalToolkit.safeStringify = function (value) {
   return stringify(value);
 };
 
+// ===== 返回结果封装 =====
 AELocalToolkit.returnResult = function (result) {
   return AELocalToolkit.safeStringify(result);
 };
 
+// ===== JSON 解析（含降级方案） =====
 AELocalToolkit.parseJson = function (text, fallback) {
   try {
     if (typeof JSON !== "undefined" && JSON.parse) {
@@ -327,6 +336,7 @@ AELocalToolkit.parseJson = function (text, fallback) {
 };
 
 
+// ===== 本地文件存储模块（整理方案持久化） =====
 AELocalToolkit.fileStorage = (function () {
   function getBaseFolder() {
     var folder = new Folder(Folder.userData.fullName + "/AE Local Toolkit");
@@ -452,6 +462,7 @@ AELocalToolkit.fileStorage = (function () {
   };
 })();
 
+// ===== AE 连接检测 =====
 function AELT_ping() {
   return AELocalToolkit.returnResult({
     ok: true,
@@ -460,42 +471,51 @@ function AELT_ping() {
   });
 }
 
+// ===== AE 工程整理入口（使用默认方案） =====
 function AELT_organizeProject() {
   return AELocalToolkit.returnResult(AELocalToolkit.organizer.organizeProject());
 }
 
+// ===== AE 工程整理入口（使用指定方案） =====
 function AELT_organizeProjectWithScheme(schemeJson) {
   var scheme = AELocalToolkit.parseJson(schemeJson, null);
   return AELocalToolkit.returnResult(AELocalToolkit.organizer.organizeProjectWithScheme(scheme));
 }
 
+// ===== 加载所有整理方案列表 =====
 function AELT_loadOrganizerSchemes() {
   return AELocalToolkit.returnResult(AELocalToolkit.fileStorage.listSchemes());
 }
 
+// ===== 保存整理方案 =====
 function AELT_saveOrganizerScheme(schemeJson) {
   var scheme = AELocalToolkit.parseJson(schemeJson, null);
   return AELocalToolkit.returnResult(AELocalToolkit.fileStorage.saveScheme(scheme));
 }
 
+// ===== 删除整理方案 =====
 function AELT_deleteOrganizerScheme(id) {
   return AELocalToolkit.returnResult(AELocalToolkit.fileStorage.deleteScheme(id));
 }
 
+// ===== 获取选中属性摘要 =====
 function AELT_getSelectedPropertySummary() {
   return AELocalToolkit.returnResult(AELocalToolkit.expressions.getSelectedPropertySummary());
 }
 
+// ===== 批量应用表达式 =====
 function AELT_applyExpression(expression, overwriteExisting) {
   return AELocalToolkit.returnResult(
     AELocalToolkit.expressions.applyExpression(expression, overwriteExisting === true || overwriteExisting === "true")
   );
 }
 
+// ===== 批量移除表达式 =====
 function AELT_removeExpressions() {
   return AELocalToolkit.returnResult(AELocalToolkit.expressions.removeExpressions());
 }
 
+// ===== 选择脚本文件夹对话框 =====
 function AELT_selectScriptFolder() {
   var folder = Folder.selectDialog("\u9009\u62e9\u811a\u672c\u6587\u4ef6\u5939");
   return AELocalToolkit.returnResult({
@@ -504,6 +524,7 @@ function AELT_selectScriptFolder() {
   });
 }
 
+// ===== 扫描指定文件夹中的脚本文件 =====
 function AELT_scanScripts(folderPath) {
   try {
     if (!AELocalToolkit.launcher) return AELocalToolkit.returnResult({ ok: false, messages: ["launcher \u6a21\u5757\u672a\u52a0\u8f7d"] });
@@ -513,6 +534,7 @@ function AELT_scanScripts(folderPath) {
   }
 }
 
+// ===== 运行指定脚本 =====
 function AELT_launchScript(filePath) {
   try {
     if (!AELocalToolkit.launcher) return AELocalToolkit.returnResult({ ok: false, messages: ["launcher \u6a21\u5757\u672a\u52a0\u8f7d"] });

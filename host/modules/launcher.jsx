@@ -1,4 +1,9 @@
-﻿var AELocalToolkit = AELocalToolkit || {};
+/**
+ * AE Local Toolkit - 脚本启动器模块
+ * 扫描本地文件夹中的 .jsx / .jsxbin 脚本文件，
+ * 提供脚本浏览和运行功能
+ */
+var AELocalToolkit = AELocalToolkit || {};
 AELocalToolkit.launcher = (function() {
 
   function scanScripts(folderPath) {

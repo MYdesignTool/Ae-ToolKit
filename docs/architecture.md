@@ -1,3 +1,4 @@
+# 架构说明
 # Architecture Notes
 
 ## Local-Only Principle
@@ -13,7 +14,7 @@ The panel does not call remote APIs. V1 data lives in:
 | Layer | Path | Purpose |
 | --- | --- | --- |
 | CEP manifest | `CSXS/manifest.xml` | Registers the AE panel |
-| Panel UI | `client/` | Renders the interface and stores user expressions |
+| Panel UI | `client/` | 模块化前端：`js/core.js`(状态/兜底) + `js/util.js`(工具) + `js/ui.js`(面板/调试/设置) + `js/organizer.js`(整理) + `js/expressions.js`(表达式) + `js/scripts.js`(脚本启动器) + `js/app.js`(入口) |
 | AE host script | `host/index.jsx` | Runs ExtendScript inside After Effects |
 | Data | `data/` | Stores default rules, default expressions, changelog |
 | Docs | `docs/` | Install and architecture notes |
@@ -31,12 +32,29 @@ Each function returns a JSON string with a short result summary.
 
 ## Extension Points
 
-V1 keeps host logic in `host/index.jsx` to avoid CEP and ExtendScript include path issues during early testing. After the panel is stable in AE, modules can be split again with a build step or a proven include loader.
+前端与主机均已模块化，沿用“全局命名空间 + 多文件顺序加载”范式，无构建步骤：
 
-Future modules should follow this pattern:
+- 主机端：`host/index.jsx` 通过 `$.evalFile("modules/xxx.jsx")` 加载 `host/modules/` 下的 organizer / expressions / launcher 等模块，统一挂在 `AELocalToolkit` 命名空间。
+- 前端：`client/index.html` 按依赖顺序加载 `client/js/` 下的 core → util → ui → organizer → expressions → scripts → app，模块函数均为全局函数，并挂到 `window.AELT` 命名空间下供调试。
 
-1. Add JSX logic to `host/index.jsx` or bundle it into that file.
-2. Expose one small `AELT_*` function.
-3. Call it from `client/app.js`.
-4. Show raw returns in the Debug panel while testing.
-5. Store default data in `data/` if needed.
+新增功能建议遵循此模式：
+
+1. 主机逻辑放入 `host/modules/` 对应模块，并暴露一个 `AELT_*` 函数。
+2. 前端调用位于 `client/js/` 对应模块（如整理在 organizer.js、表达式在 expressions.js）。
+3. 调试时通过 Debug 面板查看原始返回。
+4. 默认数据放入 `data/`，用户数据放入浏览器 localStorage。
+
+---
+
+## 说明
+
+> 本文档为项目架构记录，中英文对照版本。上述内容为原始英文文档，下方为中文简介。
+
+### 架构概览
+
+AE Local Toolkit 遵循纯本地原则：
+- 不调用远程 API，所有数据存储在本地
+- 数据来源：data/ 下的 JSON 文件 + 浏览器 localStorage + AE 项目状态
+- 运行时层次：CEP 清单 -> 前端 UI -> ExtendScript 主机操作 AE
+- API 通信：前端通过 evalScript 调用 AELT_* 函数，主机返回 JSON 结果
+- 扩展机制：新增模块需添加 JSX 逻辑 + 暴露 AELT_* 函数 + 在前端中调用
