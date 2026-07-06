@@ -1,20 +1,34 @@
 # AE Local Toolkit
 
-Offline After Effects 2020+ extension for project organization, expression management, and local changelog tracking.
+离线版 After Effects 2020+ 扩展 —— 项目整理 · 表达式管理 · 脚本启动 · 完全离线运行
 
-## V1 Features
+## 主要功能
 
-- Organize project items into preset folders.
-- Batch apply expressions to selected properties.
-- Batch remove expressions from selected properties.
-- Manage a local expression library.
-- View local changelog entries.
-- Run fully offline.
+### 项目整理器
+按预设规则（图片、视频、音频、PSD、3D 等）自动分类素材，支持自定义多方案、嵌套文件夹，整理后清除空文件夹。
 
-## Project Type
+### 表达式管理器
+批量应用或移除表达式，内置示例库，支持用户自定义表达式（收藏、搜索、编辑），操作前确认覆盖或删除。
 
-This project starts as a CEP panel because AE 2020+ compatibility is the priority.
+### 脚本启动器
+浏览并运行本地 `.jsx`/`.jsxbin` 脚本，支持收藏、实时搜索、仅显示收藏，自动显示关联 PNG 图标。
 
-## Current Status
+### 更新日志与设置
+点击版本号查看本地更新历史，支持静默模式减少提示。
 
-The initial scaffold and host JSX modules are being built. See `DEVELOPMENT_PLAN.md` for the full plan.
+## 安装
+
+将 `AeLocalToolkit/` 文件夹复制到 CEP 扩展目录：
+
+- Windows: `C:\Program Files (x86)\Common Files\Adobe\CEP\extensions\`
+- macOS: `/Library/Application Support/Adobe/CEP/extensions/`
+
+启动 After Effects 2020 或更高版本，在 `窗口 > 扩展 > AeLocalToolkit` 中打开面板。
+
+## 开发状态
+
+当前版本 **v0.2.1**，核心功能已完成。表达式库导入/导出功能计划后续添加。
+
+## 许可证
+
+本项目采用 **GNU General Public License v3.0**。任何使用、修改或分发本项目代码的衍生作品，必须同样以 GPLv3 开源，并保留原始版权声明。
