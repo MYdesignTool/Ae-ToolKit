@@ -1,0 +1,55 @@
+{
+  "version": 1,
+  "expressions": [
+    {
+      "id": "wiggle-basic",
+      "name": "基础抖动",
+      "category": "常用",
+      "description": "为选中属性添加基础随机抖动。",
+      "code": "wiggle(5, 20)",
+      "tags": ["wiggle", "抖动", "随机"],
+      "builtin": true,
+      "favorite": false
+    },
+    {
+      "id": "loop-out-cycle",
+      "name": "循环关键帧",
+      "category": "常用",
+      "description": "循环播放当前属性的关键帧动画。",
+      "code": "loopOut(\"cycle\")",
+      "tags": ["loop", "循环", "关键帧"],
+      "builtin": true,
+      "favorite": false
+    },
+    {
+      "id": "time-rotation",
+      "name": "持续旋转",
+      "category": "动画",
+      "description": "让旋转类属性随时间持续变化。",
+      "code": "time * 60",
+      "tags": ["time", "旋转"],
+      "builtin": true,
+      "favorite": false
+    },
+    {
+      "id": "blink-opacity",
+      "name": "透明度闪烁",
+      "category": "动画",
+      "description": "让透明度在显示和隐藏之间闪烁。",
+      "code": "Math.sin(time * 10) > 0 ? 100 : 0",
+      "tags": ["opacity", "闪烁"],
+      "builtin": true,
+      "favorite": false
+    },
+    {
+      "id": "posterize-random",
+      "name": "分帧随机",
+      "category": "工具",
+      "description": "以较低频率生成随机值，适合跳动效果。",
+      "code": "posterizeTime(8);\nrandom(value - 20, value + 20);",
+      "tags": ["random", "posterizeTime"],
+      "builtin": true,
+      "favorite": false
+    }
+  ]
+}

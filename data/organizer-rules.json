@@ -1,0 +1,18 @@
+{
+  "id": "preset-default",
+  "name": "默认整理方案",
+  "version": 2,
+  "builtin": true,
+  "fallbackPath": "Footage",
+  "rules": [
+    { "path": "Comp", "itemTypes": ["CompItem"], "extensions": [] },
+    { "path": "Image", "itemTypes": [], "extensions": ["JPEG", "JPG", "PNG", "TIFF", "GIF", "BMP", "SWF", "EXR", "WEBP"] },
+    { "path": "Video", "itemTypes": [], "extensions": ["AVI", "MP4", "MOV", "MPEG2", "MKV", "M4V", "WEBM"] },
+    { "path": "Audio", "itemTypes": [], "extensions": ["MP3", "WAV", "AIFF", "AAC", "FLAC"] },
+    { "path": "PSD", "itemTypes": [], "extensions": ["PSD", "PSB"] },
+    { "path": "Live2D", "itemTypes": [], "extensions": ["CAE"] },
+    { "path": "3D", "itemTypes": [], "extensions": ["OBJ", "FBX", "GLTF"] },
+    { "path": "Solids", "itemTypes": ["SolidSource"], "extensions": [] },
+    { "path": "Footage", "itemTypes": [], "extensions": [] }
+  ]
+}
