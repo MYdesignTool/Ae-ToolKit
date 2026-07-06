@@ -1,0 +1,173 @@
+﻿<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>AE工具箱</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <main class="app">
+      <header class="topbar">
+        <div>
+          <h1>AE工具箱</h1>
+          <p>本地化 AE 效率工具</p>
+        </div>
+        <span class="version" id="versionLabel">0.2.1</span>
+      </header>
+
+      <nav class="tabs" aria-label="Main sections">
+        <button class="tab active" data-view="organizer">整理</button>
+        <button class="tab" data-view="scripts">脚本集</button>
+        <button class="tab" data-view="expressions">表达式</button>
+        <button class="tab" data-view="debug">Debug</button>
+        <button class="tab" data-view="settings">设置</button>
+      </nav>
+
+      <section class="view" id="scriptsView">
+        <div class="section-head">
+          <h2>脚本启动器</h2>
+          <div>
+            <button class="ghost" id="scriptFolderBtn">选择文件夹</button>
+            <button class="ghost" id="refreshScriptsBtn">刷新</button>
+          </div>
+        </div>
+        <p class="muted" id="scriptFolderStatus">未选择脚本文件夹</p>
+      <label class="field">
+        <span>搜索脚本</span>
+        <div class="search-row">
+          <input id="scriptSearch" type="search" placeholder="按名称过滤..." />
+          <button id="favFilterBtn" class="fav-toggle" title="仅显示收藏脚本">\u2606</button>
+        </div>
+      </label>
+        <div class="script-list" id="scriptList"></div>
+      </section>
+
+      <section class="view active" id="organizerView">
+        <div class="section-head">
+          <h2>工程整理</h2>
+          <button class="primary" id="organizeBtn">一键整理</button>
+        </div>
+        <p class="muted">选择或编辑整理方案。文件夹路径支持 "父文件夹/子文件夹"。</p>
+
+        <label class="field">
+          <span>整理方案</span>
+          <select id="schemeSelect"></select>
+        </label>
+
+        <div class="button-row">
+          <button class="ghost" id="newSchemeBtn">新建方案</button>
+          <button class="ghost" id="saveSchemeBtn">保存方案</button>
+          <button class="danger" id="deleteSchemeBtn">删除方案</button>
+        </div>
+
+        <label class="field">
+          <span>方案名称</span>
+          <input id="schemeNameInput" type="text" placeholder="整理方案名称" />
+        </label>
+
+        <label class="field">
+          <span>未匹配素材文件夹</span>
+          <input id="fallbackPathInput" type="text" placeholder="Footage" />
+        </label>
+
+        <div class="section-head">
+          <h2>文件夹规则</h2>
+          <button class="ghost" id="addRuleBtn">添加规则</button>
+        </div>
+        <div class="rule-grid editable" id="ruleGrid"></div>
+      </section>
+
+      <section class="view" id="expressionsView">
+        <div class="section-head">
+          <h2>表达式管理</h2>
+          <button class="ghost" id="refreshSelectionBtn">刷新选择</button>
+        </div>
+
+        <div class="selection-status" id="selectionStatus">等待选择属性</div>
+
+        <label class="field">
+          <span>搜索表达式</span>
+          <input id="expressionSearch" type="search" placeholder="名称、分类或标签" />
+        </label>
+
+        <div class="expression-list" id="expressionList"></div>
+
+        <label class="field">
+          <span>表达式内容</span>
+          <textarea id="expressionCode" spellcheck="false" placeholder="在这里输入或选择一个表达式"></textarea>
+        </label>
+
+        <div class="button-row">
+          <button class="primary" id="applyExpressionBtn">应用到选中属性</button>
+          <button class="danger" id="removeExpressionBtn">移除表达式</button>
+        </div>
+
+        <div class="button-row">
+          <button class="ghost" id="saveExpressionBtn">保存为自定义表达式</button>
+          <button class="ghost" id="deleteExpressionBtn">删除自定义表达式</button>
+          <button class="ghost" id="updateExpressionBtn" style="display:none">更新表达式</button>
+        </div>
+      </section>
+
+      <section class="view" id="debugView">
+        <div class="section-head">
+          <h2>Debug 信息</h2>
+          <div class="debug-actions">
+            <button class="ghost" id="pingHostBtn">检测连接</button>
+            <button class="ghost" id="testStorageBtn">检测存储</button>
+            <button class="ghost" id="clearDebugBtn">清空</button>
+          </div>
+        </div>
+        <div class="debug-log" id="debugLog"></div>
+      </section>
+
+      <section class="view" id="settingsView">
+        <div class="section-head">
+          <h2>设置</h2>
+        </div>
+        <div class="settings-list">
+          <div class="settings-item">
+            <div class="settings-item-info">
+              <strong>安静模式</strong>
+              <span class="muted">启用后操作确认对话框将不再显示</span>
+            </div>
+            <label class="switch">
+              <input type="checkbox" id="quietModeToggle" />
+              <span class="slider"></span>
+            </label>
+          </div>
+          <div class="settings-item">
+            <div class="settings-item-info">
+              <strong>Debug 模式</strong>
+              <span class="muted">启用后显示 Debug 选项卡</span>
+            </div>
+            <label class="switch">
+              <input type="checkbox" id="debugModeToggle" />
+              <span class="slider"></span>
+            </label>
+          </div>
+        </div>
+        <div class="settings-about">
+          <p class="muted">AE工具箱 v0.2.1</p>
+          <p class="muted">离线 After Effects 扩展面板</p>
+        </div>
+      </section>
+
+    <footer class="status" id="statusBar">准备就绪</footer>
+    </main>
+
+    <div class="modal-overlay" id="changelogModal" style="display:none">
+     <div class="modal-content">
+       <div class="modal-header">
+         <h2>更新日志</h2>
+         <button class="ghost mini" id="closeChangelogBtn">关闭</button>
+       </div>
+       <div class="modal-body" id="changelogBody"></div>
+     </div>
+   </div>
+
+    <div class="toast-container" id="toastContainer"></div>
+    <script src="./app.js"></script>
+  </body>
+</html>
