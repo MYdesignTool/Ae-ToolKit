@@ -176,36 +176,61 @@
     restoreScriptFolder();
     initHostModuleBase();
 
+    var root = getExtensionRoot();
+
     Promise.all([
       loadJson("../data/organizer-rules.json", fallbackRules),
-      loadJson("../data/default-expressions.json", fallbackExpressions),
-      loadJson("../data/changelog.json", fallbackChangelog)
+      loadJson("../data/default-expressions.json", fallbackExpressions)
     ]).then(function (results) {
       state.rules = normalizeScheme(results[0]);
       state.organizerSchemes = [state.rules];
       state.selectedSchemeId = state.rules.id;
       state.expressions = results[1].expressions.concat(getUserExpressions());
-      state.changelog = results[2];
       renderRules();
       renderExpressions();
-      renderChangelog();
       loadSettings();
       pingHost();
       loadOrganizerSchemesFromHost();
       refreshSelection();
+      loadChangelogFromHost(root);
     }).catch(function () {
       state.rules = normalizeScheme(fallbackRules);
       state.organizerSchemes = [state.rules];
       state.selectedSchemeId = state.rules.id;
       state.expressions = cloneData(fallbackExpressions).expressions.concat(getUserExpressions());
-      state.changelog = cloneData(fallbackChangelog);
       renderRules();
       renderExpressions();
-      renderChangelog();
       loadSettings();
       setStatus("已使用内置数据启动。");
       pingHost();
       refreshSelection();
+      loadChangelogFromHost(root);
+    });
+  }
+
+  // 通过 host（ExtendScript）读取更新日志文件。
+  // CEP 中 fetch 本地 file:// 资源常被安全策略拦截/不可用，故改由 host 直接读文件，
+  // 保证数据单一来源、且前端无需硬编码兜底。文件缺失或解析失败时 state.changelog
+  // 为 null，由 renderChangelog 显示“未找到更新日志”。
+  function loadChangelogFromHost(root) {
+    if (!root) {
+      state.changelog = null;
+      renderChangelog();
+      return;
+    }
+    evalAe('AELT_readFile("' + escape(root + "/data/changelog.json") + '")', function (result) {
+      if (result && result.ok && result.text) {
+        try {
+          state.changelog = JSON.parse(result.text);
+        } catch (e) {
+          state.changelog = null;
+          addDebug("changelog parse failed", e.toString());
+        }
+      } else {
+        state.changelog = null;
+        if (result && result.exists === false) addDebug("changelog file not found", root + "/data/changelog.json");
+      }
+      renderChangelog();
     });
   }
 
@@ -216,5 +241,6 @@ document.addEventListener("DOMContentLoaded", init);
 AELT.app = {
   cacheEls: cacheEls,
   bindEvents: bindEvents,
-  init: init
+  init: init,
+  loadChangelogFromHost: loadChangelogFromHost
 };

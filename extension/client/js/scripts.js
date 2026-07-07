@@ -49,6 +49,9 @@ function scanScripts() {
 function renderScripts() {
   var query = els.scriptSearch.value.trim().toLowerCase();
   var favs = getScriptFavorites();
+  // state.selectedScriptFsName 为 URL 编码路径，展示/对比时解码为可读路径。
+  var selectedFs = state.selectedScriptFsName;
+  try { selectedFs = decodeURI(state.selectedScriptFsName); } catch (e) {}
   var filtered = state.scripts;
   if (state.favFilterOn) {
     filtered = filtered.filter(function (s) { return favs.indexOf(s.fsName) >= 0; });
@@ -62,7 +65,7 @@ function renderScripts() {
   for (var i = 0; i < filtered.length; i++) {
     var s = filtered[i];
     var isFav = favs.indexOf(s.fsName) >= 0;
-    var selected = s.fsName === state.selectedScriptFsName ? ' active' : '';
+    var selected = s.fsName === selectedFs ? ' active' : '';
     html += '<div class="script-item' + selected + '" data-url="' + escapeHtml(encodeURI(s.fsName)) + '" data-fsname="' + escapeHtml(s.fsName) + '">';
     html += '<span class="script-fav' + (isFav ? ' favored' : '') + '" data-fsname="' + escapeHtml(s.fsName) + '">' + (isFav ? '★' : '☆') + '</span>';
     if (s.iconPath) {
@@ -89,13 +92,16 @@ function renderScripts() {
 
 function launchScript() {
   if (!state.selectedScriptFsName) return;
-    setStatus("\u8fd0\u884c\u4e2d: " + state.selectedScriptFsName);
+  // state.selectedScriptFsName 是为安全传输而做的 URL 编码路径，展示时解码为人类可读路径。
+  var displayPath = state.selectedScriptFsName;
+  try { displayPath = decodeURI(state.selectedScriptFsName); } catch (e) {}
+    setStatus("\u8fd0\u884c\u4e2d: " + displayPath);
     evalAe("AELT_launchScript('" + escapeForEvalScript(state.selectedScriptFsName) + "')", function (result) {
     if (!result.ok) {
       setStatus((result.messages && result.messages[0]) || "\u8fd0\u884c\u5931\u8d25");
       showToast("\u811a\u672c\u8fd0\u884c\u5931\u8d25", "error");
     } else {
-      setStatus("\u811a\u672c\u5df2\u8fd0\u884c: " + state.selectedScriptFsName);
+      setStatus("\u811a\u672c\u5df2\u8fd0\u884c: " + displayPath);
       showToast("\u811a\u672c\u5df2\u8fd0\u884c", "success");
     }
   });

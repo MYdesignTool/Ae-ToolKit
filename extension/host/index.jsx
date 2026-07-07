@@ -108,6 +108,7 @@ function hostLog(msg) {
   function moduleIsDefined(name) {
     if (name === "organizer.jsx") return typeof AELocalToolkit.organizer === "object";
     if (name === "expressions.jsx") return typeof AELocalToolkit.expressions === "object";
+    if (name === "launcher.jsx") return typeof AELocalToolkit.launcher === "object";
     return true;
   }
 
@@ -147,212 +148,12 @@ function hostLog(msg) {
   }
 
   function loadModules() {
-    // expressions 已在 index.jsx 内联定义（始终可用），此处仅加载外部 organizer 模块，
-    // 避免“静默加载失败”被内联副本掩盖、也避免外部 expressions.jsx 与内联版本分歧。
+    // 所有功能模块均位于 host/modules/ 下，由本入口按需加载，index.jsx 仅负责引导。
     tryLoadModule("organizer.jsx");
+    tryLoadModule("expressions.jsx");
+    tryLoadModule("launcher.jsx");
   }
-  if (typeof AELocalToolkit.expressions !== "object") {
-    AELocalToolkit.expressions = (function () {
-      function resultBase() {
-        return {
-          ok: true,
-          total: 0,
-          applied: 0,
-          removed: 0,
-          skipped: 0,
-          existing: 0,
-          errors: 0,
-          messages: []
-        };
-      }
-    
-      function collectLayerProperties(group, props) {
-        try {
-          for (var i = 1; i <= group.numProperties; i++) {
-            var child = group.property(i);
-            if (child.selected === true) {
-              props.push(child);
-            }
-            if (child.numProperties && child.numProperties > 0) {
-              collectLayerProperties(child, props);
-            }
-          }
-        } catch (e) {
-        }
-      }
-    
-      function getSelectedProperties() {
-        var comp = app.project ? app.project.activeItem : null;
-        if (!comp || !(comp instanceof CompItem)) {
-          return {
-            ok: false,
-            message: "Open a comp and select one or more properties.",
-            properties: []
-          };
-        }
-    
-        var props = [];
-        try {
-          var directProps = comp.selectedProperties;
-          for (var i = 0; i < directProps.length; i++) {
-            props.push(directProps[i]);
-          }
-        } catch (e) {
-          props = [];
-        }
-    
-        if (props.length === 0) {
-          var layers = comp.selectedLayers;
-          for (var j = 0; j < layers.length; j++) {
-            collectLayerProperties(layers[j], props);
-          }
-        }
-    
-        return {
-          ok: true,
-          message: "",
-          properties: props
-        };
-      }
-    
-      function canUseExpression(prop) {
-        try {
-          return prop && prop.canSetExpression === true;
-        } catch (e) {
-          return false;
-        }
-      }
-    
-      function hasExpression(prop) {
-        try {
-          return prop.expressionEnabled === true || (prop.expression && prop.expression.length > 0);
-        } catch (e) {
-          return false;
-        }
-      }
-    
-      function getSelectedPropertySummary() {
-        var selected = getSelectedProperties();
-        var summary = resultBase();
-    
-        if (!selected.ok) {
-          summary.ok = false;
-          summary.messages.push(selected.message);
-          return summary;
-        }
-    
-        summary.total = selected.properties.length;
-        for (var i = 0; i < selected.properties.length; i++) {
-          var prop = selected.properties[i];
-          if (!canUseExpression(prop)) {
-            summary.skipped++;
-          } else if (hasExpression(prop)) {
-            summary.existing++;
-          }
-        }
-    
-        return summary;
-      }
-    
-      function applyExpression(expression, overwriteExisting) {
-        var summary = resultBase();
-        var selected = getSelectedProperties();
-    
-        if (!selected.ok) {
-          summary.ok = false;
-          summary.messages.push(selected.message);
-          return summary;
-        }
-    
-        if (!expression || String(expression).replace(/\s/g, "").length === 0) {
-          summary.ok = false;
-          summary.messages.push("Expression is empty.");
-          return summary;
-        }
-    
-        summary.total = selected.properties.length;
-        app.beginUndoGroup("AE Local Toolkit - Apply Expression");
-        try {
-          for (var i = 0; i < selected.properties.length; i++) {
-            var prop = selected.properties[i];
-            try {
-              if (!canUseExpression(prop)) {
-                summary.skipped++;
-                continue;
-              }
-    
-              if (hasExpression(prop) && !overwriteExisting) {
-                summary.existing++;
-                summary.skipped++;
-                continue;
-              }
-    
-              prop.expression = expression;
-              prop.expressionEnabled = true;
-              summary.applied++;
-            } catch (e) {
-              summary.errors++;
-              summary.messages.push("Apply failed: " + e.toString());
-            }
-          }
-        } catch (outerError) {
-          summary.ok = false;
-          summary.errors++;
-          summary.messages.push(outerError.toString());
-        } finally {
-          app.endUndoGroup();
-        }
-    
-        return summary;
-      }
-    
-      function removeExpressions() {
-        var summary = resultBase();
-        var selected = getSelectedProperties();
-    
-        if (!selected.ok) {
-          summary.ok = false;
-          summary.messages.push(selected.message);
-          return summary;
-        }
-    
-        summary.total = selected.properties.length;
-        app.beginUndoGroup("AE Local Toolkit - Remove Expressions");
-        try {
-          for (var i = 0; i < selected.properties.length; i++) {
-            var prop = selected.properties[i];
-            try {
-              if (!canUseExpression(prop) || !hasExpression(prop)) {
-                summary.skipped++;
-                continue;
-              }
-    
-              prop.expressionEnabled = false;
-              prop.expression = "";
-              summary.removed++;
-            } catch (e) {
-              summary.errors++;
-              summary.messages.push("Remove failed: " + e.toString());
-            }
-          }
-        } catch (outerError) {
-          summary.ok = false;
-          summary.errors++;
-          summary.messages.push(outerError.toString());
-        } finally {
-          app.endUndoGroup();
-        }
-    
-        return summary;
-      }
-    
-      return {
-        getSelectedPropertySummary: getSelectedPropertySummary,
-        applyExpression: applyExpression,
-        removeExpressions: removeExpressions
-      };
-    })();
-  }
+
 
   // 按需确保 organizer 模块已加载：整理入口会调用，避免客户端竞态导致模块未就绪。
   AELocalToolkit.ensureOrganizerLoaded = function () {
@@ -384,73 +185,7 @@ function hostLog(msg) {
   hostLog("autoLoad: organizer=" + (typeof AELocalToolkit.organizer) + " errors=" + AELocalToolkit.__loadErrors.join(" | "));
 })();
 
-// ===== 脚本启动器模块 =====
-AELocalToolkit.launcher = (function() {
-  function scanScripts(folderPath) {
-    var result = { ok: true, folder: folderPath, scripts: [], messages: [] };
-    try {
-      var folder = new Folder(folderPath);
-      if (!folder.exists) {
-        result.ok = false;
-        result.messages.push("\u6587\u4ef6\u5939\u4e0d\u5b58\u5728: " + folderPath);
-        return result;
-      }
-      result.scripts = collectScripts(folder, folder.fsName);
-    } catch (e) {
-      result.ok = false;
-      result.messages.push(e.toString());
-    }
-    return result;
-  }
 
-  function collectScripts(folder, basePath) {
-    var items = folder.getFiles();
-    items.sort(sortByName);
-    var files = [];
-    for (var i = 0; i < items.length; i++) {
-      if (items[i] instanceof Folder) {
-        if (!items[i].name.match(/^\(.*\)$/))
-          files = files.concat(collectScripts(items[i], basePath));
-      } else if (items[i].name.match(/\.(jsx|jsxbin)$/)) {
-        var fsName = items[i].fsName;
-        var fileName = fsName.replace(/^.*[\\\/]/, "");
-        files.push({
-          name: fileName.replace(/\.(jsx|jsxbin)$/, ""),
-          relativePath: fsName.substr(basePath.length + 1),
-          absoluteURI: items[i].absoluteURI,
-          fsName: fsName,
-          iconPath: File(fsName.replace(/\.(jsx|jsxbin)$/, ".png")).exists ? "file:///" + fsName.replace(/\\/g, "/").replace(/\.(jsx|jsxbin)$/, ".png") : ""
-        });
-      }
-    }
-    return files;
-  }
-
-  function sortByName(a, b) {
-    var na = a.name.toLowerCase(), nb = b.name.toLowerCase();
-    return na < nb ? -1 : na > nb ? 1 : 0;
-  }
-
-  function launchScript(filePath) {
-    var result = { ok: true, file: filePath, messages: [] };
-    try {
-      var decoded = decodeURI(filePath);
-      var file = new File(decoded);
-      if (!file.exists) {
-        result.ok = false;
-        result.messages.push("\u627e\u4e0d\u5230\u811a\u672c\u6587\u4ef6: " + decoded);
-        return result;
-      }
-      $.evalFile(file);
-    } catch (e) {
-      result.ok = false;
-      result.messages.push("\u811a\u672c\u8fd0\u884c\u51fa\u9519: " + e.toString());
-    }
-    return result;
-  }
-
-  return { scanScripts: scanScripts, launchScript: launchScript };
-})();
 
 // ===== JSON 安全序列化工具 =====
 AELocalToolkit.safeStringify = function (value) {
@@ -701,11 +436,13 @@ function AELT_deleteOrganizerScheme(id) {
 
 // ===== 获取选中属性摘要 =====
 function AELT_getSelectedPropertySummary() {
+  if (!AELocalToolkit.expressions) return AELocalToolkit.returnResult({ ok: false, messages: ["expressions 模块未加载"] });
   return AELocalToolkit.returnResult(AELocalToolkit.expressions.getSelectedPropertySummary());
 }
 
 // ===== 批量应用表达式 =====
 function AELT_applyExpression(expression, overwriteExisting) {
+  if (!AELocalToolkit.expressions) return AELocalToolkit.returnResult({ ok: false, messages: ["expressions 模块未加载"] });
   return AELocalToolkit.returnResult(
     AELocalToolkit.expressions.applyExpression(expression, overwriteExisting === true || overwriteExisting === "true")
   );
@@ -713,6 +450,7 @@ function AELT_applyExpression(expression, overwriteExisting) {
 
 // ===== 批量移除表达式 =====
 function AELT_removeExpressions() {
+  if (!AELocalToolkit.expressions) return AELocalToolkit.returnResult({ ok: false, messages: ["expressions 模块未加载"] });
   return AELocalToolkit.returnResult(AELocalToolkit.expressions.removeExpressions());
 }
 
@@ -742,5 +480,28 @@ function AELT_launchScript(filePath) {
     return AELocalToolkit.returnResult(AELocalToolkit.launcher.launchScript(filePath));
   } catch (e) {
     return AELocalToolkit.returnResult({ ok: false, messages: [e.toString()] });
+  }
+}
+
+// ===== 读取扩展内数据文件（绕开 CEP 对 fetch file:// 的限制） =====
+// 由客户端传入相对扩展根目录的文件路径（已 escape），host 直接读取文本后回传。
+// 客户端据此解析 JSON；文件缺失或读取失败时返回 ok:false，前端显示“未找到”。
+function AELT_readFile(path) {
+  try {
+    var raw = path;
+    try { raw = unescape(path); } catch (d) { raw = path; }
+    var f = new File(raw);
+    if (!f.exists) {
+      return AELocalToolkit.returnResult({ ok: false, exists: false, text: "" });
+    }
+    f.encoding = "UTF-8";
+    if (!f.open("r")) {
+      return AELocalToolkit.returnResult({ ok: false, exists: true, text: "" });
+    }
+    var text = f.read();
+    f.close();
+    return AELocalToolkit.returnResult({ ok: true, exists: true, text: String(text || "") });
+  } catch (e) {
+    return AELocalToolkit.returnResult({ ok: false, exists: false, text: "", error: (e && e.toString ? e.toString() : e) });
   }
 }
