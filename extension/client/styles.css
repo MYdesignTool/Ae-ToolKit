@@ -544,7 +544,6 @@ textarea {
   align-items: center;
   justify-content: center;
 }
-.script-icon.placeholder { /* 占位图与正常图标同尺寸，不额外加框 */ }
 .placeholder-svg { display: block; }
 .script-icon-img { max-height: 36px; max-width: 200px; height: auto; width: auto; object-fit: contain; display: block; border-radius: 8px; }
 .script-name {
