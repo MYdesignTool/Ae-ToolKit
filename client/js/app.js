@@ -133,11 +133,48 @@
     });
   }
 
+  // 从面板自身 URL 推导扩展根目录：面板入口为 <root>/client/index.html，
+  // 去掉该后缀即得到扩展根目录（host/ 与 client/ 并列）。
+  function getExtensionRoot() {
+    try {
+      var href = window.location.href;
+      href = href.replace(/^file:\/\/?/, "");
+      href = href.split("?")[0].split("#")[0];
+      href = href.replace(/\/client\/index\.html$/i, "");
+      // file:// 路径中空格等被 URL 编码为 %20，需解码为真实字符，否则找不到文件夹
+      try { href = decodeURIComponent(href); } catch (d) {}
+      // 去掉 Windows 盘符前的多余斜杠：/C:/... -> C:/...
+      href = href.replace(/^\/([A-Za-z]:)/, "$1");
+      return href;
+    } catch (e) {
+      return "";
+    }
+  }
+
+  // 告诉 host 扩展根目录，使其能定位 host/modules 下的模块。
+  // 本 CEP 环境下 host 的 $.fileName 不可靠（返回 80，指向 AE 自身目录），
+  // 因此必须由客户端提供路径。
+  function initHostModuleBase() {
+    var root = getExtensionRoot();
+    if (!root) {
+      addDebug("module base", "无法从 window.location 推导扩展根目录");
+      return;
+    }
+    evalAe('AELT_setModuleBase("' + escape(root) + '")', function (result) {
+      if (result && result.loadErrors && result.loadErrors.length) {
+        addDebug("host module load errors", result.loadErrors);
+      } else {
+        addDebug("host module base", result && result.moduleBase);
+      }
+    });
+  }
+
   function init() {
     cacheEls();
     bindEvents();
     bindScriptEvents();
     restoreScriptFolder();
+    initHostModuleBase();
 
     Promise.all([
       loadJson("../data/organizer-rules.json", fallbackRules),

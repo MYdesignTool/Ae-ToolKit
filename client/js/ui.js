@@ -67,6 +67,12 @@
 
   function pingHost() {
     evalAe("AELT_ping()", function (result) {
+      if (result.loadErrors && result.loadErrors.length) {
+        addDebug("host load errors", result.loadErrors);
+        setStatus("Host 模块加载失败，详见 Debug。");
+        showToast("Host 模块加载失败", "error");
+        return;
+      }
       if (result.ok) {
         setStatus("AE host 已连接：" + result.appVersion);
         showToast("AE host 已连接", "success");
