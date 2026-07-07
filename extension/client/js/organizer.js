@@ -161,21 +161,29 @@
     }
   }
 
+  // 确保 host 模块已加载：重新设置模块根目录（幂等），避免面板初始化顺序竞态导致
+  // 整理/读取方案时 organizer 模块尚未就绪。
+  function ensureModules(callback) {
+    evalAe('AELT_setModuleBase("' + escape(getExtensionRoot()) + '")', function () { callback(); });
+  }
+
   function loadOrganizerSchemesFromHost() {
-    evalAe("AELT_loadOrganizerSchemes()", function (result) {
-      if (result.ok && result.schemes && result.schemes.length) {
-        state.organizerSchemes = result.schemes.map(normalizeScheme);
-        if (!state.organizerSchemes.some(function (scheme) { return scheme.id === state.selectedSchemeId; })) {
-          state.selectedSchemeId = state.organizerSchemes[0].id;
+    ensureModules(function () {
+      evalAe("AELT_loadOrganizerSchemes()", function (result) {
+        if (result.ok && result.schemes && result.schemes.length) {
+          state.organizerSchemes = result.schemes.map(normalizeScheme);
+          if (!state.organizerSchemes.some(function (scheme) { return scheme.id === state.selectedSchemeId; })) {
+            state.selectedSchemeId = state.organizerSchemes[0].id;
+          }
+          renderRules();
+          setStatus("已加载整理方案 " + state.organizerSchemes.length + " 套。");
+        } else {
+          state.organizerSchemes = [normalizeScheme(fallbackRules)];
+          state.selectedSchemeId = "preset-default";
+          renderRules();
+          setStatus("整理方案文件读取失败，已使用内置预设。");
         }
-        renderRules();
-        setStatus("已加载整理方案 " + state.organizerSchemes.length + " 套。");
-      } else {
-        state.organizerSchemes = [normalizeScheme(fallbackRules)];
-        state.selectedSchemeId = "preset-default";
-        renderRules();
-        setStatus("整理方案文件读取失败，已使用内置预设。");
-      }
+      });
     });
   }
 
@@ -189,14 +197,16 @@
    }
 
     setStatus("正在整理工程：" + scheme.name);
-    var script = "AELT_organizeProjectWithScheme('" + escapeForEvalScript(JSON.stringify(scheme)) + "')";
-    evalAe(script, function (result) {
-      if (!result.ok) {
-        setStatus((result.messages && result.messages[0]) || "整理失败。");
-        return;
-      }
-      setStatus("整理完成：移动 " + result.moved + " 项，跳过 " + result.skipped + " 项，错误 " + result.errors + " 个。");
-      showToast("整理完成：移动 " + result.moved + " 项", "success");
+    var script = "AELT_organizeProjectWithScheme('" + escape(escapeForEvalScript(JSON.stringify(scheme))) + "')";
+    ensureModules(function () {
+      evalAe(script, function (result) {
+        if (!result.ok) {
+          setStatus((result.messages && result.messages[0]) || "整理失败。");
+          return;
+        }
+        setStatus("整理完成：移动 " + result.moved + " 项，跳过 " + result.skipped + " 项，错误 " + result.errors + " 个。");
+        showToast("整理完成：移动 " + result.moved + " 项", "success");
+      });
     });
   }
 
@@ -230,7 +240,7 @@
       return;
     }
 
-    var script = "AELT_saveOrganizerScheme('" + escapeForEvalScript(JSON.stringify(scheme)) + "')";
+    var script = "AELT_saveOrganizerScheme('" + escape(escapeForEvalScript(JSON.stringify(scheme))) + "')";
     evalAe(script, function (result) {
       if (!result.ok) {
         setStatus((result.messages && result.messages[0]) || "方案保存失败。");

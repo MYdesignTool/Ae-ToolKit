@@ -3,7 +3,7 @@
  * 根据预定义规则自动分类 AE 项目中的素材至对应文件夹，
  * 支持多方案管理、嵌套文件夹、空文件夹清理等功能
  */
-var AELocalToolkit = AELocalToolkit || {};
+AELocalToolkit = AELocalToolkit || {};
 AELocalToolkit.organizer = (function () {
   var defaultScheme = {
     id: "preset-default",

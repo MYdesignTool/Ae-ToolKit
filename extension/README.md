@@ -18,7 +18,7 @@
 
 ## 安装
 
-将 `AeLocalToolkit/` 文件夹复制到 CEP 扩展目录：
+将下载的所有文件解压到名为`AeLocalToolkit/` 的文件夹，然后将 `AeLocalToolkit/` 文件夹放到 CEP 扩展目录：
 
 - Windows: `C:\Program Files (x86)\Common Files\Adobe\CEP\extensions\`
 - macOS: `/Library/Application Support/Adobe/CEP/extensions/`
