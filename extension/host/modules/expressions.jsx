@@ -3,7 +3,7 @@
  * 提供 AE 表达式的批量应用、移除及选中属性的摘要统计功能
  * 通过 ExtendScript 操作 AE 内部属性对象
  */
-var AELocalToolkit = AELocalToolkit || {};
+AELocalToolkit = AELocalToolkit || {};
 AELocalToolkit.expressions = (function () {
   function resultBase() {
     return {
