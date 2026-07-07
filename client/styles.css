@@ -16,6 +16,8 @@
 /* ===== 全局重置 ===== */
 * {
   box-sizing: border-box;
+  scrollbar-width: thin;
+  scrollbar-color: #3a3a3a #1c1c1c;
 }
 
 /* ===== 页面基础样式 ===== */
@@ -29,6 +31,22 @@ body {
   overflow: hidden;
   height: 100%;
 }
+
+/* ===== 自定义滚动条（暗色主题，统一替代默认白色滚动条） ===== */
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-track {
+  background: #1c1c1c;
+  border-radius: 6px;
+}
+::-webkit-scrollbar-thumb {
+  background: #3a3a3a;
+  border: 2px solid #1c1c1c;
+  background-clip: padding-box;
+  border-radius: 6px;
+}
+::-webkit-scrollbar-thumb:hover { background: #4a4a4a; }
+::-webkit-scrollbar-thumb:active { background: var(--accent-strong); }
+::-webkit-scrollbar-corner { background: transparent; }
 
 button,
 input,
@@ -363,6 +381,9 @@ textarea {
   display: flex; justify-content: space-between; align-items: center;
   padding: 16px; border-bottom: 1px solid #353535;
 }
+.modal-actions { display: flex; gap: 8px; }
+.settings-about .repo-link { cursor: pointer; }
+.settings-about .repo-link:hover { color: var(--accent-strong); text-decoration: underline; }
 .modal-body { padding: 16px; overflow-y: auto; max-height: 350px; }
 .modal-body .changelog-item { border: 0; background: transparent; padding: 8px 0; }
 .modal-body .changelog-item + .changelog-item { border-top: 1px solid #353535; }
@@ -449,12 +470,13 @@ textarea {
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 8px 10px;
+  padding: 6px 10px;
   border: 1px solid var(--line);
   border-radius: var(--radius);
   background: var(--panel);
   cursor: pointer;
-  min-height: 36px;
+  min-height: 52px;
+  overflow: hidden;
 }
 .script-item:hover { border-color: #4a4a4a; }
 .script-item.active { border-color: var(--accent-strong); }
@@ -506,7 +528,7 @@ textarea {
   color: var(--muted);
 }
 .script-icon.hidden { visibility: hidden; }
-.script-icon-img { width: 157px; height: 39px; object-fit: contain; display: block; }
+.script-icon-img { max-height: 36px; max-width: 200px; height: auto; width: auto; object-fit: contain; display: block; border-radius: 8px; }
 .script-name {
   flex: 1;
   overflow: hidden;

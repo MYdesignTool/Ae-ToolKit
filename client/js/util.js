@@ -84,8 +84,11 @@
         return;
       }
 
+      // 注意：在 CEP（CEF）中通过 fetch 读取 file:// 本地资源时，响应常常
+      // response.ok === false（status 为 0），但响应体仍是正常的 JSON。
+      // 因此不能仅凭 !response.ok 就判定失败；直接解析响应体，仅当文件缺失
+      // 或 JSON 解析出错时才回退到 fallback（changelog 的 fallback 为 null）。
       fetch(path).then(function (response) {
-        if (!response.ok) throw new Error("HTTP " + response.status);
         return response.json();
       }).then(function (data) {
         addDebug("data loaded", path);

@@ -5,7 +5,6 @@
  */
 var AELocalToolkit = AELocalToolkit || {};
 AELocalToolkit.launcher = (function() {
-
   function scanScripts(folderPath) {
     var result = { ok: true, folder: folderPath, scripts: [], messages: [] };
     try {
@@ -33,12 +32,13 @@ AELocalToolkit.launcher = (function() {
           files = files.concat(collectScripts(items[i], basePath));
       } else if (items[i].name.match(/\.(jsx|jsxbin)$/)) {
         var fsName = items[i].fsName;
+        var fileName = fsName.replace(/^.*[\\\/]/, "");
         files.push({
-          name: items[i].name.replace(/\.(jsx|jsxbin)$/, ""),
+          name: fileName.replace(/\.(jsx|jsxbin)$/, ""),
           relativePath: fsName.substr(basePath.length + 1),
           absoluteURI: items[i].absoluteURI,
           fsName: fsName,
-          hasIcon: File(fsName.replace(/\.(jsx|jsxbin)$/, ".png")).exists
+          iconPath: File(fsName.replace(/\.(jsx|jsxbin)$/, ".png")).exists ? "file:///" + fsName.replace(/\\/g, "/").replace(/\.(jsx|jsxbin)$/, ".png") : ""
         });
       }
     }
@@ -53,10 +53,11 @@ AELocalToolkit.launcher = (function() {
   function launchScript(filePath) {
     var result = { ok: true, file: filePath, messages: [] };
     try {
-      var file = new File(filePath);
+      var decoded = decodeURI(filePath);
+      var file = new File(decoded);
       if (!file.exists) {
         result.ok = false;
-        result.messages.push("\u627e\u4e0d\u5230\u811a\u672c\u6587\u4ef6: " + filePath);
+        result.messages.push("\u627e\u4e0d\u5230\u811a\u672c\u6587\u4ef6: " + decoded);
         return result;
       }
       $.evalFile(file);
@@ -67,8 +68,5 @@ AELocalToolkit.launcher = (function() {
     return result;
   }
 
-  return {
-    scanScripts: scanScripts,
-    launchScript: launchScript
-  };
+  return { scanScripts: scanScripts, launchScript: launchScript };
 })();
