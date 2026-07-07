@@ -29,7 +29,8 @@ function hostLog(msg) {
   function findExtensionRoot() {
     var bases = [
       "C:/Program Files (x86)/Common Files/Adobe/CEP/extensions",
-      "C:/Program Files/Common Files/Adobe/CEP/extensions"
+      "C:/Program Files/Common Files/Adobe/CEP/extensions",
+      "/Library/Application Support/Adobe/CEP/extensions"
     ];
     try { bases.push(Folder.userData.fullName + "/Adobe/CEP/extensions"); } catch (e) {}
     for (var b = 0; b < bases.length; b++) {
@@ -49,10 +50,10 @@ function hostLog(msg) {
     return null;
   }
 
-  // 通过“读取文件内容 + eval(全局作用域)”加载模块。
+  // 通过“读取文件内容 + 执行”加载模块。
   // 本环境确认 $.eval 不存在；且 $.evalFile 在 directory junction 路径下会“假成功”
-  // （不抛错、也未定义模块全局变量）。因此改为：先读内容，再用全局 eval 在内存中执行
-  // （完全绕过文件路径，不受 junction 影响）；若 eval 不可用则写临时真实路径再 $.evalFile。
+  // （不抛错、也未定义模块全局变量）。因此改为：先读内容，再按可靠性依次尝试执行
+  // （临时真实路径 $.evalFile → 全局 eval → 直接 $.evalFile 原始文件）。
   // 任何读取/解析失败都会被捕获并记录到 loadErrors（不再“假成功”）；并校验全局是否真正定义。
   function evalModuleFile(f, name) {
     try {
@@ -67,24 +68,33 @@ function hostLog(msg) {
         AELocalToolkit.__loadErrors.push(name + ": 读取内容为空 -> " + f.fsName);
         return false;
       }
-      // 执行模块代码。本环境确认 $.eval 不存在；$.evalFile 在 junction 路径下会静默失败。
-      // 因此优先：把内容写入临时文件（真实路径，非 junction），再用 $.evalFile 执行——
-      // $.evalFile 在全局作用域运行，且真实路径与旧版 v0.1.3（正常工作的版本）一致，最可靠。
-      // 若 $.evalFile 不可用，则退回全局 eval 在内存中执行。
+      // 执行模块代码，按可靠性依次尝试，任一成功即返回（全局是否真定义由 tryLoadModule 校验）：
+      // 1) 临时真实路径 + $.evalFile：最可靠，绕过 junction 的静默失败，与旧版 v0.1.3 一致；
+      // 2) 全局 eval 内存执行：本环境此 API 缺失，但其它环境可能存在；
+      // 3) 直接 $.evalFile 原始文件：真实路径下必成功；junction 下即便静默失败也会被
+      //    moduleIsDefined 校验拦下，不会“假成功”。
+      var executed = false;
+      var lastErr = null;
       if (typeof $.evalFile === "function") {
-        var tmp = new File(Folder.temp.fullName + "/AELT_" + name);
-        tmp.encoding = "UTF-8";
-        if (tmp.open("w")) {
-          tmp.write(src);
-          tmp.close();
-          $.evalFile(tmp);
-        } else {
-          throw new Error("无法写入临时文件: " + tmp.fsName);
-        }
-      } else if (typeof eval === "function") {
-        eval(src);
-      } else {
-        throw new Error("eval 与 $.evalFile 均不可用");
+        try {
+          var tmp = new File(Folder.temp.fullName + "/AELT_" + name);
+          tmp.encoding = "UTF-8";
+          if (tmp.open("w")) {
+            tmp.write(src);
+            tmp.close();
+            $.evalFile(tmp);
+            executed = true;
+          }
+        } catch (tmpErr) { lastErr = tmpErr; }
+      }
+      if (!executed && typeof eval === "function") {
+        try { eval(src); executed = true; } catch (evErr) { lastErr = evErr; }
+      }
+      if (!executed && typeof $.evalFile === "function") {
+        try { $.evalFile(f); executed = true; } catch (evfErr) { lastErr = evfErr; }
+      }
+      if (!executed) {
+        throw lastErr || new Error("eval 与 $.evalFile 均不可用");
       }
       hostLog("evalModuleFile OK: " + f.fsName);
       return true;
@@ -114,7 +124,8 @@ function hostLog(msg) {
     // 兜底：直接尝试已知扩展根目录（防止 getFiles 枚举不出 junction/symlink 导致 findExtensionRoot 返回空）
     var fallbackRoots = [
       "C:/Program Files (x86)/Common Files/Adobe/CEP/extensions/AeLocalToolkit",
-      "C:/Program Files/Common Files/Adobe/CEP/extensions/AeLocalToolkit"
+      "C:/Program Files/Common Files/Adobe/CEP/extensions/AeLocalToolkit",
+      "/Library/Application Support/Adobe/CEP/extensions/AeLocalToolkit"
     ];
     try { fallbackRoots.push(Folder.userData.fullName + "/Adobe/CEP/extensions/AeLocalToolkit"); } catch (e) {}
     for (var r = 0; r < fallbackRoots.length; r++) {
@@ -639,7 +650,7 @@ function AELT_ping() {
     moduleBase: AELocalToolkit.__moduleBase,
     organizerType: typeof AELocalToolkit.organizer,
     loadErrors: AELocalToolkit.__loadErrors || [],
-    message: "Host JSX loaded [r5]"
+    message: "Host JSX loaded [v0.2.1]"
   });
 }
 
