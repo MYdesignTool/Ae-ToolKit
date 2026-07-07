@@ -25,6 +25,12 @@
 
 启动 After Effects 2020 或更高版本，在 `窗口 > 扩展 > AeLocalToolkit` 中打开面板。
 
+> **重要**：本工具会在本地写入文件（整理素材、保存方案与自定义表达式），因此需要开启 AE 的脚本写权限。请先进入对应菜单，勾选脚本写文件选项，再重启 After Effects 使设置生效：
+> - 中文：`编辑 > 首选项 > 脚本与表达式`，勾选 **允许脚本写入文件和访问网络**
+> - English: `Edit > Preferences > Scripting & Expressions`, check **Allow Scripts to Write Files and Access Network**
+>
+> （本工具完全离线运行，不访问任何网络，勾选该选项仅用于开放本地文件写入。）
+
 ## 开发状态
 
 当前版本 **v0.2.1**，核心功能已完成。表达式库导入/导出功能计划后续添加。
