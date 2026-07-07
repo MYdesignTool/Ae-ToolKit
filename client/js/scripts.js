@@ -67,17 +67,19 @@ function renderScripts() {
     var isFav = favs.indexOf(s.fsName) >= 0;
     var selected = s.fsName === selectedFs ? ' active' : '';
     html += '<div class="script-item' + selected + '" data-url="' + escapeHtml(encodeURI(s.fsName)) + '" data-fsname="' + escapeHtml(s.fsName) + '">';
-    html += '<span class="script-fav' + (isFav ? ' favored' : '') + '" data-fsname="' + escapeHtml(s.fsName) + '">' + (isFav ? '★' : '☆') + '</span>';
+    // 图标：有则显示图片，无则显示占位符以保持视觉一致（图标区域始终占位）。
     if (s.iconPath) {
-      html += '<span class="script-icon" style="width:auto"><img class="script-icon-img" src="' + escapeHtml(s.iconPath) + '" /></span>';
+      html += '<span class="script-icon"><img class="script-icon-img" src="' + escapeHtml(s.iconPath) + '" alt="" /></span>';
     } else {
-      html += '<span class="script-icon hidden"></span>';
+      html += '<span class="script-icon placeholder" aria-hidden="true"><svg class="placeholder-svg" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#666" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/></svg></span>';
     }
     html += '<span class="script-name">' + escapeHtml(s.name) + '</span>';
     if (s.relativePath.indexOf("\\") >= 0 || s.relativePath.indexOf("/") >= 0) {
       var folderPart = s.relativePath.substr(0, s.relativePath.length - s.relativePath.replace(/^.*[\\\/]/, "").length);
       html += '<span class="script-folder">' + escapeHtml(folderPart) + '</span>';
     }
+    // 收藏图标放在最右侧。
+    html += '<span class="script-fav' + (isFav ? ' favored' : '') + '" data-fsname="' + escapeHtml(s.fsName) + '">' + (isFav ? '★' : '☆') + '</span>';
     html += '</div>';
   }
   els.scriptList.innerHTML = html || '<div class="selection-status">\u6ca1\u6709\u5339\u914d\u7684\u811a\u672c</div>';

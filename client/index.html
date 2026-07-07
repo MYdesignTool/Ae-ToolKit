@@ -25,19 +25,12 @@
       </nav>
 
       <section class="view" id="scriptsView">
-        <div class="section-head">
-          <h2>脚本启动器</h2>
-          <div>
-            <button class="ghost" id="scriptFolderBtn">选择文件夹</button>
-            <button class="ghost" id="refreshScriptsBtn">刷新</button>
-          </div>
-        </div>
-        <p class="muted" id="scriptFolderStatus">未选择脚本文件夹</p>
       <label class="field">
         <span>搜索脚本</span>
         <div class="search-row">
           <input id="scriptSearch" type="search" placeholder="按名称过滤..." />
           <button id="favFilterBtn" class="fav-toggle" title="仅显示收藏脚本">☆</button>
+          <button class="ghost refresh-btn" id="refreshScriptsBtn">刷新</button>
         </div>
       </label>
         <div class="script-list" id="scriptList"></div>
@@ -146,6 +139,13 @@
               <input type="checkbox" id="debugModeToggle" />
               <span class="slider"></span>
             </label>
+          </div>
+          <div class="settings-item">
+            <div class="settings-item-info">
+              <strong>脚本文件夹</strong>
+              <span class="muted" id="scriptFolderStatus">未选择脚本文件夹</span>
+            </div>
+            <button class="ghost" id="scriptFolderBtn">选择文件夹</button>
           </div>
         </div>
         <div class="settings-about">
