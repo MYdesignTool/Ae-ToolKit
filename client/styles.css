@@ -170,10 +170,15 @@ button {
   background: var(--panel-soft);
   color: var(--text);
   cursor: pointer;
+  outline: none;
 }
 
 button:hover {
   border-color: #4a4a4a;
+}
+
+button:focus-visible {
+  border-color: var(--accent);
 }
 
 /* ===== 主要操作按钮 ===== */
@@ -539,13 +544,7 @@ textarea {
   align-items: center;
   justify-content: center;
 }
-.script-icon.placeholder {
-  width: 36px;
-  height: 36px;
-  border-radius: 8px;
-  background: #1d1d1d;
-  border: 1px solid #2c2c2c;
-}
+.script-icon.placeholder { /* 占位图与正常图标同尺寸，不额外加框 */ }
 .placeholder-svg { display: block; }
 .script-icon-img { max-height: 36px; max-width: 200px; height: auto; width: auto; object-fit: contain; display: block; border-radius: 8px; }
 .script-name {
