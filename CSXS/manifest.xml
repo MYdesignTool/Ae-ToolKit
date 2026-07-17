@@ -3,9 +3,9 @@
   AE Local Toolkit CEP 扩展清单文件
   定义扩展的标识、版本、支持的宿主程序（AE）、运行环境及界面配置
 -->
-<ExtensionManifest Version="7.0" ExtensionBundleId="com.local.aetoolkit" ExtensionBundleVersion="0.2.1" ExtensionBundleName="AE Local Toolkit" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+<ExtensionManifest Version="7.0" ExtensionBundleId="com.local.aetoolkit" ExtensionBundleVersion="0.2.2" ExtensionBundleName="AE Local Toolkit" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
   <ExtensionList>
-    <Extension Id="com.local.aetoolkit.panel" Version="0.2.1" />
+    <Extension Id="com.local.aetoolkit.panel" Version="0.2.2" />
   </ExtensionList>
   <ExecutionEnvironment>
     <HostList>

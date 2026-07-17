@@ -166,6 +166,12 @@ ew File().
 ## Changelog
 
 
+### v0.2.2 (2026-07-17)
+
+- **Feature**: 工程整理进度提示 — 面板中央悬浮小窗 + 扫光进度条，整理期间持续动画，缓解“程序卡死”的等待焦虑（纯前端实现，不改动 host 协议）。
+- **Optimization**: 工程整理性能 — 扩展名预建查表 Map，分类时 O(1) 命中，替代逐规则遍历。
+- **Optimization**: 工程整理性能 — 合并“先移到根再分类”两遍为单遍整理，素材重挂载次数减半。
+
 ### v0.2.1 (2026-07-05)
 
 - **Feature**: Script launcher — browse and run AE scripts from the panel.
