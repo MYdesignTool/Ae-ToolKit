@@ -366,6 +366,98 @@ textarea {
 @keyframes toastIn { from { transform: translateY(-100%); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
 @keyframes toastOut { from { transform: translateY(0); opacity: 1; } to { transform: translateY(-100%); opacity: 0; } }
 
+/* ===== 整理工程：不确定进度条（仅作"程序未卡死"提示，非真实百分比） ===== */
+/* 面板中央悬浮的小窗口：遮罩层压暗并模糊背后区域 */
+.organize-progress {
+  position: fixed;
+  inset: 0;
+  z-index: 150;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, .4);
+  -webkit-backdrop-filter: blur(1.5px) saturate(120%);
+  backdrop-filter: blur(1.5px) saturate(120%);
+}
+.organize-progress.hidden { display: none; }
+
+/* 整理进度小窗：干净实体卡片（避开 CEP 不支持的 backdrop-filter） */
+.organize-progress-card {
+  width: 240px;
+  padding: 22px 20px;
+  border-radius: 16px;
+  background: linear-gradient(180deg, #24282f, #1b1e24);
+  border: 1px solid #3a3f47;
+  box-shadow:
+    0 12px 36px rgba(0, 0, 0, .5),
+    inset 0 1px 0 rgba(255, 255, 255, .06);
+}
+.organize-progress-track {
+  position: relative;
+  height: 8px;
+  border-radius: 5px;
+  background: #23262b;
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, .5);
+  overflow: hidden;
+}
+.organize-progress-indeterminate {
+  position: absolute;
+  top: 0; left: 0;
+  height: 100%;
+  width: 35%;
+  border-radius: 5px;
+  background: linear-gradient(90deg, #3b82f6, #22d3ee);
+  box-shadow: 0 0 8px rgba(59, 130, 246, .7);
+  animation: organizeSweep 1.4s cubic-bezier(.4, 0, .2, 1) infinite;
+}
+/* 流动斜纹，增强“活动中”观感 */
+.organize-progress-indeterminate::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 5px;
+  background-image: linear-gradient(45deg,
+    rgba(255, 255, 255, .18) 25%, transparent 25%, transparent 50%,
+    rgba(255, 255, 255, .18) 50%, rgba(255, 255, 255, .18) 75%, transparent 75%, transparent);
+  background-size: 16px 16px;
+  opacity: .6;
+  animation: organizeStripes .6s linear infinite;
+}
+@keyframes organizeSweep {
+  0%   { left: -35%; transform: scaleX(.8); }
+  50%  { transform: scaleX(1); }
+  100% { left: 100%; transform: scaleX(.8); }
+}
+@keyframes organizeStripes {
+  from { background-position: 0 0; }
+  to   { background-position: 16px 0; }
+}
+.organize-progress-label {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  margin-top: 12px;
+  font-size: 12px;
+  color: #aab4c4;
+  letter-spacing: .2px;
+  text-align: center;
+}
+/* 跳动的小圆点，提示“进行中” */
+.organize-progress-label::before {
+  content: "";
+  width: 7px; height: 7px;
+  border-radius: 50%;
+  background: #22d3ee;
+  box-shadow: 0 0 6px rgba(34, 211, 238, .8);
+  animation: organizePulse 1s ease-in-out infinite;
+}
+@keyframes organizePulse {
+  0%, 100% { opacity: .3; transform: scale(.8); }
+  50%      { opacity: 1;  transform: scale(1.2); }
+}
+
+
 /* ===== 弹窗遮罩层 ===== */
 .modal-overlay {
   position: fixed; inset: 0;
