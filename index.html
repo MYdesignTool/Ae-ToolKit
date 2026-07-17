@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ae-ToolKit — After Effects 离线扩展工具集</title>
+  <meta name="description" content="Ae-ToolKit 是一款完全离线运行的 After Effects CEP 扩展面板，集成项目整理器、表达式管理器、脚本启动器三大核心功能。支持 AE 2020+，纯 AI 开发，开源免费。">
+  <link rel="icon" type="image/png" href="assets/img/logo.png">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css">
+  <link rel="stylesheet" href="assets/css/style.css">
+</head>
+<body>
+
+  <!-- ===== Header ===== -->
+  <header class="site-header" id="top">
+    <nav class="nav container">
+      <a href="#top" class="brand">
+        <img src="assets/img/logo.png" alt="Ae-ToolKit" class="logo-icon">
+        Ae-ToolKit
+      </a>
+      <ul class="nav-links">
+        <li><a href="#features">功能</a></li>
+        <li><a href="#code">代码</a></li>
+        <li><a href="#structure">结构</a></li>
+        <li><a href="#install">安装</a></li>
+        <li><a href="https://github.com/MYdesignTool/Ae-ToolKit" target="_blank" rel="noopener">GitHub ↗</a></li>
+      </ul>
+      <button class="mobile-toggle" aria-label="菜单" onclick="document.querySelector('.nav-links').classList.toggle('open')">
+        <span></span><span></span><span></span>
+      </button>
+    </nav>
+  </header>
+
+  <!-- ===== Hero ===== -->
+  <section id="hero" class="hero">
+    <div class="hero-bg">
+      <span class="blob blob-1"></span>
+      <span class="blob blob-2"></span>
+      <span class="blob blob-3"></span>
+      <span class="blob blob-4"></span>
+    </div>
+    <canvas class="hero-fx" id="matrix-fx"></canvas>
+    <div class="hero-overlay"></div>
+    <div class="hero-content container">
+      <div class="hero-badge">v0.2.2 · GPLv3 · 完全离线运行</div>
+      <h1 class="hero-title">
+        After Effects<br>
+        <span class="gradient-text">离线扩展工具集</span>
+      </h1>
+      <p class="hero-desc">
+        项目整理 · 表达式管理 · 脚本启动 — 三大核心功能，<br>
+        无需联网，本地运行，为你的 AE 工作流提速。
+      </p>
+      <div class="hero-actions">
+        <a href="https://github.com/MYdesignTool/Ae-ToolKit/releases/latest" class="btn btn-primary" target="_blank" rel="noopener">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          下载扩展
+        </a>
+        <a href="https://github.com/MYdesignTool/Ae-ToolKit" class="btn btn-ghost" target="_blank" rel="noopener">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.3 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.898-.015 3.293 0 .315.21.69.825.57C20.565 21.795 24 17.295 24 12c0-6.63-5.37-12-12-12z"/></svg>
+          源码仓库
+        </a>
+      </div>
+      <p class="hero-note">
+        ✨ 纯 AI 开发 &nbsp;·&nbsp; 支持 AE 2020+ &nbsp;·&nbsp; CEP 扩展面板
+      </p>
+    </div>
+  </section>
+
+  <!-- ===== Features ===== -->
+  <section id="features" class="features section">
+    <div class="container">
+      <h2 class="section-title">
+        <span class="title-accent">//</span> 核心功能
+      </h2>
+      <p class="section-subtitle">三大模块覆盖素材管理、代码复用与工作流加速</p>
+      <div class="feature-grid">
+
+        <article class="feature-card glass">
+          <div class="feature-img-wrap">
+            <img src="assets/img/feature-organizer.png" alt="项目整理器" loading="lazy">
+          </div>
+          <h3>📁 项目整理器</h3>
+          <p>按预设规则自动分类素材（图片、视频、音频、PSD、3D 等）。支持自定义多方案与嵌套文件夹结构，整理完成后自动清除空文件夹。</p>
+          <ul class="feature-list">
+            <li>智能识别媒体类型</li>
+            <li>自定义整理方案</li>
+            <li>自动清理空目录</li>
+          </ul>
+        </article>
+
+        <article class="feature-card glass">
+          <div class="feature-img-wrap">
+            <img src="assets/img/feature-expression.png" alt="表达式管理器" loading="lazy">
+          </div>
+          <h3>⚡ 表达式管理器</h3>
+          <p>批量应用或移除 After Effects 表达式，内置示例库。支持用户自定义表达式收藏、搜索与编辑，操作前确认覆盖或删除。</p>
+          <ul class="feature-list">
+            <li>一键批量操作</li>
+            <li>自定义表达式库</li>
+            <li>安全确认机制</li>
+          </ul>
+        </article>
+
+        <article class="feature-card glass">
+          <div class="feature-img-wrap">
+            <img src="assets/img/feature-script.svg" alt="脚本启动器" loading="lazy">
+          </div>
+          <h3>▶️ 脚本启动器</h3>
+          <p>浏览并运行本地 <code>.jsx</code> / <code>.jsxbin</code> 脚本文件。支持收藏夹、实时搜索过滤、仅显示收藏项，并自动关联显示 PNG 图标。</p>
+          <ul class="feature-list">
+            <li>快速启动任意脚本</li>
+            <li>收藏夹与搜索</li>
+            <li>PNG 图标关联</li>
+          </ul>
+        </article>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== Code Showcase ===== -->
+  <section id="code" class="code-showcase section">
+    <div class="container">
+      <h2 class="section-title">
+        <span class="title-accent">{ }</span> 代码一览
+      </h2>
+      <p class="section-subtitle">纯 ExtendScript / JavaScript 实现，离线运行，无任何外部依赖</p>
+
+      <div class="code-panel glass">
+        <div class="code-header">
+          <div class="code-tabs" role="tablist">
+            <button class="code-tab active" data-key="organizer" role="tab">项目整理</button>
+            <button class="code-tab" data-key="expressions" role="tab">表达式管理</button>
+            <button class="code-tab" data-key="launcher" role="tab">脚本启动</button>
+          </div>
+          <button class="code-copy" id="code-copy" type="button">复制</button>
+        </div>
+        <div class="code-body">
+          <div class="code-meta">
+            <span class="code-dot"></span>
+            <span id="code-file">host/modules/organizer.jsx</span>
+          </div>
+          <pre><code id="code-view" class="language-javascript"></code></pre>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== Project Structure ===== -->
+  <section id="structure" class="structure section">
+    <div class="container">
+      <h2 class="section-title">
+        <span class="title-accent">▣</span> 项目结构
+      </h2>
+      <p class="section-subtitle">清晰的模块化目录，便于扩展与二次开发</p>
+
+      <div class="project-tree glass">
+        <div class="tree-header">
+          <span class="code-dot"></span>
+          <span>项目结构 · AeLocalToolkit/</span>
+        </div>
+        <ul class="tree">
+          <li class="tree-folder">AeLocalToolkit/ <span class="tree-desc">项目根目录</span>
+            <ul>
+              <li class="tree-folder">CSXS/ <span class="tree-desc">CEP 扩展配置目录</span>
+                <ul><li class="tree-file">manifest.xml <span class="tree-desc">扩展清单，定义入口、窗口与权限</span></li></ul>
+              </li>
+              <li class="tree-folder">client/ <span class="tree-desc">前端 UI（AE 面板内运行）</span>
+                <ul>
+                  <li class="tree-folder">images/ <span class="tree-desc">图标与图片资源</span>
+                    <ul><li class="tree-file">placeholder.png <span class="tree-desc">占位图标</span></li></ul>
+                  </li>
+                  <li class="tree-folder">js/ <span class="tree-desc">前端逻辑脚本</span>
+                    <ul>
+                      <li class="tree-file">app.js <span class="tree-desc">应用入口与初始化</span></li>
+                      <li class="tree-file">core.js <span class="tree-desc">核心通信与状态管理</span></li>
+                      <li class="tree-file">expressions.js <span class="tree-desc">表达式管理界面逻辑</span></li>
+                      <li class="tree-file">organizer.js <span class="tree-desc">项目整理界面逻辑</span></li>
+                      <li class="tree-file">scripts.js <span class="tree-desc">脚本列表与启动逻辑</span></li>
+                      <li class="tree-file">ui.js <span class="tree-desc">通用 UI 组件与交互</span></li>
+                      <li class="tree-file">util.js <span class="tree-desc">工具函数</span></li>
+                    </ul>
+                  </li>
+                  <li class="tree-file">index.html <span class="tree-desc">面板主页面</span></li>
+                  <li class="tree-file">styles.css <span class="tree-desc">面板样式</span></li>
+                </ul>
+              </li>
+              <li class="tree-folder">data/ <span class="tree-desc">默认配置数据</span>
+                <ul>
+                  <li class="tree-file">changelog.json <span class="tree-desc">版本更新记录</span></li>
+                  <li class="tree-file">default-expressions.json <span class="tree-desc">内置表达式预设</span></li>
+                  <li class="tree-file">organizer-rules.json <span class="tree-desc">默认整理规则</span></li>
+                </ul>
+              </li>
+              <li class="tree-folder">docs/ <span class="tree-desc">项目文档</span>
+                <ul>
+                  <li class="tree-file">architecture.md <span class="tree-desc">架构说明</span></li>
+                  <li class="tree-file">install.md <span class="tree-desc">安装说明</span></li>
+                </ul>
+              </li>
+              <li class="tree-folder">host/ <span class="tree-desc">ExtendScript 宿主脚本（AE 内执行）</span>
+                <ul>
+                  <li class="tree-folder">modules/ <span class="tree-desc">宿主功能模块</span>
+                    <ul>
+                      <li class="tree-file">expressions.jsx <span class="tree-desc">表达式应用逻辑</span></li>
+                      <li class="tree-file">launcher.jsx <span class="tree-desc">脚本启动逻辑</span></li>
+                      <li class="tree-file">organizer.jsx <span class="tree-desc">项目整理逻辑</span></li>
+                    </ul>
+                  </li>
+                  <li class="tree-file">index.jsx <span class="tree-desc">宿主脚本入口</span></li>
+                </ul>
+              </li>
+              <li class="tree-file">DEVELOPMENT_PLAN.md <span class="tree-desc">开发计划</span></li>
+              <li class="tree-file">License.md <span class="tree-desc">许可证（GPL v3）</span></li>
+              <li class="tree-file">README.md <span class="tree-desc">项目说明</span></li>
+            </ul>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== Install ===== -->
+  <section id="install" class="install section">
+    <div class="container">
+      <h2 class="section-title">
+        <span class="title-accent">#</span> 安装指南
+      </h2>
+      <p class="section-subtitle">四步完成安装，即刻开始使用</p>
+      <div class="steps">
+
+        <div class="step glass">
+          <span class="step-num">01</span>
+          <span class="step-line" aria-hidden="true"></span>
+          <div class="step-body">
+            <h4>下载解压</h4>
+            <p>从 <a href="https://github.com/MYdesignTool/Ae-ToolKit/releases/latest" target="_blank" rel="noopener">GitHub Releases</a> 下载最新版本，将所有文件解压到名为 <code>AeLocalToolkit/</code> 的文件夹中。</p>
+          </div>
+        </div>
+
+        <div class="step glass">
+          <span class="step-num">02</span>
+          <span class="step-line" aria-hidden="true"></span>
+          <div class="step-body">
+            <h4>复制到扩展目录</h4>
+            <p>将 <code>AeLocalToolkit/</code> 文件夹复制到系统 CEP 扩展目录：</p>
+            <pre><code># Windows
+C:\Program Files (x86)\Common Files\Adobe\CEP\extensions\
+
+# macOS
+/Library/Application Support/Adobe/CEP/extensions/</code></pre>
+          </div>
+        </div>
+
+        <div class="step glass">
+          <span class="step-num">03</span>
+          <span class="step-line" aria-hidden="true"></span>
+          <div class="step-body">
+            <h4>启用脚本权限</h4>
+            <p>打开 After Effects 2020 或更高版本：</p>
+            <p><strong>中文：</strong>编辑 → 首选项 → 脚本与表达式 → 勾选「允许脚本写入文件和访问网络」</p>
+            <p><strong>English：</strong>Edit → Preferences → Scripting & Expressions → Check "Allow Scripts to Write Files and Access Network"</p>
+            <p class="step-note">💡 工具完全离线运行，此权限仅用于本地文件读写。</p>
+          </div>
+        </div>
+
+        <div class="step glass">
+          <span class="step-num">04</span>
+          <div class="step-body">
+            <h4>打开面板</h4>
+            <p>重启 After Effects 后，通过菜单路径打开面板：</p>
+            <p><code>窗口(W) → 扩展 → AeLocalToolkit</code></p>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== Footer ===== -->
+  <footer class="site-footer">
+    <div class="container">
+      <div class="footer-top">
+        <div class="footer-brand">
+          <img src="assets/img/logo.png" alt="" class="logo-sm">
+          <strong>Ae-ToolKit</strong>
+        </div>
+        <p class="footer-desc">
+          一款由 <mark class="ai-tag">纯 AI 开发</mark> 的 After Effects CEP 扩展<br>
+          所有代码（包括日志及文档）均由 AI 完成
+        </p>
+      </div>
+      <div class="footer-bottom">
+        <div class="footer-links">
+          <a href="https://github.com/MYdesignTool/Ae-ToolKit" target="_blank" rel="noopener">GitHub 仓库</a>
+          <a href="https://github.com/MYdesignTool/Ae-ToolKit/issues" target="_blank" rel="noopener">问题反馈</a>
+          <a href="https://github.com/MYdesignTool/Ae-ToolKit/blob/main/LICENSE" target="_blank" rel="noopener">GPL v3.0 许可证</a>
+        </div>
+        <p class="copyright">&copy; 2026 MYdesignTool. All rights reserved.</p>
+      </div>
+    </div>
+  </footer>
+
+  <canvas id="cursor-fx" aria-hidden="true"></canvas>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+  <script src="assets/js/main.js?v=13"></script>
+  <script src="assets/js/effects.js?v=13"></script>
+  <script src="assets/js/code-showcase.js?v=13"></script>
+</body>
+</html>
