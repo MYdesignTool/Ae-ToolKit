@@ -99,6 +99,22 @@ AELocalToolkit.organizer = (function () {
     return null;
   }
 
+  // 预建「扩展名 → 目标文件夹路径」查表，分类时 O(1) 命中，避免逐规则遍历。
+  // 与 findRuleByExtension 一致：同名扩展名以首个匹配规则为准。
+  function buildExtensionMap(scheme) {
+    var map = {};
+    for (var i = 0; i < scheme.rules.length; i++) {
+      var extensions = scheme.rules[i].extensions || [];
+      for (var j = 0; j < extensions.length; j++) {
+        var ext = String(extensions[j]).toUpperCase();
+        if (ext && !map.hasOwnProperty(ext)) {
+          map[ext] = scheme.rules[i].path;
+        }
+      }
+    }
+    return map;
+  }
+
   function moveToFolder(item, folder, folderPath, summary) {
     if (item.parentFolder === folder) {
       summary.skipped++;
@@ -110,7 +126,7 @@ AELocalToolkit.organizer = (function () {
     incrementFolder(summary, folderPath);
   }
 
-  function classifyItem(item, scheme, folders, summary) {
+  function classifyItem(item, scheme, extMap, folders, summary) {
     try {
       if (item instanceof CompItem) {
         var compRule = findRuleByItemType(scheme, "CompItem");
@@ -127,8 +143,7 @@ AELocalToolkit.organizer = (function () {
       }
 
       var ext = getFileExtension(item);
-      var rule = ext ? findRuleByExtension(scheme, ext) : null;
-      var targetPath = rule ? rule.path : scheme.fallbackPath;
+      var targetPath = (ext && extMap[ext]) ? extMap[ext] : scheme.fallbackPath;
       moveToFolder(item, folders[targetPath], targetPath, summary);
     } catch (e) {
       summary.errors++;
@@ -243,19 +258,11 @@ AELocalToolkit.organizer = (function () {
         }
       }
 
-      for (var j = 0; j < allItems.length; j++) {
-        try {
-          if (allItems[j].parentFolder !== rootFolder) {
-            allItems[j].parentFolder = rootFolder;
-          }
-        } catch (moveError) {
-          summary.errors++;
-          summary.messages.push("Move to root failed: " + allItems[j].name + " / " + moveError.toString());
-        }
-      }
-
+      // 单遍整理：直接把每个素材移到其目标文件夹（已在目标则跳过），
+      // 省去“先全部移到根再分类”的二次重挂载，重挂载次数减半。
+      var extMap = buildExtensionMap(scheme);
       for (var k = 0; k < allItems.length; k++) {
-        classifyItem(allItems[k], scheme, folders, summary);
+        classifyItem(allItems[k], scheme, extMap, folders, summary);
       }
 
       purgeEmptyFolders(rootFolder, rootFolder, summary);
