@@ -1,21 +1,30 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="zh-CN" data-theme="light">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Ae-ToolKit — After Effects 离线扩展工具集</title>
   <meta name="description" content="Ae-ToolKit 是一款完全离线运行的 After Effects CEP 扩展面板，集成项目整理器、表达式管理器、脚本启动器三大核心功能。支持 AE 2020+，纯 AI 开发，开源免费。">
-  <link rel="icon" type="image/png" href="assets/img/logo.png">
+  <link rel="icon" type="image/svg+xml" href="assets/img/logo.svg?v=3">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css">
-  <link rel="stylesheet" href="assets/css/style.css">
+  <link rel="stylesheet" href="assets/css/style.css?v=24">
+  <link rel="stylesheet" href="assets/css/theme-light.css?v=3">
 </head>
 <body>
+
+  <!-- 全页流动背景：让液态玻璃在滚动时持续可见 -->
+  <div class="page-bg" aria-hidden="true">
+    <span class="pg-blob pg-blob-1"></span>
+    <span class="pg-blob pg-blob-2"></span>
+    <span class="pg-blob pg-blob-3"></span>
+    <span class="pg-blob pg-blob-4"></span>
+  </div>
 
   <!-- ===== Header ===== -->
   <header class="site-header" id="top">
     <nav class="nav container">
       <a href="#top" class="brand">
-        <img src="assets/img/logo.png" alt="Ae-ToolKit" class="logo-icon">
+        <img src="assets/img/logo.svg?v=3" alt="Ae-ToolKit" class="logo-icon">
         Ae-ToolKit
       </a>
       <ul class="nav-links">
@@ -25,6 +34,9 @@
         <li><a href="#install">安装</a></li>
         <li><a href="https://github.com/MYdesignTool/Ae-ToolKit" target="_blank" rel="noopener">GitHub ↗</a></li>
       </ul>
+      <button class="theme-toggle" id="theme-toggle" type="button" aria-label="切换主题" title="切换亮色 / 暗色主题">
+        <span class="bulb">💡</span>
+      </button>
       <button class="mobile-toggle" aria-label="菜单" onclick="document.querySelector('.nav-links').classList.toggle('open')">
         <span></span><span></span><span></span>
       </button>
@@ -33,12 +45,6 @@
 
   <!-- ===== Hero ===== -->
   <section id="hero" class="hero">
-    <div class="hero-bg">
-      <span class="blob blob-1"></span>
-      <span class="blob blob-2"></span>
-      <span class="blob blob-3"></span>
-      <span class="blob blob-4"></span>
-    </div>
     <canvas class="hero-fx" id="matrix-fx"></canvas>
     <div class="hero-overlay"></div>
     <div class="hero-content container">
@@ -283,7 +289,7 @@ C:\Program Files (x86)\Common Files\Adobe\CEP\extensions\
     <div class="container">
       <div class="footer-top">
         <div class="footer-brand">
-          <img src="assets/img/logo.png" alt="" class="logo-sm">
+          <img src="assets/img/logo.svg?v=3" alt="" class="logo-sm">
           <strong>Ae-ToolKit</strong>
         </div>
         <p class="footer-desc">
@@ -304,8 +310,8 @@ C:\Program Files (x86)\Common Files\Adobe\CEP\extensions\
 
   <canvas id="cursor-fx" aria-hidden="true"></canvas>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
-  <script src="assets/js/main.js?v=13"></script>
-  <script src="assets/js/effects.js?v=13"></script>
+  <script src="assets/js/main.js?v=16"></script>
+  <script src="assets/js/effects.js?v=17"></script>
   <script src="assets/js/code-showcase.js?v=13"></script>
 </body>
 </html>

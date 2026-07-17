@@ -3,6 +3,25 @@
 (function () {
   "use strict";
 
+  // 标记 JS 可用，启用滚动揭示动画（无 JS 时内容正常显示）
+  document.documentElement.classList.add("js");
+
+  // 主题切换：默认亮色，灯泡按钮切换并持久化到 localStorage
+  (function () {
+    var root = document.documentElement;
+    var btn = document.getElementById("theme-toggle");
+    var saved = null;
+    try { saved = localStorage.getItem("theme"); } catch (e) {}
+    root.setAttribute("data-theme", saved === "dark" ? "dark" : "light");
+    if (btn) {
+      btn.addEventListener("click", function () {
+        var next = root.getAttribute("data-theme") === "light" ? "dark" : "light";
+        root.setAttribute("data-theme", next);
+        try { localStorage.setItem("theme", next); } catch (e) {}
+      });
+    }
+  })();
+
   // 年份
   var yearEl = document.getElementById("year");
   if (yearEl) yearEl.textContent = new Date().getFullYear();
@@ -21,40 +40,53 @@
     });
   });
 
-  // Header 滚动时增加背景深度
-  var header = document.querySelector(".site-header");
-  var lastScroll = 0;
-  window.addEventListener("scroll", function () {
-    var s = window.scrollY;
-    if (s > 60) {
-      header.style.background = "rgba(7,7,28,.92)";
-    } else {
-      header.style.background = "rgba(7,7,28,.75)";
-    }
-    lastScroll = s;
-  }, { passive: true });
+  // 滚动揭示：进入视口时淡入上浮（错落出现）
+  var revealEls = document.querySelectorAll(
+    ".section-title, .section-subtitle, .feature-card, .code-panel, .project-tree, .step, .footer-top, .footer-bottom"
+  );
+  revealEls.forEach(function (el) { el.classList.add("reveal"); });
 
-  // Feature cards 进入视口时的淡入动画（IntersectionObserver）
+  // 同组元素按出现顺序错落延迟
+  revealEls.forEach(function (el) {
+    var parent = el.parentElement;
+    var sibs = Array.prototype.filter.call(parent.children, function (c) {
+      return c.classList && c.classList.contains("reveal");
+    });
+    var idx = sibs.indexOf(el);
+    if (idx > 0) el.style.transitionDelay = (idx * 0.1).toFixed(2) + "s";
+  });
+
   if ("IntersectionObserver" in window) {
     var observer = new IntersectionObserver(
       function (entries) {
         entries.forEach(function (entry) {
           if (entry.isIntersecting) {
-            entry.target.style.opacity = "1";
-            entry.target.style.transform = "translateY(0)";
+            entry.target.classList.add("in");
             observer.unobserve(entry.target);
           }
         });
       },
-      { threshold: 0.15 }
+      { threshold: 0.12, rootMargin: "0px 0px -8% 0px" }
     );
-
-    document.querySelectorAll(".feature-card, .step").forEach(function (el) {
-      el.style.opacity = "0";
-      el.style.transform = "translateY(30px)";
-      el.style.transition = "opacity .6s ease, transform .6s ease";
-      observer.observe(el);
-    });
+    revealEls.forEach(function (el) { observer.observe(el); });
+  } else {
+    revealEls.forEach(function (el) { el.classList.add("in"); });
   }
 
+  // 液态玻璃：鼠标跟随高光（仅精确指针设备），覆盖所有玻璃元素（含导航栏）
+  if (window.matchMedia && window.matchMedia("(pointer:fine)").matches) {
+    document.querySelectorAll(".glass, .site-header").forEach(function (card) {
+      card.addEventListener("mousemove", function (e) {
+        var r = card.getBoundingClientRect();
+        var x = ((e.clientX - r.left) / r.width) * 100;
+        var y = ((e.clientY - r.top) / r.height) * 100;
+        card.style.setProperty("--mx", x + "%");
+        card.style.setProperty("--my", y + "%");
+      });
+      card.addEventListener("mouseleave", function () {
+        card.style.setProperty("--mx", "50%");
+        card.style.setProperty("--my", "0%");
+      });
+    });
+  }
 })();

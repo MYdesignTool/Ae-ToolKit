@@ -65,23 +65,12 @@
     var MAX_ACTIVE = 6;    // 同时存在的片段上限
 
     var active = [];       // 当前显示的片段对象
-    var rects = [];        // 占用矩形（用于重叠检测）
-    var contentEl = hero.querySelector(".hero-content");
-    var contentBox = null; // 中央文字框（永久避让区）
-    var CONTENT_PAD = 30;  // 文字框周围的安全留白
+    var rects = [];        // 占用矩形（用于片段间重叠检测）
 
     function getSize() {
       var w = hero.clientWidth || window.innerWidth;
       var h = hero.clientHeight || window.innerHeight;
       return { w: w, h: h };
-    }
-
-    // 实时计算中央文字框相对 hero 的坐标，避免打字机在其上生成
-    function updateContentBox() {
-      if (!contentEl) { contentBox = null; return; }
-      var hb = hero.getBoundingClientRect();
-      var cb = contentEl.getBoundingClientRect();
-      contentBox = { x: cb.left - hb.left, y: cb.top - hb.top, w: cb.width, h: cb.height };
     }
 
     function resize() {
@@ -106,11 +95,6 @@
     }
 
     function overlaps(x, y, w, h) {
-      // 永远避开中央文字框
-      if (contentBox) {
-        if (x < contentBox.x + contentBox.w + CONTENT_PAD && x + w + CONTENT_PAD > contentBox.x &&
-            y < contentBox.y + contentBox.h + CONTENT_PAD && y + h + CONTENT_PAD > contentBox.y) return true;
-      }
       for (var i = 0; i < rects.length; i++) {
         var r = rects[i];
         if (x < r.x + r.w + PAD && x + w + PAD > r.x &&
@@ -121,7 +105,6 @@
 
     function trySpawn() {
       if (active.length >= MAX_ACTIVE) return;
-      updateContentBox();
       var text = SOURCE_SNIPPETS[(Math.random() * SOURCE_SNIPPETS.length) | 0];
       var m = measure(text);
       var W = hero.clientWidth, H = hero.clientHeight;
@@ -137,7 +120,8 @@
             text: text,
             x: x, y: y, w: m.w, h: m.h, rect: rect,
             typed: 0,
-            state: "typing",
+            state: "appearing",                   // 先从左到右刷出，再开始打字
+            appearStart: performance.now(),
             fade: 1,
             lastType: performance.now(),
             typeDelay: 12 + Math.random() * 26,   // 每字符间隔(ms)
@@ -150,25 +134,48 @@
 
     function drawSnippet(it, now) {
       var alpha = it.fade;
-      var sub = it.text.slice(0, it.typed);
-      var lines = sub.split("\n");
-      ctx.font = FONT_SIZE + "px monospace";
-      ctx.textBaseline = "top";
+      var bx = it.x - 12, by = it.y - 10, bw = it.w + 24, bh = it.h + 20;
+      // 出现动画进度：从左到右刷出（0→1）
+      var p = 1;
+      if (it.state === "appearing") p = Math.min(1, (now - it.appearStart) / 320);
 
-      // 玻璃卡片底（暗色 + 弱描边，低调融入背景）
+      // ---- 暗色玻璃卡片底（低调融入背景） ----
       ctx.save();
+      if (it.state === "appearing") {            // 刷出阶段：只显示左侧 p 宽度
+        ctx.beginPath();
+        ctx.rect(bx, by, bw * p, bh);
+        ctx.clip();
+      }
       ctx.globalAlpha = 0.10 * alpha;
       ctx.fillStyle = "#07061a";
-      roundRectPath(ctx, it.x - 12, it.y - 10, it.w + 24, it.h + 20, 10);
+      roundRectPath(ctx, bx, by, bw, bh, 10);
       ctx.fill();
       ctx.globalAlpha = 0.20 * alpha;
       ctx.strokeStyle = "rgba(120,100,190,1)";
       ctx.lineWidth = 1;
-      roundRectPath(ctx, it.x - 12, it.y - 10, it.w + 24, it.h + 20, 10);
+      roundRectPath(ctx, bx, by, bw, bh, 10);
       ctx.stroke();
       ctx.restore();
 
-      // 文字（暗紫灰 + 极弱辉光，不抢主体）
+      // 从左到右刷出时的亮色扫描线（增强“刷”的动感）
+      if (it.state === "appearing") {
+        ctx.save();
+        ctx.globalAlpha = 0.85 * alpha;
+        var sx = bx + bw * p;
+        var sg = ctx.createLinearGradient(sx - 16, 0, sx, 0);
+        sg.addColorStop(0, "rgba(255,255,255,0)");
+        sg.addColorStop(1, "rgba(200,180,255,0.95)");
+        ctx.fillStyle = sg;
+        ctx.fillRect(sx - 16, by, 16, bh);
+        ctx.restore();
+        return;                                   // 刷出阶段不显示文字，结束后再打字
+      }
+
+      // ---- 打字机文字（暗紫灰 + 极弱辉光，不抢主体） ----
+      var sub = it.text.slice(0, it.typed);
+      var lines = sub.split("\n");
+      ctx.font = FONT_SIZE + "px monospace";
+      ctx.textBaseline = "top";
       ctx.shadowColor = "rgba(120,90,200,0.35)";
       ctx.shadowBlur = 3;
       ctx.fillStyle = "rgba(160,150,195," + (0.52 * alpha) + ")";
@@ -205,7 +212,12 @@
       for (var i = active.length - 1; i >= 0; i--) {
         var it = active[i];
 
-        if (it.state === "typing") {
+        if (it.state === "appearing") {
+          if (now - it.appearStart > 320) {       // 刷出约 320ms 后开始打字
+            it.state = "typing";
+            it.lastType = now;
+          }
+        } else if (it.state === "typing") {
           if (now - it.lastType > it.typeDelay) {
             it.typed++;
             it.lastType = now;

@@ -17,6 +17,7 @@
   --radius: 16px;
   --radius-sm: 8px;
   --max-w: 1100px;
+  --grid-step: 40px;   /* 网格漂移步长 = 暗色网格 tile，保证无缝循环 */
 }
 
 *,
@@ -52,10 +53,43 @@ img { max-width: 100%; height: auto; display: block; }
   position: fixed;
   top: 0; left: 0; right: 0;
   z-index: 100;
-  background: rgba(7, 7, 28, 0.75);
-  backdrop-filter: blur(16px) saturate(180%);
-  -webkit-backdrop-filter: blur(16px) saturate(180%);
-  border-bottom: 1px solid var(--glass-border);
+  --mx: 50%;
+  --my: 0%;
+  /* 液态玻璃：浅色半透明 + 轻模糊，让流动光斑清晰透出 */
+  background:
+    linear-gradient(120deg, rgba(255,255,255,.10) 0%, transparent 30%, transparent 70%, rgba(255,255,255,.05) 100%),
+    linear-gradient(135deg, rgba(255,255,255,.06), rgba(255,255,255,.02));
+  backdrop-filter: blur(6px) saturate(160%);
+  -webkit-backdrop-filter: blur(6px) saturate(160%);
+  border: 1px solid rgba(255,255,255,.14);
+  /* 边缘光学（借鉴开源：成对 inset 高光 + 暗部 + 外投影） */
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.45),
+    inset 0 -1px 0 rgba(0,0,0,.30),
+    0 10px 30px rgba(0,0,0,.35);
+}
+/* 鼠标跟随的柔和折射高光（液态感来源，随指针位置移动） */
+.site-header::before {
+  content: "";
+  position: absolute; inset: 0;
+  border-radius: inherit;
+  background: radial-gradient(120% 120% at var(--mx) var(--my), rgba(255,255,255,.18), transparent 55%);
+  filter: blur(6px);
+  pointer-events: none;
+}
+/* 底部液态高光线：替代硬边框，与页面背景柔和过渡 */
+.site-header::after {
+  content: "";
+  position: absolute;
+  left: 0; right: 0; bottom: 0;
+  height: 1px;
+  background: linear-gradient(90deg,
+    transparent,
+    rgba(167,139,250,.75),
+    rgba(217,70,239,.6),
+    transparent);
+  filter: blur(.3px);
+  pointer-events: none;
 }
 
 .nav {
@@ -63,6 +97,8 @@ img { max-width: 100%; height: auto; display: block; }
   align-items: center;
   justify-content: space-between;
   height: 64px;
+  position: relative;
+  z-index: 2;
 }
 
 .brand {
@@ -117,6 +153,25 @@ img { max-width: 100%; height: auto; display: block; }
   transition: all .3s;
 }
 
+/* 主题切换灯泡按钮 */
+.theme-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px; height: 40px;
+  border-radius: 50%;
+  border: 1px solid var(--glass-border);
+  background: rgba(255,255,255,.06);
+  color: var(--fg);
+  cursor: pointer;
+  font-size: 1.1rem;
+  line-height: 1;
+  transition: all .25s;
+  margin-left: .25rem;
+}
+.theme-toggle:hover { background: rgba(255,255,255,.14); transform: translateY(-1px); }
+.theme-toggle .bulb { transition: filter .3s, transform .3s; display: inline-block; }
+
 /* ---------- Hero ---------- */
 .hero {
   position: relative;
@@ -127,81 +182,11 @@ img { max-width: 100%; height: auto; display: block; }
   overflow: hidden;
 }
 
-.hero-bg {
-  position: absolute; inset: -10%;
-  z-index: 0;
-  overflow: hidden;
-  background: var(--bg);
-  filter: saturate(140%);
-}
-/* 各自独立游动的蓝紫光斑，营造缓慢流动的氛围灯光 */
-.blob {
-  position: absolute;
-  border-radius: 50%;
-  filter: blur(60px);
-  opacity: .55;
-  mix-blend-mode: screen;
-  will-change: transform;
-}
-.blob-1 {
-  width: 46%; height: 52%;
-  left: 4%; top: 6%;
-  background: radial-gradient(circle at 50% 50%, rgba(139,92,246,.85), transparent 70%);
-  animation: drift-1 15s ease-in-out infinite alternate;
-}
-.blob-2 {
-  width: 44%; height: 50%;
-  right: 2%; top: 2%;
-  background: radial-gradient(circle at 50% 50%, rgba(217,70,239,.70), transparent 70%);
-  animation: drift-2 18s ease-in-out infinite alternate;
-}
-.blob-3 {
-  width: 50%; height: 56%;
-  right: 8%; bottom: -6%;
-  background: radial-gradient(circle at 50% 50%, rgba(6,182,212,.55), transparent 70%);
-  animation: drift-3 21s ease-in-out infinite alternate;
-}
-.blob-4 {
-  width: 42%; height: 48%;
-  left: 14%; bottom: 0%;
-  background: radial-gradient(circle at 50% 50%, rgba(99,102,241,.65), transparent 70%);
-  animation: drift-4 16s ease-in-out infinite alternate;
-}
-@keyframes drift-1 {
-  0%   { transform: translate(0,0) scale(1); }
-  50%  { transform: translate(18%, 14%) scale(1.28); }
-  100% { transform: translate(-14%, 22%) scale(.82); }
-}
-@keyframes drift-2 {
-  0%   { transform: translate(0,0) scale(1); }
-  50%  { transform: translate(-20%, 16%) scale(1.26); }
-  100% { transform: translate(12%, -14%) scale(.85); }
-}
-@keyframes drift-3 {
-  0%   { transform: translate(0,0) scale(1); }
-  50%  { transform: translate(-16%, -18%) scale(1.3); }
-  100% { transform: translate(14%, 12%) scale(.8); }
-}
-@keyframes drift-4 {
-  0%   { transform: translate(0,0) scale(1); }
-  50%  { transform: translate(22%, -12%) scale(1.24); }
-  100% { transform: translate(-18%, 10%) scale(1.28); }
-}
-/* 细网格叠加，缓慢漂移增强科技精密感（矢量 SVG，清晰） */
-.hero-bg::after {
-  content: "";
-  position: absolute; inset: 0;
-  background-image:
-    linear-gradient(rgba(255,255,255,.035) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255,255,255,.035) 1px, transparent 1px);
-  background-size: 44px 44px;
-  animation: grid-drift 9s linear infinite;
-  mask-image: radial-gradient(ellipse at center, #000 30%, transparent 78%);
-  -webkit-mask-image: radial-gradient(ellipse at center, #000 30%, transparent 78%);
-}
+/* Hero 不再使用独立背景层，统一由固定层 .page-bg 提供连续流动的
+   光斑与网格，避免 Hero 与下方 section 在滚动交界处出现断层/分割线 */
 @keyframes grid-drift {
   from { background-position: 0 0, 0 0; }
-  to   { background-position: 44px 44px, 44px 44px; }
+  to   { background-position: var(--grid-step) var(--grid-step), var(--grid-step) var(--grid-step); }
 }
 
 /* 打字机源码画布：位于遮罩之上、内容之下，保证清晰可见 */
@@ -226,9 +211,8 @@ img { max-width: 100%; height: auto; display: block; }
   position: absolute; inset: 0;
   pointer-events: none;
   background:
-    radial-gradient(ellipse at 30% 50%, rgba(139,92,246,.25) 0%, transparent 60%),
-    radial-gradient(ellipse at 70% 30%, rgba(217,70,239,.18) 0%, transparent 55%),
-    linear-gradient(to bottom, transparent 45%, var(--bg) 95%);
+    radial-gradient(ellipse at 30% 50%, rgba(139,92,246,.22) 0%, transparent 60%),
+    radial-gradient(ellipse at 70% 30%, rgba(217,70,239,.16) 0%, transparent 55%);
 }
 
 .hero-content {
@@ -238,12 +222,31 @@ img { max-width: 100%; height: auto; display: block; }
   max-width: 760px;
   text-align: center;
   border-radius: 26px;
-  background: rgba(10, 8, 30, .16);
-  border: 1px solid rgba(167, 139, 250, .12);
-  backdrop-filter: blur(4px);
-  -webkit-backdrop-filter: blur(4px);
-  box-shadow: 0 10px 40px rgba(0, 0, 0, .22);
+  /* 液态玻璃：浅色半透明 + 多层 inset 高光 + 内壁暗部 */
+  background: linear-gradient(135deg, rgba(255,255,255,.08), rgba(255,255,255,.02));
+  border: 1px solid rgba(255,255,255,.14);
+  backdrop-filter: blur(8px) saturate(170%);
+  -webkit-backdrop-filter: blur(8px) saturate(170%);
+  box-shadow:
+    0 18px 50px rgba(0,0,0,.45),
+    inset 0 1px 0 rgba(255,255,255,.55),
+    inset 1px 0 1px rgba(255,255,255,.22),
+    inset -1px 0 1px rgba(255,255,255,.12),
+    inset 0 -1px 0 rgba(0,0,0,.35),
+    inset 0 -12px 26px -16px rgba(0,0,0,.65);
+  overflow: hidden;
 }
+/* 伪元素基础结构（供亮/暗主题叠加折射高光与对角反光） */
+.hero-content::before,
+.hero-content::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  z-index: 1;
+}
+.hero-content > * { position: relative; z-index: 2; }
 
 .hero-badge {
   display: inline-block;
@@ -363,9 +366,6 @@ img { max-width: 100%; height: auto; display: block; }
 /* ---------- Features ---------- */
 .features {
   position: relative;
-  background:
-    radial-gradient(40% 50% at 15% 20%, rgba(139,92,246,.10), transparent 60%),
-    radial-gradient(45% 55% at 85% 75%, rgba(217,70,239,.08), transparent 60%);
 }
 .feature-grid {
   display: grid;
@@ -375,60 +375,75 @@ img { max-width: 100%; height: auto; display: block; }
 
 /* Liquid Glass — Apple 风格液态玻璃
    半透明 + 高光 + 圆角折射 + 流动光泽 */
+/* Liquid Glass — 借鉴开源的边缘光学：多层 inset 高光 + 对角镜面反光
+   配合全页流动背景（backdrop-filter 模糊流动光斑）形成液态折射 */
 .glass {
+  --mx: 50%;
+  --my: 0%;
   position: relative;
-  background: linear-gradient(135deg, rgba(255,255,255,.10), rgba(255,255,255,.025));
+  background: linear-gradient(135deg, rgba(255,255,255,.08), rgba(255,255,255,.02));
   border: 1px solid rgba(255,255,255,.14);
   border-radius: var(--radius);
-  backdrop-filter: blur(22px) saturate(170%);
-  -webkit-backdrop-filter: blur(22px) saturate(170%);
+  backdrop-filter: blur(8px) saturate(170%);
+  -webkit-backdrop-filter: blur(8px) saturate(170%);
   box-shadow:
-    0 8px 40px rgba(0,0,0,.45),
-    inset 0 1px 1px rgba(255,255,255,.30),
-    inset 0 -1px 1px rgba(255,255,255,.04);
+    /* 外投影：悬浮深度 */
+    0 10px 40px rgba(0,0,0,.50),
+    /* 顶部锐利高光（主光源在上） */
+    inset 0 1px 0 rgba(255,255,255,.55),
+    /* 左右边缘折射高光（成对，模拟玻璃圆柱侧壁） */
+    inset 1px 0 1px rgba(255,255,255,.22),
+    inset -1px 0 1px rgba(255,255,255,.12),
+    /* 底部内壁暗部：玻璃厚度 */
+    inset 0 -1px 0 rgba(0,0,0,.35),
+    inset 0 -12px 26px -16px rgba(0,0,0,.65);
   overflow: hidden;
   transition: transform .35s cubic-bezier(.2,.7,.3,1),
               box-shadow .35s, border-color .35s;
 }
-/* 顶部高光 + 边缘折射光晕 */
+/* 鼠标跟随的柔和折射高光（液态感来源之一） */
 .glass::before {
   content: "";
   position: absolute; inset: 0;
   border-radius: inherit;
   background:
-    radial-gradient(140% 120% at 0% 0%, rgba(255,255,255,.22), transparent 45%),
-    radial-gradient(120% 100% at 100% 0%, rgba(167,139,250,.12), transparent 42%);
+    radial-gradient(120% 120% at var(--mx) var(--my), rgba(255,255,255,.22), transparent 52%),
+    radial-gradient(120% 100% at 100% 100%, rgba(167,139,250,.12), transparent 48%);
+  filter: blur(6px);
+  transition: background .3s ease;
   pointer-events: none;
-  z-index: 2;
+  z-index: 1;
 }
-/* 流动光泽（悬停时扫过） */
+/* 对角镜面反光弧（借鉴开源：两侧对角高光 + 模糊） */
 .glass::after {
   content: "";
-  position: absolute;
-  top: -60%; left: -40%;
-  width: 55%; height: 220%;
-  background: linear-gradient(90deg, transparent, rgba(255,255,255,.14), transparent);
-  transform: rotate(18deg);
+  position: absolute; inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(
+    135deg,
+    rgba(255,255,255,.30) 0%,
+    transparent 30%,
+    transparent 70%,
+    rgba(255,255,255,.14) 100%
+  );
+  filter: blur(2px);
   pointer-events: none;
-  opacity: 0;
-  z-index: 3;
+  opacity: .85;
+  z-index: 1;
+  transition: opacity .35s ease;
 }
 .glass:hover {
   transform: translateY(-4px);
-  border-color: rgba(255,255,255,.28);
+  border-color: rgba(255,255,255,.30);
   box-shadow:
-    0 16px 56px rgba(139, 92, 246, .22),
-    inset 0 1px 1px rgba(255,255,255,.40),
-    inset 0 -1px 1px rgba(255,255,255,.06);
+    0 20px 60px rgba(139, 92, 246, .28),
+    inset 0 1px 0 rgba(255,255,255,.75),
+    inset 1px 0 1px rgba(255,255,255,.30),
+    inset -1px 0 1px rgba(255,255,255,.18),
+    inset 0 -1px 0 rgba(0,0,0,.40),
+    inset 0 -12px 26px -16px rgba(0,0,0,.70);
 }
-.glass:hover::after {
-  opacity: 1;
-  animation: sheen 1.1s ease;
-}
-@keyframes sheen {
-  0%   { left: -40%; }
-  100% { left: 130%; }
-}
+.glass:hover::after { opacity: 1; }
 
 .feature-card {
   padding: 1.75rem;
@@ -478,9 +493,6 @@ img { max-width: 100%; height: auto; display: block; }
 /* ---------- Install ---------- */
 .install {
   position: relative;
-  background:
-    radial-gradient(45% 55% at 80% 15%, rgba(6,182,212,.08), transparent 60%),
-    radial-gradient(40% 50% at 10% 80%, rgba(139,92,246,.10), transparent 60%);
 }
 .steps {
   display: flex;
@@ -507,7 +519,7 @@ img { max-width: 100%; height: auto; display: block; }
   width: 2px;
   background: linear-gradient(to bottom, var(--accent), transparent);
   opacity: .4;
-  z-index: 1;
+  z-index: 2;
 }
 .step-num {
   flex: 0 0 auto;
@@ -555,9 +567,6 @@ img { max-width: 100%; height: auto; display: block; }
 /* ---------- Code Showcase ---------- */
 .code-showcase {
   position: relative;
-  background:
-    radial-gradient(45% 55% at 20% 30%, rgba(139,92,246,.10), transparent 60%),
-    radial-gradient(40% 50% at 85% 70%, rgba(217,70,239,.07), transparent 60%);
 }
 .code-panel {
   border-radius: var(--radius);
@@ -650,6 +659,7 @@ img { max-width: 100%; height: auto; display: block; }
   border-radius: var(--radius);
   padding: 1.1rem 1.3rem;
 }
+.project-tree > * { position: relative; z-index: 4; }
 .tree-header {
   display: flex; align-items: center; gap: .55rem;
   font-family: "SF Mono", "Fira Code", "Consolas", monospace;
@@ -675,9 +685,8 @@ img { max-width: 100%; height: auto; display: block; }
 
 /* ---------- Footer ---------- */
 .site-footer {
-  border-top: 1px solid var(--glass-border);
   padding: 3.5rem 0 2rem;
-  background: linear-gradient(to bottom, var(--bg), #050512);
+  background: linear-gradient(to bottom, transparent, #050512 40%);
 }
 .footer-top { text-align: center; margin-bottom: 2.5rem; }
 .footer-brand {
@@ -717,6 +726,104 @@ img { max-width: 100%; height: auto; display: block; }
 }
 .copyright { font-size: .82rem; color: var(--muted); }
 
+/* ---------- 全页流动背景 ---------- */
+/* 固定在视口后方的漂浮光斑 + 漂移网格，让所有玻璃卡片背后
+   都有持续流动的光晕，液态玻璃的折射感由此显现 */
+.page-bg {
+  position: fixed;
+  inset: -12%;
+  z-index: -1;
+  overflow: hidden;
+  pointer-events: none;
+  filter: saturate(135%);
+}
+.page-bg .pg-blob {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(75px);
+  opacity: .52;
+  mix-blend-mode: screen;
+  will-change: transform;
+}
+.page-bg .pg-blob-1 {
+  width: 40%; height: 46%;
+  left: 1%; top: 6%;
+  background: radial-gradient(circle at 50% 50%, rgba(139,92,246,.75), transparent 70%);
+  animation: pg-drift-1 24s ease-in-out infinite alternate;
+}
+.page-bg .pg-blob-2 {
+  width: 44%; height: 50%;
+  right: -2%; top: 38%;
+  background: radial-gradient(circle at 50% 50%, rgba(217,70,239,.62), transparent 70%);
+  animation: pg-drift-2 28s ease-in-out infinite alternate;
+}
+.page-bg .pg-blob-3 {
+  width: 46%; height: 52%;
+  left: 8%; bottom: 2%;
+  background: radial-gradient(circle at 50% 50%, rgba(6,182,212,.5), transparent 70%);
+  animation: pg-drift-3 30s ease-in-out infinite alternate;
+}
+.page-bg .pg-blob-4 {
+  width: 40%; height: 46%;
+  right: 6%; bottom: 16%;
+  background: radial-gradient(circle at 50% 50%, rgba(99,102,241,.6), transparent 70%);
+  animation: pg-drift-4 26s ease-in-out infinite alternate;
+}
+@keyframes pg-drift-1 {
+  0%   { transform: translate(0,0) scale(1); }
+  50%  { transform: translate(20%, 16%) scale(1.25); }
+  100% { transform: translate(-16%, 24%) scale(.85); }
+}
+@keyframes pg-drift-2 {
+  0%   { transform: translate(0,0) scale(1); }
+  50%  { transform: translate(-22%, 18%) scale(1.22); }
+  100% { transform: translate(14%, -16%) scale(.88); }
+}
+@keyframes pg-drift-3 {
+  0%   { transform: translate(0,0) scale(1); }
+  50%  { transform: translate(-18%, -20%) scale(1.3); }
+  100% { transform: translate(16%, 14%) scale(.82); }
+}
+@keyframes pg-drift-4 {
+  0%   { transform: translate(0,0) scale(1); }
+  50%  { transform: translate(24%, -14%) scale(1.24); }
+  100% { transform: translate(-20%, 12%) scale(1.26); }
+}
+.page-bg::after {
+  content: "";
+  position: absolute; inset: 0;
+  background-image:
+    linear-gradient(rgba(255,255,255,.08) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,.08) 1px, transparent 1px);
+  background-size: 40px 40px;
+  animation: grid-drift 14s linear infinite;
+  mask-image: radial-gradient(ellipse at center, #000 36%, transparent 94%);
+  -webkit-mask-image: radial-gradient(ellipse at center, #000 36%, transparent 94%);
+}
+
+/* ---------- 滚动揭示动画 ---------- */
+.js .reveal {
+  opacity: 0;
+  transform: translateY(34px);
+  transition:
+    opacity .7s cubic-bezier(.2,.7,.3,1),
+    transform .7s cubic-bezier(.2,.7,.3,1),
+    box-shadow .35s ease,
+    border-color .35s ease;
+}
+.js .reveal.in {
+  opacity: 1;
+  transform: none;
+}
+/* 揭示完成后恢复玻璃卡片的悬停上浮 */
+.js .reveal.in.glass:hover {
+  transform: translateY(-4px);
+}
+@media (prefers-reduced-motion: reduce) {
+  .js .reveal { opacity: 1; transform: none; transition: none; }
+  .page-bg .pg-blob, .page-bg::after { animation: none; }
+}
+
 /* ---------- Animations ---------- */
 @keyframes fadeInUp {
   from { opacity: 0; transform: translateY(24px); }
@@ -731,7 +838,7 @@ img { max-width: 100%; height: auto; display: block; }
     top: 64px; left: 0; right: 0;
     flex-direction: column;
     background: rgba(7, 7, 28, .96);
-    backdrop-filter: blur(20px);
+    backdrop-filter: blur(8px);
     padding: 1.5rem;
     gap: 1rem;
     border-bottom: 1px solid var(--glass-border);
@@ -753,3 +860,11 @@ img { max-width: 100%; height: auto; display: block; }
   }
   .footer-links { flex-wrap: wrap; justify-content: center; }
 }
+
+/* ============================================================
+   主题说明：
+   - 暗色主题 = 本文件的基础样式（默认基线）
+   - 亮色主题 = assets/css/theme-light.css（html[data-theme="light"] 覆盖）
+   ============================================================ */
+/* 灯泡状态：暗色=关闭(灰)（亮色开启状态见 theme-light.css） */
+html[data-theme="dark"] .theme-toggle .bulb { filter: grayscale(1) opacity(.55); }

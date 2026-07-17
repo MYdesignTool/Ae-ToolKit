@@ -1,0 +1,173 @@
+/* ============================================================
+   亮色主题（默认）— 完全参考 yzrt「纯CSS液态玻璃」.box 实现
+   仅在 html[data-theme="light"] 下生效；暗色见 style.css
+   ============================================================ */
+html[data-theme="light"] {
+  --bg: #f3f3f3;
+  --bg-elevated: #ffffff;
+  --fg: #1d1d2b;
+  --muted: #5b5b73;
+  --glass-bg: rgba(255,255,255,0.04);
+  --glass-border: rgba(51,51,51,0.10);
+  --grid-step: 55px;   /* 亮色网格 tile = 55px，漂移步长对齐以无缝循环 */
+}
+
+/* 亮色背景：参考 yzrt —— #F3F3F3 底 + 柔和彩色光晕 */
+html[data-theme="light"] body {
+  background:
+    radial-gradient(1100px 760px at 12% 8%, rgba(139,92,246,.10), transparent 60%),
+    radial-gradient(1000px 720px at 88% 92%, rgba(6,182,212,.08), transparent 60%),
+    #f3f3f3;
+}
+
+/* 亮色下网格：参考 yzrt 的 #E1E1E1 细线，55px，铺满全页透过玻璃 */
+html[data-theme="light"] .page-bg::after {
+  background-image:
+    linear-gradient(rgba(51,51,51,.09) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(51,51,51,.09) 1px, transparent 1px);
+  background-size: 55px 55px;
+  mask-image: none;
+  -webkit-mask-image: none;
+}
+/* 亮色下光斑用正常混合 + 低透明，形成淡彩雾 */
+html[data-theme="light"] .page-bg .pg-blob {
+  mix-blend-mode: normal;
+  opacity: .30;
+}
+
+/* ============================================================
+   亮色液态玻璃 —— 严格对齐参考 .box：
+   - 背景几乎透明 rgba(255,255,255,.04)
+   - 模糊很轻 blur(2px)
+   - 下方明确投影 0 4px 8px rgba(0,0,0,.2)
+   - 成对白色 inset 高光(左上/右下) + 内壁暗边，放到 ::before 边缘光学层
+     并套 filter: contrast() 复刻参考 .fx-layer{contrast(3)} 的锐化效果
+   - ::after 为 45° 对角镜面反光 blur(3px)
+   ============================================================ */
+html[data-theme="light"] .glass,
+html[data-theme="light"] .hero-content {
+  background: rgba(255,255,255,0.04);
+  border: 1px double rgba(51,51,51,0.08);
+  backdrop-filter: blur(2px);
+  -webkit-backdrop-filter: blur(2px);
+  box-shadow: 0 4px 8px rgba(0,0,0,0.2);   /* 参考的下方投影 */
+}
+
+/* 边缘光学层（::before）：成对高光 + 内壁暗边 + 暗环 + contrast 锐化
+   复刻参考 .box 的对比锐化（参考整层 contrast(3)），只作用于光学层不伤文字
+   注意：clip-path 把高光严格裁进圆角内，避免 backdrop-filter 裁剪 bug 导致白边外溢 */
+html[data-theme="light"] .glass::before,
+html[data-theme="light"] .hero-content::before {
+  background: transparent;
+  box-shadow:
+    inset 2px -2px 1px -1px rgba(255,255,255,0.55),
+    inset -2px 2px 1px -1px rgba(255,255,255,0.55),
+    inset 6px -6px 1px -6px rgba(255,255,255,0.30),
+    inset -6px 6px 1px -6px rgba(255,255,255,0.30),
+    inset 0 0 2px rgba(0,0,0,0.7),
+    inset 0 0 10px rgba(0,0,0,0.40);   /* 内壁暗环（参考 :before 模糊黑边） */
+  filter: contrast(1.8);
+  opacity: 1;
+  clip-path: inset(0 round var(--radius));
+}
+
+/* 对角镜面反光（::after）：两端白光 45°，blur，对齐参考 25%/75%
+   收敛白光强度 + clip-path 防外溢 */
+html[data-theme="light"] .glass::after,
+html[data-theme="light"] .hero-content::after {
+  background: linear-gradient(
+    45deg,
+    rgba(255,255,255,0.5) 0%,
+    transparent 25%,
+    transparent 75%,
+    rgba(255,255,255,0.5) 100%
+  );
+  filter: blur(2px);
+  opacity: .55;
+  clip-path: inset(0 round var(--radius));
+}
+
+/* hero-content 圆角为 26px，单独对齐 clip-path 半径，避免圆角被裁方 */
+html[data-theme="light"] .hero-content::before,
+html[data-theme="light"] .hero-content::after {
+  clip-path: inset(0 round 26px);
+}
+
+/* 悬停：提亮成对高光 + 抬升投影 */
+html[data-theme="light"] .glass:hover {
+  filter: brightness(1);
+  box-shadow: 0 8px 18px rgba(0,0,0,0.24);
+}
+html[data-theme="light"] .glass:hover::before {
+  box-shadow:
+    inset 2px -2px 1px -1px rgba(255,255,255,0.7),
+    inset -2px 2px 1px -1px rgba(255,255,255,0.7),
+    inset 6px -6px 1px -6px rgba(255,255,255,0.4),
+    inset -6px 6px 1px -6px rgba(255,255,255,0.4),
+    inset 0 0 2px rgba(0,0,0,0.75),
+    inset 0 0 12px rgba(0,0,0,0.45);
+}
+
+/* ---- 导航栏：同款玻璃（本体 box-shadow，导航含文字不套 contrast） ---- */
+html[data-theme="light"] .site-header {
+  background: rgba(255,255,255,0.04);
+  border: 1px double rgba(51,51,51,0.08);
+  backdrop-filter: blur(2px);
+  -webkit-backdrop-filter: blur(2px);
+  box-shadow:
+    inset 2px -2px 1px -1px rgba(255,255,255,0.9),
+    inset -2px 2px 1px -1px rgba(255,255,255,0.9),
+    inset 6px -6px 1px -6px rgba(255,255,255,0.55),
+    inset -6px 6px 1px -6px rgba(255,255,255,0.55),
+    inset 0 0 2px rgba(0,0,0,0.6),
+    0 4px 8px rgba(0,0,0,0.15);
+}
+html[data-theme="light"] .site-header::after {
+  background: linear-gradient(90deg, transparent, rgba(139,92,246,.5), rgba(6,182,212,.4), transparent);
+}
+
+/* ---- 亮色下代码区 / 步骤区适配 ---- */
+html[data-theme="light"] .code-header {
+  background: rgba(255,255,255,.5);
+  border-bottom-color: rgba(20,20,40,.08);
+}
+html[data-theme="light"] .code-tab:hover { color: var(--fg); background: rgba(20,20,40,.05); }
+html[data-theme="light"] .code-body pre { background: rgba(20,20,40,.045); }
+html[data-theme="light"] .step pre { background: rgba(20,20,40,.045); border-color: rgba(20,20,40,.08); }
+html[data-theme="light"] .feature-img-wrap { background: #fff; }
+
+/* ---- 亮色下 highlight.js 语法配色（深色字） ---- */
+html[data-theme="light"] .hljs { color: #3a3550; }
+html[data-theme="light"] .hljs-comment, html[data-theme="light"] .hljs-quote { color: #8a87a3; }
+html[data-theme="light"] .hljs-keyword, html[data-theme="light"] .hljs-selector-tag,
+html[data-theme="light"] .hljs-built_in, html[data-theme="light"] .hljs-name { color: #7c3aed; }
+html[data-theme="light"] .hljs-string, html[data-theme="light"] .hljs-attr,
+html[data-theme="light"] .hljs-template-tag { color: #0d9488; }
+html[data-theme="light"] .hljs-number, html[data-theme="light"] .hljs-literal,
+html[data-theme="light"] .hljs-type { color: #c026d3; }
+html[data-theme="light"] .hljs-variable, html[data-theme="light"] .hljs-params { color: #1d1d2b; }
+html[data-theme="light"] .hljs-function .hljs-title, html[data-theme="light"] .hljs-title.function_,
+html[data-theme="light"] .hljs-section { color: #6d28d9; }
+html[data-theme="light"] .hljs-meta { color: #9a93b8; }
+
+/* ---- 亮色下项目树配色 ---- */
+html[data-theme="light"] .tree-folder { color: #7c3aed; }
+html[data-theme="light"] .tree-file { color: #3a3550; }
+html[data-theme="light"] .tree-file::before { color: rgba(20,20,40,.3); }
+html[data-theme="light"] .tree-header { border-bottom-color: rgba(20,20,40,.08); }
+
+/* ---- 亮色下页脚与按钮 ---- */
+html[data-theme="light"] .site-footer { background: linear-gradient(to bottom, transparent, #d9dce8 40%); }
+html[data-theme="light"] .btn-ghost { color: var(--fg); border-color: var(--glass-border); }
+html[data-theme="light"] .btn-ghost:hover { background: rgba(20,20,40,.05); border-color: rgba(20,20,40,.14); color: var(--fg); }
+
+/* ---- 灯泡状态：亮色=开启(亮黄发光) ---- */
+html[data-theme="light"] .theme-toggle .bulb { filter: drop-shadow(0 0 4px rgba(255,200,0,.6)); }
+
+/* ---- 亮色下移动端菜单 ---- */
+@media (max-width: 768px) {
+  html[data-theme="light"] .nav-links {
+    background: rgba(255,255,255,.97);
+    border-bottom-color: var(--glass-border);
+  }
+}
