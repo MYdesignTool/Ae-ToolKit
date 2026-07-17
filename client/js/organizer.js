@@ -196,10 +196,14 @@
      return;
    }
 
+    if (els.organizeBtn) els.organizeBtn.disabled = true;
+    showOrganizeProgress();
     setStatus("正在整理工程：" + scheme.name);
     var script = "AELT_organizeProjectWithScheme('" + escape(escapeForEvalScript(JSON.stringify(scheme))) + "')";
     ensureModules(function () {
       evalAe(script, function (result) {
+        hideOrganizeProgress();
+        if (els.organizeBtn) els.organizeBtn.disabled = false;
         if (!result.ok) {
           setStatus((result.messages && result.messages[0]) || "整理失败。");
           return;
@@ -208,6 +212,16 @@
         showToast("整理完成：移动 " + result.moved + " 项", "success");
       });
     });
+  }
+
+  function showOrganizeProgress() {
+    var el = document.getElementById("organizeProgress");
+    if (el) el.classList.remove("hidden");
+  }
+
+  function hideOrganizeProgress() {
+    var el = document.getElementById("organizeProgress");
+    if (el) el.classList.add("hidden");
   }
 
   function newScheme() {
