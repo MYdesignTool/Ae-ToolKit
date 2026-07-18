@@ -311,20 +311,22 @@
       showToast("预设方案不能删除", "error");
       return;
     }
-    if (!confirmAction("确认删除整理方案“" + scheme.name + "”？")) return;
+    confirmAction("确认删除整理方案“" + scheme.name + "”？", function (ok) {
+      if (!ok) return;
 
-    evalAe("AELT_deleteOrganizerScheme('" + escapeForEvalScript(scheme.id) + "')", function (result) {
-      if (!result.ok) {
-        setStatus((result.messages && result.messages[0]) || "方案删除失败。");
-        return;
-      }
-      state.organizerSchemes = state.organizerSchemes.filter(function (item) {
-        return item.id !== scheme.id;
+      evalAe("AELT_deleteOrganizerScheme('" + escapeForEvalScript(scheme.id) + "')", function (result) {
+        if (!result.ok) {
+          setStatus((result.messages && result.messages[0]) || "方案删除失败。");
+          return;
+        }
+        state.organizerSchemes = state.organizerSchemes.filter(function (item) {
+          return item.id !== scheme.id;
+        });
+        state.selectedSchemeId = state.organizerSchemes[0] ? state.organizerSchemes[0].id : "preset-default";
+        renderRules();
+        setStatus("方案已删除。");
+        showToast("方案已删除", "success");
       });
-      state.selectedSchemeId = state.organizerSchemes[0] ? state.organizerSchemes[0].id : "preset-default";
-      renderRules();
-      setStatus("方案已删除。");
-      showToast("方案已删除", "success");
     });
   }
 

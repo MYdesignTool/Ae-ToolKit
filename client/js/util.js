@@ -23,7 +23,59 @@
    }, 1000);
  }
 
- function addDebug(type, detail) {
+ // 自定义输入对话框（替代原生 window.prompt，避免 CEP 标题栏显示乱码扩展路径）。
+// onConfirm(value) 中 value 为用户输入（已 trim），取消/关闭时为 null。
+function showInputDialog(title, defaultText, onConfirm) {
+  var modal = document.getElementById("inputModal");
+  if (!modal) { var fb = window.prompt(title, defaultText); if (onConfirm) onConfirm(fb); return; }
+  var titleEl = document.getElementById("inputModalTitle");
+  var field = document.getElementById("inputModalField");
+  var okBtn = document.getElementById("inputModalOk");
+  var cancelBtn = document.getElementById("inputModalCancel");
+  titleEl.textContent = title || "输入";
+  field.style.display = "";
+  field.value = defaultText || "";
+  modal.style.display = "flex";
+  field.focus();
+  field.select();
+  function done(val) {
+    modal.style.display = "none";
+    okBtn.onclick = null; cancelBtn.onclick = null; modal.onclick = null; field.onkeydown = null;
+    if (onConfirm) onConfirm(val);
+  }
+  okBtn.onclick = function () { done(field.value.trim() || null); };
+  cancelBtn.onclick = function () { done(null); };
+  modal.onclick = function (e) { if (e.target === modal) done(null); };
+  field.onkeydown = function (e) {
+    if (e.key === "Enter") done(field.value.trim() || null);
+    else if (e.key === "Escape") done(null);
+  };
+}
+
+// 自定义确认对话框（替代原生 window.confirm，同样规避乱码标题栏）。
+// onConfirm(result) 中 result 为 true(确定) / false(取消或关闭)。
+function showConfirmDialog(message, onConfirm) {
+  var modal = document.getElementById("inputModal");
+  if (!modal) { var fb = window.confirm(message); if (onConfirm) onConfirm(fb); return; }
+  var titleEl = document.getElementById("inputModalTitle");
+  var field = document.getElementById("inputModalField");
+  var okBtn = document.getElementById("inputModalOk");
+  var cancelBtn = document.getElementById("inputModalCancel");
+  titleEl.textContent = message || "确认";
+  field.style.display = "none";
+  field.value = "";
+  modal.style.display = "flex";
+  function done(val) {
+    modal.style.display = "none";
+    okBtn.onclick = null; cancelBtn.onclick = null; modal.onclick = null;
+    if (onConfirm) onConfirm(val);
+  }
+  okBtn.onclick = function () { done(true); };
+  cancelBtn.onclick = function () { done(false); };
+  modal.onclick = function (e) { if (e.target === modal) done(false); };
+}
+
+function addDebug(type, detail) {
     var time = new Date().toLocaleTimeString();
     state.debugEntries.unshift({
       time: time,
@@ -111,9 +163,11 @@
     return true;
   }
 
-  function confirmAction(message) {
-    if (state.quietMode) return true;
-    return window.confirm(message);
+  function confirmAction(message, onConfirm) {
+    if (state.quietMode) { if (onConfirm) onConfirm(true); return; }
+    showConfirmDialog(message, function (result) {
+      if (onConfirm) onConfirm(result === true);
+    });
   }
 
   function escapeHtml(value) {

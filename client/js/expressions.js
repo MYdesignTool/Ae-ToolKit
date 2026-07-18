@@ -56,38 +56,44 @@
         return;
       }
 
-      var overwrite = true;
-      if (summary.existing > 0) {
-        overwrite = confirmAction("检测到 " + summary.existing + " 个属性已有表达式，是否覆盖？");
+      function runApply() {
+        var script = "AELT_applyExpression('" + escapeForEvalScript(expression) + "', true)";
+        evalAe(script, function (result) {
+          setStatus("已应用 " + result.applied + " 个属性，跳过 " + result.skipped + " 个，错误 " + result.errors + " 个。");
+          showToast("已应用表达式到 " + result.applied + " 个属性", "success");
+          refreshSelection();
+        });
       }
-      if (!overwrite) {
-        setStatus("已取消应用表达式。");
+      if (summary.existing > 0) {
+        confirmAction("检测到 " + summary.existing + " 个属性已有表达式，是否覆盖？", function (overwrite) {
+          if (!overwrite) {
+            setStatus("已取消应用表达式。");
+            return;
+          }
+          runApply();
+        });
         return;
       }
-
-      var script = "AELT_applyExpression('" + escapeForEvalScript(expression) + "', true)";
-      evalAe(script, function (result) {
-        setStatus("已应用 " + result.applied + " 个属性，跳过 " + result.skipped + " 个，错误 " + result.errors + " 个。");
-        showToast("已应用表达式到 " + result.applied + " 个属性", "success");
-        refreshSelection();
-      });
+      runApply();
     });
   }
 
   function removeExpressions() {
-    if (!confirmAction("确认移除选中属性上的表达式？")) {
-      setStatus("已取消移除表达式。");
-      return;
-    }
-
-    evalAe("AELT_removeExpressions()", function (result) {
-      if (!result.ok) {
-        setStatus(result.messages.join(" "));
+    confirmAction("确认移除选中属性上的表达式？", function (ok) {
+      if (!ok) {
+        setStatus("已取消移除表达式。");
         return;
       }
-      setStatus("已移除 " + result.removed + " 个表达式，跳过 " + result.skipped + " 个，错误 " + result.errors + " 个。");
-      showToast("已移除 " + result.removed + " 个表达式", "success");
-      refreshSelection();
+
+      evalAe("AELT_removeExpressions()", function (result) {
+        if (!result.ok) {
+          setStatus(result.messages.join(" "));
+          return;
+        }
+        setStatus("已移除 " + result.removed + " 个表达式，跳过 " + result.skipped + " 个，错误 " + result.errors + " 个。");
+        showToast("已移除 " + result.removed + " 个表达式", "success");
+        refreshSelection();
+      });
     });
   }
 
@@ -98,32 +104,33 @@
       return;
     }
 
-    var name = window.prompt("表达式名称", "自定义表达式");
-    if (!name) return;
+    showInputDialog("保存为自定义表达式", "自定义表达式", function (name) {
+      if (!name) return;
 
-    var items = getUserExpressions();
-    var item = {
-      id: "user-" + Date.now(),
-      name: name,
-      category: "自定义",
-      description: "用户保存的本地表达式。",
-      code: code,
-      tags: ["自定义"],
-      builtin: false,
-      favorite: false
-    };
+      var items = getUserExpressions();
+      var item = {
+        id: "user-" + Date.now(),
+        name: name,
+        category: "自定义",
+        description: "用户保存的本地表达式。",
+        code: code,
+        tags: ["自定义"],
+        builtin: false,
+        favorite: false
+      };
 
-    items.push(item);
-    if (!setUserExpressions(items)) {
-      setStatus("保存失败：当前 CEP 本地存储不可用。");
-      showToast("保存失败", "error");
-      return;
-    }
-    state.expressions.push(item);
-    state.selectedExpressionId = item.id;
-    renderExpressions();
-    setStatus("已保存到本地表达式库。");
+      items.push(item);
+      if (!setUserExpressions(items)) {
+        setStatus("保存失败：当前 CEP 本地存储不可用。");
+        showToast("保存失败", "error");
+        return;
+      }
+      state.expressions.push(item);
+      state.selectedExpressionId = item.id;
+      renderExpressions();
+      setStatus("已保存到本地表达式库。");
       showToast("表达式已保存", "success");
+    });
   }
 
   function deleteExpression() {
@@ -143,24 +150,26 @@
       return;
     }
 
-    if (!confirmAction("确认删除这个自定义表达式？")) return;
+    confirmAction("确认删除这个自定义表达式？", function (ok) {
+      if (!ok) return;
 
-    var next = getUserExpressions().filter(function (item) {
-      return item.id !== state.selectedExpressionId;
-    });
-    if (!setUserExpressions(next)) {
-      setStatus("删除失败：当前 CEP 本地存储不可用。");
-      showToast("删除失败", "error");
-      return;
-    }
-    state.expressions = state.expressions.filter(function (item) {
-      return item.id !== state.selectedExpressionId;
-    });
-    state.selectedExpressionId = null;
-    els.expressionCode.value = "";
-    renderExpressions();
-    setStatus("已删除自定义表达式。");
+      var next = getUserExpressions().filter(function (item) {
+        return item.id !== state.selectedExpressionId;
+      });
+      if (!setUserExpressions(next)) {
+        setStatus("删除失败：当前 CEP 本地存储不可用。");
+        showToast("删除失败", "error");
+        return;
+      }
+      state.expressions = state.expressions.filter(function (item) {
+        return item.id !== state.selectedExpressionId;
+      });
+      state.selectedExpressionId = null;
+      els.expressionCode.value = "";
+      renderExpressions();
+      setStatus("已删除自定义表达式。");
       showToast("自定义表达式已删除", "success");
+    });
   }
 
   function updateExpression() {
@@ -182,25 +191,26 @@
       setStatus("表达式内容为空。");
       return;
     }
-    var name = window.prompt("表达式名称?", selected.name);
-    if (!name) return;
-    selected.name = name;
-    selected.code = code;
-    var userItems = getUserExpressions();
-    for (var i = 0; i < userItems.length; i++) {
-      if (userItems[i].id === state.selectedExpressionId) {
-        userItems[i] = selected;
-        break;
+    showInputDialog("更新表达式名称", selected.name, function (name) {
+      if (!name) return;
+      selected.name = name;
+      selected.code = code;
+      var userItems = getUserExpressions();
+      for (var i = 0; i < userItems.length; i++) {
+        if (userItems[i].id === state.selectedExpressionId) {
+          userItems[i] = selected;
+          break;
+        }
       }
-    }
-    if (!setUserExpressions(userItems)) {
-      setStatus("保存失败：当前 CEP 本地存储不可用。");
-      showToast("保存失败", "error");
-      return;
-    }
-    renderExpressions();
-    setStatus("表达式已更新。");
-    showToast("表达式已更新", "success");
+      if (!setUserExpressions(userItems)) {
+        setStatus("保存失败：当前 CEP 本地存储不可用。");
+        showToast("保存失败", "error");
+        return;
+      }
+      renderExpressions();
+      setStatus("表达式已更新。");
+      showToast("表达式已更新", "success");
+    });
   }
 
 
