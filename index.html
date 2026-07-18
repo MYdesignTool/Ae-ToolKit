@@ -7,7 +7,7 @@
   <meta name="description" content="Ae-ToolKit 是一款完全离线运行的 After Effects CEP 扩展面板，集成项目整理器、表达式管理器、脚本启动器三大核心功能。支持 AE 2020+，纯 AI 开发，开源免费。">
   <link rel="icon" type="image/svg+xml" href="assets/img/logo.svg?v=3">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css">
-  <link rel="stylesheet" href="assets/css/style.css?v=25">
+  <link rel="stylesheet" href="assets/css/style.css?v=26">
   <link rel="stylesheet" href="assets/css/theme-light.css?v=3">
 </head>
 <body>
@@ -243,44 +243,81 @@
       <h2 class="section-title">
         <span class="title-accent">#</span> 安装指南
       </h2>
-      <p class="section-subtitle">四步完成安装，即刻开始使用</p>
-      <div class="steps">
+      <p class="section-subtitle">两种方式任选其一，Windows 用户推荐安装器</p>
 
+      <!-- 方式一：一键安装器 -->
+      <h3 class="method-title">方式一 · 一键安装器 <span class="method-tag">Windows 推荐</span></h3>
+      <div class="steps">
+        <div class="step glass">
+          <span class="step-num">01</span>
+          <span class="step-line" aria-hidden="true"></span>
+          <div class="step-body">
+            <h4>下载安装器</h4>
+            <p>在 <a href="https://github.com/MYdesignTool/Ae-ToolKit/releases/latest" target="_blank" rel="noopener">GitHub Releases</a> 下载单个 Windows 安装器 <code>aetoolkit-installer.exe</code>。</p>
+          </div>
+        </div>
+        <div class="step glass">
+          <span class="step-num">02</span>
+          <span class="step-line" aria-hidden="true"></span>
+          <div class="step-body">
+            <h4>运行安装向导</h4>
+            <p>双击运行，按原生向导操作：阅读许可协议并勾选同意 → 确认安装路径（默认已填好用户级 CEP 目录，可「浏览…」自定义）→ 点击「安装」。安装器会自动写入 <code>PlayerDebugMode</code>，<strong>无需管理员权限</strong>。</p>
+          </div>
+        </div>
+        <div class="step glass">
+          <span class="step-num">03</span>
+          <div class="step-body">
+            <h4>打开面板</h4>
+            <p>按提示重启 After Effects，通过菜单路径打开面板：</p>
+            <p><code>窗口(W) → 扩展 → AE Local Toolkit</code></p>
+            <p class="step-note">💡 若系统提示「未知发布者」属正常现象（安装器未做代码签名），点「更多信息 → 仍要运行」即可。</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- 方式二：手动安装 -->
+      <h3 class="method-title">方式二 · 手动安装 <span class="method-tag method-tag--ghost">全平台</span></h3>
+      <div class="steps">
         <div class="step glass">
           <span class="step-num">01</span>
           <span class="step-line" aria-hidden="true"></span>
           <div class="step-body">
             <h4>下载解压</h4>
-            <p>从 <a href="https://github.com/MYdesignTool/Ae-ToolKit/releases/latest" target="_blank" rel="noopener">GitHub Releases</a> 下载最新版本，将所有文件解压到名为 <code>AeLocalToolkit/</code> 的文件夹中。</p>
+            <p>从 <a href="https://github.com/MYdesignTool/Ae-ToolKit/releases/latest" target="_blank" rel="noopener">GitHub Releases</a> 下载干净扩展包 <code>aetoolkit-extension.zip</code>，解压得到 <code>AeLocalToolkit/</code> 文件夹。</p>
           </div>
         </div>
-
         <div class="step glass">
           <span class="step-num">02</span>
           <span class="step-line" aria-hidden="true"></span>
           <div class="step-body">
             <h4>复制到扩展目录</h4>
-            <p>将 <code>AeLocalToolkit/</code> 文件夹复制到系统 CEP 扩展目录：</p>
-            <pre><code># Windows
+            <p>将 <code>AeLocalToolkit/</code> 文件夹整体复制到 CEP 扩展目录：</p>
+            <pre><code># Windows 用户级（无需管理员）
+%APPDATA%\Adobe\CEP\extensions\
+
+# Windows 系统级
 C:\Program Files (x86)\Common Files\Adobe\CEP\extensions\
 
-# macOS
-/Library/Application Support/Adobe/CEP/extensions/</code></pre>
+# macOS 用户级
+~/Library/Application Support/Adobe/CEP/extensions\
+
+# macOS 系统级（需管理员）
+/Library/Application Support/Adobe/CEP/extensions\</code></pre>
           </div>
         </div>
-
         <div class="step glass">
           <span class="step-num">03</span>
           <span class="step-line" aria-hidden="true"></span>
           <div class="step-body">
-            <h4>启用脚本权限</h4>
-            <p>打开 After Effects 2020 或更高版本：</p>
-            <p><strong>中文：</strong>编辑 → 首选项 → 脚本与表达式 → 勾选「允许脚本写入文件和访问网络」</p>
-            <p><strong>English：</strong>Edit → Preferences → Scripting & Expressions → Check "Allow Scripts to Write Files and Access Network"</p>
-            <p class="step-note">💡 工具完全离线运行，此权限仅用于本地文件读写。</p>
+            <h4>开启调试模式（未签名时）</h4>
+            <p>若扩展未签名（通常已通过安装器或旧版写入，可跳过），需手动开启调试模式以加载未签名扩展：</p>
+            <pre><code># Windows 注册表
+HKEY_CURRENT_USER\Software\Adobe\CSXS.9\PlayerDebugMode = 1
+
+# macOS 终端
+defaults write com.adobe.CSXS.9 PlayerDebugMode -bool true</code></pre>
           </div>
         </div>
-
         <div class="step glass">
           <span class="step-num">04</span>
           <div class="step-body">
@@ -289,8 +326,12 @@ C:\Program Files (x86)\Common Files\Adobe\CEP\extensions\
             <p><code>窗口(W) → 扩展 → AeLocalToolkit</code></p>
           </div>
         </div>
-
       </div>
+
+      <p class="install-note">⚠️ <strong>重要（两种方式均需要）</strong>：本工具会在本地写入文件（整理素材、保存方案与自定义表达式），需开启 AE 脚本写权限。打开 After Effects 2020+：<br>
+      <strong>中文：</strong>编辑 → 首选项 → 脚本与表达式 → 勾选「允许脚本写入文件和访问网络」<br>
+      <strong>English：</strong>Edit → Preferences → Scripting & Expressions → Check "Allow Scripts to Write Files and Access Network"<br>
+      重启 After Effects 使设置生效。工具完全离线运行，不访问任何网络，该权限仅用于开放本地文件写入。</p>
     </div>
   </section>
 
