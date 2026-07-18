@@ -679,6 +679,8 @@ img { max-width: 100%; height: auto; display: block; }
 .tree-file { color: #d7d2f0; }
 .tree-file::before { content: "\2014  "; color: rgba(255, 255, 255, .28); }
 .tree-desc { color: var(--muted); font-size: .78rem; margin-left: .55rem; }
+.tree-note { margin-top: 1rem; font-size: .8rem; color: var(--muted); line-height: 1.7; }
+.tree-note code { font-family: "SF Mono", "Fira Code", "Consolas", monospace; background: rgba(255, 255, 255, .06); padding: .05rem .35rem; border-radius: 5px; color: #c4a6ff; }
 .hljs-function .hljs-title, .hljs-title.function_, .hljs-section { color: #a78bfa; }
 .hljs-variable, .hljs-params { color: #e8e8f0; }
 .hljs-meta { color: #8b85b8; }

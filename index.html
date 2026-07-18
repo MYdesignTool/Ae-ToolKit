@@ -7,7 +7,7 @@
   <meta name="description" content="Ae-ToolKit 是一款完全离线运行的 After Effects CEP 扩展面板，集成项目整理器、表达式管理器、脚本启动器三大核心功能。支持 AE 2020+，纯 AI 开发，开源免费。">
   <link rel="icon" type="image/svg+xml" href="assets/img/logo.svg?v=3">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css">
-  <link rel="stylesheet" href="assets/css/style.css?v=24">
+  <link rel="stylesheet" href="assets/css/style.css?v=25">
   <link rel="stylesheet" href="assets/css/theme-light.css?v=3">
 </head>
 <body>
@@ -219,11 +219,20 @@
                   <li class="tree-file">index.jsx <span class="tree-desc">宿主脚本入口</span></li>
                 </ul>
               </li>
+              <li class="tree-folder">installer/ <span class="tree-desc">Windows 安装包构建</span>
+                <ul>
+                  <li class="tree-file">aetoolkit.nsi <span class="tree-desc">NSIS 安装脚本</span></li>
+                  <li class="tree-file">build-installer.cmd <span class="tree-desc">一键构建脚本</span></li>
+                  <li class="tree-file">sign-win.ps1 <span class="tree-desc">Windows 代码签名脚本</span></li>
+                  <li class="tree-file">README.md <span class="tree-desc">安装器说明</span></li>
+                </ul>
+              </li>
               <li class="tree-file">License.md <span class="tree-desc">许可证（GPL v3）</span></li>
               <li class="tree-file">README.md <span class="tree-desc">项目说明</span></li>
             </ul>
           </li>
         </ul>
+        <p class="tree-note">注：<code>data/settings.json</code>、<code>data/organizer-schemes/</code> 与 <code>installer/dist/</code> 为本地用户数据或构建产物，已通过 <code>.gitignore</code> 排除，不纳入云端仓库与 Release。</p>
       </div>
     </div>
   </section>
