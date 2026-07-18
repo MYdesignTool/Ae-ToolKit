@@ -1,0 +1,5 @@
+# 本地用户设置（随设备变化，不纳入版本控制）
+data/settings.json
+
+# 用户保存的整理方案（随设备变化，不纳入版本控制；云端仅保留内置默认规则 data/organizer-rules.json）
+data/organizer-schemes/

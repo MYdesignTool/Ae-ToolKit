@@ -4,6 +4,78 @@
 // 依赖 core.js 的 state/els/fallbackRules 与 util.js 的规范化函数。
 // ============================================================================
 
+  // ==========================================================================
+  // 全局整理文件夹（合成 / 固态层 / 未匹配素材）
+  // 这三项由所有整理方案共用，持久化于扩展目录 data/settings.json（随扩展一起拷贝），
+  // 主界面只配置素材规则。主界面渲染时剥离内部项目规则；整理/保存时再动态注入回 scheme，
+  // 保证发给 host 的数据结构与旧版完全一致。
+  // ==========================================================================
+  var ORG_FOLDER_DEFAULTS = { comp: "Comp", solid: "Solids", fallback: "Footage" };
+
+  function getGlobalFolders() {
+    return {
+      comp: AELT.settings.get("compFolder", ORG_FOLDER_DEFAULTS.comp),
+      solid: AELT.settings.get("solidFolder", ORG_FOLDER_DEFAULTS.solid),
+      fallback: AELT.settings.get("fallbackFolder", ORG_FOLDER_DEFAULTS.fallback)
+    };
+  }
+
+  function setGlobalFolder(kind, value) {
+    var key = { comp: "compFolder", solid: "solidFolder", fallback: "fallbackFolder" }[kind];
+    if (!key) return;
+    AELT.settings.set(key, normalizePath(value));
+  }
+
+  // 首次启动时，从已有方案吸收合成/固态层/未匹配文件夹作为全局初始值；
+  // 仅在对应设置尚未写入过时生效（幂等，切换方案不会覆盖用户设置）。
+  function absorbGlobalFoldersFromScheme(scheme) {
+    function setIfAbsent(key, value) {
+      if (AELT.settings.get(key, undefined) === undefined && value) AELT.settings.set(key, value);
+    }
+    var comp = "", solid = "";
+    (scheme.rules || []).forEach(function (rule) {
+      var types = rule.itemTypes || [];
+      if (types.indexOf("CompItem") >= 0) comp = rule.path;
+      if (types.indexOf("SolidSource") >= 0) solid = rule.path;
+    });
+    setIfAbsent("compFolder", comp);
+    setIfAbsent("solidFolder", solid);
+    setIfAbsent("fallbackFolder", scheme.fallbackPath);
+  }
+
+  // 判断一条规则是否为“内部项目规则”（合成/固态层），这类规则不在主界面展示。
+  function isInternalRule(rule) {
+    var types = rule.itemTypes || [];
+    return types.indexOf("CompItem") >= 0 || types.indexOf("SolidSource") >= 0;
+  }
+
+  // 将全局文件夹值回填到设置页输入框。
+  function fillGlobalFolderInputs() {
+    var folders = getGlobalFolders();
+    if (els.compFolderInput) els.compFolderInput.value = folders.comp;
+    if (els.solidFolderInput) els.solidFolderInput.value = folders.solid;
+    if (els.fallbackFolderInput) els.fallbackFolderInput.value = folders.fallback;
+  }
+
+  // 绑定设置页全局文件夹输入框，输入即持久化到扩展目录 data/settings.json（全局共用）。
+  function bindGlobalFolderInputs() {
+    if (els.compFolderInput) {
+      els.compFolderInput.addEventListener("input", function () {
+        setGlobalFolder("comp", els.compFolderInput.value);
+      });
+    }
+    if (els.solidFolderInput) {
+      els.solidFolderInput.addEventListener("input", function () {
+        setGlobalFolder("solid", els.solidFolderInput.value);
+      });
+    }
+    if (els.fallbackFolderInput) {
+      els.fallbackFolderInput.addEventListener("input", function () {
+        setGlobalFolder("fallback", els.fallbackFolderInput.value);
+      });
+    }
+  }
+
   function getSelectedScheme() {
     for (var i = 0; i < state.organizerSchemes.length; i++) {
       if (state.organizerSchemes[i].id === state.selectedSchemeId) {
@@ -20,28 +92,39 @@
     for (var i = 0; i < cards.length; i++) {
       var pathInput = cards[i].querySelector("[data-rule-path]");
       var extensionsInput = cards[i].querySelector("[data-rule-extensions]");
-      var itemTypesInput = cards[i].querySelector("[data-rule-item-types]");
       rules.push({
         path: normalizePath(pathInput.value),
-        itemTypes: normalizeItemTypes(itemTypesInput.value),
+        itemTypes: [],
         extensions: normalizeExtensions(extensionsInput.value)
       });
     }
 
-   return normalizeScheme({
-     id: current.id,
-     name: els.schemeNameInput.value.trim() || "整理方案",
+    // 注意：这里只返回主界面编辑的“可见规则”，不注入内部项目规则。
+    // 内部规则（合成/固态层）由 buildHostScheme 在发给 host 的边界处注入，
+    // 避免 addRule/removeRule/saveScheme 等内部状态操作导致重复注入。
+    var folders = getGlobalFolders();
+    return normalizeScheme({
+      id: current.id,
+      name: els.schemeNameInput.value.trim() || "整理方案",
       builtin: false,
-      fallbackPath: normalizePath(els.fallbackPathInput.value || "Footage"),
+      fallbackPath: normalizePath(folders.fallback || "Footage"),
       rules: rules
     });
   }
 
+  // 在编辑器方案基础上注入全局的合成/固态层规则，生成与旧版一致、
+  // 可直接发给 host 的完整方案。仅用于整理/保存等 host 边界。
+  function buildHostScheme() {
+    var scheme = getSchemeFromEditor();
+    var folders = getGlobalFolders();
+    scheme.rules.push({ path: normalizePath(folders.comp), itemTypes: ["CompItem"], extensions: [] });
+    scheme.rules.push({ path: normalizePath(folders.solid), itemTypes: ["SolidSource"], extensions: [] });
+    return scheme;
+  }
+
   function validateScheme(scheme) {
     var seen = {};
-    var seenItemTypes = {};
     var duplicates = [];
-    var duplicateItemTypes = [];
     var invalidRules = [];
 
     scheme.rules.forEach(function (rule, ruleIndex) {
@@ -53,13 +136,6 @@
           seen[ext] = rule.path;
         }
       });
-      rule.itemTypes.forEach(function (itemType) {
-        if (seenItemTypes[itemType]) {
-          duplicateItemTypes.push(itemType);
-        } else {
-          seenItemTypes[itemType] = rule.path;
-        }
-      });
     });
 
     if (invalidRules.length) {
@@ -67,9 +143,6 @@
     }
     if (duplicates.length) {
       return { ok: false, message: "文件类型不能重复：" + duplicates.join(", ") };
-    }
-    if (duplicateItemTypes.length) {
-      return { ok: false, message: "AE 类型不能重复：" + duplicateItemTypes.join(", ") };
     }
     return { ok: true, message: "" };
   }
@@ -86,17 +159,19 @@
     var scheme = getSelectedScheme();
     state.selectedSchemeId = scheme.id;
     els.schemeNameInput.value = scheme.name || "";
-    els.fallbackPathInput.value = scheme.fallbackPath || "Footage";
+    // 首次从当前方案吸收全局文件夹初始值（幂等）。
+    absorbGlobalFoldersFromScheme(scheme);
+    // 回填设置页的全局文件夹输入框（此时已吸收过，显示用户/方案值）。
+    fillGlobalFolderInputs();
     renderSchemeSelect();
 
-    var html = "";
-    scheme.rules.forEach(function (rule, index) {
-      var itemTypes = (rule.itemTypes || []).map(function (t) { return String(t).trim(); }).filter(Boolean);
-      var hasExt = (rule.extensions || []).length > 0;
-      var hasTypes = itemTypes.length > 0;
-      var hasComp = itemTypes.indexOf("CompItem") >= 0;
-      var hasSolid = itemTypes.indexOf("SolidSource") >= 0;
+    // 剥离内部项目规则（合成/固态层），主界面只展示素材路径规则。
+    var visibleRules = (scheme.rules || []).filter(function (rule) {
+      return !isInternalRule(rule);
+    });
 
+    var html = "";
+    visibleRules.forEach(function (rule, index) {
       html += '<div class="rule-item" data-rule-index="' + index + '">';
 
       // Header row
@@ -105,60 +180,12 @@
       html += '<button class="icon-btn danger" data-remove-rule="' + index + '" title="删除规则">\u2716</button>';
       html += '</div>';
 
-      // Side-by-side criteria
-      html += '<div class="rule-criteria-row">';
+      // File types
+      html += '<label class="field"><span>文件类型</span><input data-rule-extensions type="text" value="' + escapeHtml((rule.extensions || []).join(", ")) + '" placeholder="MP4, MOV, PNG" /></label>';
 
-      // File types column
-      html += '<div class="rule-criterion">';
-      html += '<label class="checkbox-row"><input type="checkbox" data-toggle-extensions' + (hasExt ? ' checked' : '') + ' /><span>文件类型</span></label>';
-      html += '<div class="rule-section" data-extensions-section' + (hasExt ? '' : ' style="display:none"') + '>';
-      html += '<input data-rule-extensions type="text" value="' + escapeHtml((rule.extensions || []).join(", ")) + '" placeholder="MP4, MOV, PNG" />';
-      html += '</div>';
-      html += '</div>';
-
-      // AE types column
-      html += '<div class="rule-criterion">';
-      html += '<label class="checkbox-row"><input type="checkbox" data-toggle-item-types' + (hasTypes ? ' checked' : '') + ' /><span>AE内部项目</span></label>';
-      html += '<div class="rule-section" data-item-types-section' + (hasTypes ? '' : ' style="display:none"') + '>';
-      html += '<label class="check-label"><input type="checkbox" data-item-type value="CompItem"' + (hasComp ? ' checked' : '') + ' /> 合成</label>';
-      html += '<label class="check-label"><input type="checkbox" data-item-type value="SolidSource"' + (hasSolid ? ' checked' : '') + ' /> 固态层</label>';
-      html += '<input data-rule-item-types type="hidden" value="' + escapeHtml(itemTypes.join(", ")) + '" />';
-      html += '</div>';
-      html += '</div>';
-
-      html += '</div>';  // end criteria-row
       html += '</div>';  // end rule-item
     });
     els.ruleGrid.innerHTML = html || '<div class="selection-status">暂无规则</div>';
-
-    // Toggle sections
-    var toggles = els.ruleGrid.querySelectorAll("[data-toggle-extensions], [data-toggle-item-types]");
-    for (var ti = 0; ti < toggles.length; ti++) {
-      toggles[ti].addEventListener("change", function () {
-        var isExt = this.hasAttribute("data-toggle-extensions");
-        var sec = this.closest(".rule-item").querySelector(isExt ? "[data-extensions-section]" : "[data-item-types-section]");
-        if (sec) sec.style.display = this.checked ? "block" : "none";
-        if (!this.checked) {
-          var inp = sec.querySelector(isExt ? "[data-rule-extensions]" : "[data-rule-item-types]");
-          if (inp) inp.value = "";
-        }
-      });
-    }
-
-    // Sync type checkboxes with hidden input
-    var typeCbs = els.ruleGrid.querySelectorAll("[data-item-type]");
-    for (var ci = 0; ci < typeCbs.length; ci++) {
-      typeCbs[ci].addEventListener("change", function () {
-        var sec = this.closest("[data-item-types-section]");
-        if (!sec) return;
-        var hid = sec.querySelector("[data-rule-item-types]");
-        if (!hid) return;
-        var chk = sec.querySelectorAll("[data-item-type]:checked");
-        var vals = [];
-        for (var vi = 0; vi < chk.length; vi++) vals.push(chk[vi].value);
-        hid.value = vals.join(", ");
-      });
-    }
   }
 
   // 确保 host 模块已加载：重新设置模块根目录（幂等），避免面板初始化顺序竞态导致
@@ -188,7 +215,7 @@
   }
 
  function organizeProject() {
-   var scheme = getSchemeFromEditor();
+   var scheme = buildHostScheme();
    var validation = validateScheme(scheme);
    if (!validation.ok) {
      setStatus(validation.message);
@@ -242,9 +269,9 @@
       showToast("已创建新方案", "success");
   }
 
- function saveScheme() {
-   var scheme = getSchemeFromEditor();
-   if (scheme.id === "preset-default") {
+  function saveScheme() {
+    var scheme = buildHostScheme();
+    if (scheme.id === "preset-default") {
      scheme.id = createId("scheme");
    }
    var validation = validateScheme(scheme);
@@ -346,5 +373,7 @@ AELT.organizer = {
   saveScheme: saveScheme,
   deleteScheme: deleteScheme,
   addRule: addRule,
-  replaceOrAppendScheme: replaceOrAppendScheme
+  replaceOrAppendScheme: replaceOrAppendScheme,
+  fillGlobalFolderInputs: fillGlobalFolderInputs,
+  bindGlobalFolderInputs: bindGlobalFolderInputs
 };

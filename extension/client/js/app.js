@@ -33,6 +33,7 @@
     els.saveSchemeBtn.addEventListener("click", saveScheme);
     els.deleteSchemeBtn.addEventListener("click", deleteScheme);
     els.addRuleBtn.addEventListener("click", addRule);
+    bindGlobalFolderInputs();
     els.ruleGrid.addEventListener("click", function (event) {
       var button = event.target.closest("[data-remove-rule]");
       if (!button) return;
@@ -62,17 +63,16 @@
     els.saveExpressionBtn.addEventListener("click", saveExpression);
     els.deleteExpressionBtn.addEventListener("click", deleteExpression);
     els.pingHostBtn.addEventListener("click", pingHost);
-    els.testStorageBtn.addEventListener("click", testStorage);
     els.updateExpressionBtn.addEventListener("click", updateExpression);
     els.debugModeToggle.addEventListener("change", function () {
       state.debugMode = els.debugModeToggle.checked;
-      try { localStorage.setItem("aelt.debugMode", state.debugMode ? "true" : "false"); } catch (e) {}
+      AELT.settings.set("debugMode", state.debugMode);
       syncDebugTabVisibility();
     });
     els.quietModeToggle.addEventListener("change", function () {
       state.quietMode = els.quietModeToggle.checked;
-      try { localStorage.setItem("aelt.quietMode", state.quietMode ? "true" : "false"); } catch (e) {}
-    syncDebugTabVisibility();
+      AELT.settings.set("quietMode", state.quietMode);
+      syncDebugTabVisibility();
     });
     els.clearDebugBtn.addEventListener("click", function () {
       state.debugEntries = [];
@@ -104,7 +104,9 @@
       "saveSchemeBtn",
       "deleteSchemeBtn",
       "schemeNameInput",
-      "fallbackPathInput",
+      "compFolderInput",
+      "solidFolderInput",
+      "fallbackFolderInput",
       "addRuleBtn",
       "refreshSelectionBtn",
       "selectionStatus",
@@ -116,7 +118,6 @@
       "saveExpressionBtn",
       "deleteExpressionBtn",
       "pingHostBtn",
-      "testStorageBtn",
       "clearDebugBtn",
       "updateExpressionBtn",
       "quietModeToggle",
@@ -154,10 +155,11 @@
   // 告诉 host 扩展根目录，使其能定位 host/modules 下的模块。
   // 本 CEP 环境下 host 的 $.fileName 不可靠（返回 80，指向 AE 自身目录），
   // 因此必须由客户端提供路径。
-  function initHostModuleBase() {
+  function initHostModuleBase(callback) {
     var root = getExtensionRoot();
     if (!root) {
       addDebug("module base", "无法从 window.location 推导扩展根目录");
+      if (callback) callback(false);
       return;
     }
     evalAe('AELT_setModuleBase("' + escape(root) + '")', function (result) {
@@ -166,6 +168,7 @@
       } else {
         addDebug("host module base", result && result.moduleBase);
       }
+      if (callback) callback(true);
     });
   }
 
@@ -173,38 +176,43 @@
     cacheEls();
     bindEvents();
     bindScriptEvents();
-    restoreScriptFolder();
-    initHostModuleBase();
 
-    var root = getExtensionRoot();
+    // 先告诉 host 扩展根目录（设置文件 data/settings.json 依赖它定位），
+    // 再加载设置（从扩展目录读取，而非易失的 localStorage），最后才初始化数据。
+    initHostModuleBase(function () {
+      AELT.settings.load(function () {
+        restoreScriptFolder();
 
-    Promise.all([
-      loadJson("../data/organizer-rules.json", fallbackRules),
-      loadJson("../data/default-expressions.json", fallbackExpressions)
-    ]).then(function (results) {
-      state.rules = normalizeScheme(results[0]);
-      state.organizerSchemes = [state.rules];
-      state.selectedSchemeId = state.rules.id;
-      state.expressions = results[1].expressions.concat(getUserExpressions());
-      renderRules();
-      renderExpressions();
-      loadSettings();
-      pingHost();
-      loadOrganizerSchemesFromHost();
-      refreshSelection();
-      loadChangelogFromHost(root);
-    }).catch(function () {
-      state.rules = normalizeScheme(fallbackRules);
-      state.organizerSchemes = [state.rules];
-      state.selectedSchemeId = state.rules.id;
-      state.expressions = cloneData(fallbackExpressions).expressions.concat(getUserExpressions());
-      renderRules();
-      renderExpressions();
-      loadSettings();
-      setStatus("已使用内置数据启动。");
-      pingHost();
-      refreshSelection();
-      loadChangelogFromHost(root);
+        var root = getExtensionRoot();
+        Promise.all([
+          loadJson("../data/organizer-rules.json", fallbackRules),
+          loadJson("../data/default-expressions.json", fallbackExpressions)
+        ]).then(function (results) {
+          state.rules = normalizeScheme(results[0]);
+          state.organizerSchemes = [state.rules];
+          state.selectedSchemeId = state.rules.id;
+          state.expressions = results[1].expressions.concat(getUserExpressions());
+          renderRules();
+          renderExpressions();
+          loadSettings();
+          pingHost();
+          loadOrganizerSchemesFromHost();
+          refreshSelection();
+          loadChangelogFromHost(root);
+        }).catch(function () {
+          state.rules = normalizeScheme(fallbackRules);
+          state.organizerSchemes = [state.rules];
+          state.selectedSchemeId = state.rules.id;
+          state.expressions = cloneData(fallbackExpressions).expressions.concat(getUserExpressions());
+          renderRules();
+          renderExpressions();
+          loadSettings();
+          setStatus("已使用内置数据启动。");
+          pingHost();
+          refreshSelection();
+          loadChangelogFromHost(root);
+        });
+      });
     });
   }
 

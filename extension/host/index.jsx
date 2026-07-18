@@ -244,14 +244,13 @@ AELocalToolkit.parseJson = function (text, fallback) {
 
 // ===== 本地文件存储模块（整理方案持久化） =====
 AELocalToolkit.fileStorage = (function () {
-  function getBaseFolder() {
-    var folder = new Folder(Folder.userData.fullName + "/AE Local Toolkit");
-    if (!folder.exists) folder.create();
-    return folder;
-  }
-
   function getSchemeFolder() {
-    var folder = new Folder(getBaseFolder().fsName + "/organizer-schemes");
+    // 整理方案存到扩展目录 data/organizer-schemes（随扩展一起拷贝，换设备即带走）；
+    // 不再写入系统用户目录 Folder.userData，避免与扩展文件夹分离导致备份/迁移遗漏。
+    var base = AELocalToolkit.__moduleBase;
+    if (!base) base = findExtensionRoot();
+    if (!base) base = ".";
+    var folder = new Folder(base + "/data/organizer-schemes");
     if (!folder.exists) folder.create();
     return folder;
   }
@@ -361,10 +360,58 @@ AELocalToolkit.fileStorage = (function () {
     return result;
   }
 
+  function getSettingsFile() {
+    var base = AELocalToolkit.__moduleBase;
+    if (!base) base = findExtensionRoot();
+    if (!base) return null;
+    return new File(base + "/data/settings.json");
+  }
+
+  function loadSettings() {
+    try {
+      var f = getSettingsFile();
+      if (f && f.exists) {
+        var text = readText(f);
+        return { ok: true, exists: true, settings: AELocalToolkit.parseJson(text, null) };
+      }
+      // settings.json 不存在：回退读取仓库内的默认模板 data/settings.default.json。
+      // 这样云端只需保留一份默认设置，本地改动（settings.json）被 .gitignore 忽略，
+      // 不会污染版本控制；且首次启动不会凭空生成 settings.json（除非用户真的改了设置）。
+      var base = AELocalToolkit.__moduleBase;
+      if (!base) base = findExtensionRoot();
+      if (base) {
+        var defFile = new File(base + "/data/settings.default.json");
+        if (defFile.exists) {
+          return { ok: true, exists: false, settings: AELocalToolkit.parseJson(readText(defFile), null) };
+        }
+      }
+      return { ok: true, exists: false, settings: null };
+    } catch (e) {
+      return { ok: false, exists: false, settings: null, error: (e && e.toString ? e.toString() : e) };
+    }
+  }
+
+  function saveSettings(jsonText) {
+    try {
+      var f = getSettingsFile();
+      if (!f) return { ok: false, error: "无法定位扩展目录，设置保存失败" };
+      var text = jsonText;
+      try { text = unescape(jsonText); } catch (d) { text = jsonText; }
+      if (!writeText(f, text)) {
+        return { ok: false, error: "写入设置文件失败" };
+      }
+      return { ok: true };
+    } catch (e) {
+      return { ok: false, error: (e && e.toString ? e.toString() : e) };
+    }
+  }
+
   return {
     listSchemes: listSchemes,
     saveScheme: saveScheme,
-    deleteScheme: deleteScheme
+    deleteScheme: deleteScheme,
+    loadSettings: loadSettings,
+    saveSettings: saveSettings
   };
 })();
 
@@ -432,6 +479,16 @@ function AELT_saveOrganizerScheme(schemeJson) {
 // ===== 删除整理方案 =====
 function AELT_deleteOrganizerScheme(id) {
   return AELocalToolkit.returnResult(AELocalToolkit.fileStorage.deleteScheme(id));
+}
+
+// ===== 加载设置（扩展目录 data/settings.json，随扩展一起拷贝） =====
+function AELT_loadSettings() {
+  return AELocalToolkit.returnResult(AELocalToolkit.fileStorage.loadSettings());
+}
+
+// ===== 保存设置（扩展目录 data/settings.json） =====
+function AELT_saveSettings(jsonText) {
+  return AELocalToolkit.returnResult(AELocalToolkit.fileStorage.saveSettings(jsonText));
 }
 
 // ===== 获取选中属性摘要 =====
