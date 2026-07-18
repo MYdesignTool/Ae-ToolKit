@@ -1,0 +1,8 @@
+{
+  "compFolder": "Comp",
+  "solidFolder": "Solids",
+  "fallbackFolder": "Footage",
+  "debugMode": false,
+  "quietMode": false,
+  "scriptFolder": ""
+}

@@ -1,6 +1,17 @@
 {
-  "version": "0.2.2",
+  "version": "0.2.3",
   "entries": [
+    {
+      "version": "0.2.3",
+      "date": "2026-07-18",
+      "changes": [
+        "重构: 设置存储从浏览器 localStorage 迁移到扩展目录 data/settings.json，换设备直接复制整个扩展文件夹即可保留设置",
+        "新增: 云端只保留默认设置模板 data/settings.default.json，本地设置文件被忽略、不纳入版本控制",
+        "优化: 设置不再被系统清理工具当作缓存清除，重启后设置稳定保留",
+        "重构: 整理方案从系统用户目录 Folder.userData 迁移到扩展目录 data/organizer-schemes/，随扩展一起拷贝、换设备即带走",
+        "移除: 旧版 localStorage 迁移逻辑与 Debug 页“检测存储”功能"
+      ]
+    },
     {
       "version": "0.2.2",
       "date": "2026-07-17",

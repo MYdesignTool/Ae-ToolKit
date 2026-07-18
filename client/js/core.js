@@ -46,8 +46,7 @@ window.AELT = window.AELT || {};
       { path: "PSD", itemTypes: [], extensions: ["PSD", "PSB"] },
       { path: "Live2D", itemTypes: [], extensions: ["CAE"] },
       { path: "3D", itemTypes: [], extensions: ["OBJ", "FBX", "GLTF"] },
-      { path: "Solids", itemTypes: ["SolidSource"], extensions: [] },
-      { path: "Footage", itemTypes: [], extensions: [] }
+      { path: "Solids", itemTypes: ["SolidSource"], extensions: [] }
     ]
   };
 

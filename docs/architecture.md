@@ -6,7 +6,7 @@
 The panel does not call remote APIs. V1 data lives in:
 
 - Shipped JSON files under `data/`
-- Browser `localStorage` for user-created expressions
+- `data/settings.json` for user settings (favorites, folders, toggles, custom expressions); `data/settings.default.json` is the cloud default
 - AE project state through host JSX calls
 
 ## Runtime Layers
@@ -16,7 +16,7 @@ The panel does not call remote APIs. V1 data lives in:
 | CEP manifest | `CSXS/manifest.xml` | Registers the AE panel |
 | Panel UI | `client/` | 模块化前端：`js/core.js`(状态/兜底) + `js/util.js`(工具) + `js/ui.js`(面板/调试/设置) + `js/organizer.js`(整理) + `js/expressions.js`(表达式) + `js/scripts.js`(脚本启动器) + `js/app.js`(入口) |
 | AE host script | `host/index.jsx` | Runs ExtendScript inside After Effects |
-| Data | `data/` | Stores default rules, default expressions, changelog |
+| Data | `data/` | Stores default rules, default expressions, changelog; per-device `settings.json` (user settings; `settings.default.json` is the cloud default, auto-created as a clean config copy on first launch if missing); per-device `organizer-schemes/` (user-saved organize schemes, git-ignored; built-in default rules ship as `organizer-rules.json`) |
 | Docs | `docs/` | Install and architecture notes |
 
 ## Host API
@@ -42,7 +42,7 @@ Each function returns a JSON string with a short result summary.
 1. 主机逻辑放入 `host/modules/` 对应模块，并暴露一个 `AELT_*` 函数。
 2. 前端调用位于 `client/js/` 对应模块（如整理在 organizer.js、表达式在 expressions.js）。
 3. 调试时通过 Debug 面板查看原始返回。
-4. 默认数据放入 `data/`，用户数据放入浏览器 localStorage。
+4. 默认数据放入 `data/`（含 `settings.default.json` 默认设置）；用户数据（收藏/文件夹/开关/自定义表达式）放入设备本地的 `data/settings.json`，该文件被 `.gitignore` 忽略，不会污染版本控制。
 
 ---
 
@@ -54,7 +54,7 @@ Each function returns a JSON string with a short result summary.
 
 AE Local Toolkit 遵循纯本地原则：
 - 不调用远程 API，所有数据存储在本地
-- 数据来源：data/ 下的 JSON 文件 + 浏览器 localStorage + AE 项目状态
+- 数据来源：data/ 下的 JSON 文件（含设备本地 `settings.json`）+ AE 项目状态
 - 运行时层次：CEP 清单 -> 前端 UI -> ExtendScript 主机操作 AE
 - API 通信：前端通过 evalScript 调用 AELT_* 函数，主机返回 JSON 结果
 - 扩展机制：新增模块需添加 JSX 逻辑 + 暴露 AELT_* 函数 + 在前端中调用

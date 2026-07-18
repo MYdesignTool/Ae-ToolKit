@@ -101,27 +101,14 @@
   }
 
   function getUserExpressions() {
-    try {
-      var raw = localStorage.getItem("aelt.userExpressions") || "[]";
-      var items = JSON.parse(raw);
-      if (!(items instanceof Array)) return [];
-      addDebug("storage read", "读取自定义表达式 " + items.length + " 条");
-      return items;
-    } catch (e) {
-      addDebug("storage read failed", e.toString());
-      return [];
-    }
+    var items = AELT.settings.get("userExpressions", []);
+    if (!(items instanceof Array)) return [];
+    return items;
   }
 
   function setUserExpressions(items) {
-    try {
-      localStorage.setItem("aelt.userExpressions", JSON.stringify(items));
-      addDebug("storage write", "保存自定义表达式 " + items.length + " 条");
-      return true;
-    } catch (e) {
-      addDebug("storage write failed", e.toString());
-      return false;
-    }
+    AELT.settings.set("userExpressions", items || []);
+    return true;
   }
 
   function confirmAction(message) {

@@ -535,7 +535,10 @@ textarea {
 .rule-section input[type="text"] {
   height: 28px; font-size: 12px; margin-top: 4px;
 }
-.rule-grid { max-height: 320px; overflow-y: auto; }
+/* 整理视图内：规则区撑满剩余高度并内部滚动，随窗口大小自适应 */
+#organizerView .rule-grid { flex: 1 1 auto; min-height: 0; max-height: none; overflow-y: auto; }
+/* 设置视图内容较多时整体滚动，避免小窗口溢出被裁切 */
+#settingsView { overflow-y: auto; }
 
 
 /* ===== 设置页面 ===== */
@@ -543,6 +546,8 @@ textarea {
 .settings-item { display: flex; align-items: center; justify-content: space-between; background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); padding: 12px 16px; }
 .settings-item-info { display: flex; flex-direction: column; gap: 3px; }
 .settings-item-info strong { font-size: 14px; }
+.settings-input { width: 160px; flex-shrink: 0; padding: 7px 10px; font-size: 13px; color: var(--text); background: var(--bg); border: 1px solid var(--line); border-radius: var(--radius); }
+.settings-input:focus { outline: none; border-color: var(--accent-strong); }
 .settings-about { margin-top: 20px; align-items: center; }
 .settings-about p { margin: 0; }
 

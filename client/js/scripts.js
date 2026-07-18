@@ -7,20 +7,20 @@
 // ---- Script Launcher ----
 
 function getScriptFavorites() {
-  try { return JSON.parse(localStorage.getItem("aelt.scriptFavorites") || "[]") || []; }
-  catch (e) { return []; }
+  var favs = AELT.settings.get("scriptFavorites", []);
+  return (favs instanceof Array) ? favs : [];
 }
 
 function setScriptFavorites(favs) {
-  try { localStorage.setItem("aelt.scriptFavorites", JSON.stringify(favs)); return true; }
-  catch (e) { return false; }
+  AELT.settings.set("scriptFavorites", favs || []);
+  return true;
 }
 
 function selectScriptFolder() {
   evalAe("AELT_selectScriptFolder()", function (result) {
     if (result.ok && result.path) {
       state.scriptFolder = result.path;
-      try { localStorage.setItem("aelt.scriptFolder", result.path); } catch (e) {}
+      AELT.settings.set("scriptFolder", result.path);
       els.scriptFolderStatus.textContent = result.path;
       scanScripts();
     }
@@ -147,15 +147,12 @@ function bindScriptEvents() {
 
 // 恢复上次选择的脚本文件夹并自动扫描。原单体版本同样在第二个 DOMContentLoaded 中执行。
 function restoreScriptFolder() {
-  try {
-    var saved = localStorage.getItem("aelt.scriptFolder");
-    if (saved) {
-      state.scriptFolder = saved;
-      els.scriptFolderStatus.textContent = saved;
-      scanScripts();
-    }
-  } catch (e) {}
-
+  var saved = AELT.settings.get("scriptFolder", "");
+  if (saved) {
+    state.scriptFolder = saved;
+    els.scriptFolderStatus.textContent = saved;
+    scanScripts();
+  }
 }
 
 AELT.scripts = {

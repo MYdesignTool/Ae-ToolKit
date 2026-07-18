@@ -66,13 +66,8 @@
           <input id="schemeNameInput" type="text" placeholder="整理方案名称" />
         </label>
 
-        <label class="field">
-          <span>未匹配素材文件夹</span>
-          <input id="fallbackPathInput" type="text" placeholder="Footage" />
-        </label>
-
         <div class="section-head">
-          <h2>文件夹规则</h2>
+          <h2>素材路径规则</h2>
           <button class="ghost" id="addRuleBtn">添加规则</button>
         </div>
         <div class="rule-grid editable" id="ruleGrid"></div>
@@ -115,7 +110,6 @@
           <h2>Debug 信息</h2>
           <div class="debug-actions">
             <button class="ghost" id="pingHostBtn">检测连接</button>
-            <button class="ghost" id="testStorageBtn">检测存储</button>
             <button class="ghost" id="clearDebugBtn">清空</button>
           </div>
         </div>
@@ -124,7 +118,48 @@
 
       <section class="view" id="settingsView">
         <div class="section-head">
-          <h2>设置</h2>
+          <h2>工程整理文件夹</h2>
+        </div>
+        <p class="muted">这些文件夹为所有整理方案全局共用，主界面只需配置素材路径规则。</p>
+        <div class="settings-list">
+          <div class="settings-item">
+            <div class="settings-item-info">
+              <strong>合成文件夹</strong>
+              <span class="muted">AE 合成（Comp）归类到此文件夹</span>
+            </div>
+            <input type="text" id="compFolderInput" class="settings-input" placeholder="Comp" />
+          </div>
+          <div class="settings-item">
+            <div class="settings-item-info">
+              <strong>固态层文件夹</strong>
+              <span class="muted">纯色/固态层归类到此文件夹</span>
+            </div>
+            <input type="text" id="solidFolderInput" class="settings-input" placeholder="Solids" />
+          </div>
+          <div class="settings-item">
+            <div class="settings-item-info">
+              <strong>未匹配素材文件夹</strong>
+              <span class="muted">未命中任何规则的素材归类到此文件夹</span>
+            </div>
+            <input type="text" id="fallbackFolderInput" class="settings-input" placeholder="Footage" />
+          </div>
+        </div>
+
+        <div class="section-head" style="margin-top:8px">
+          <h2>脚本文件夹</h2>
+        </div>
+        <div class="settings-list">
+          <div class="settings-item">
+            <div class="settings-item-info">
+              <strong>脚本文件夹</strong>
+              <span class="muted" id="scriptFolderStatus">未选择脚本文件夹</span>
+            </div>
+            <button class="ghost" id="scriptFolderBtn">选择文件夹</button>
+          </div>
+        </div>
+
+        <div class="section-head" style="margin-top:8px">
+          <h2>通用设置</h2>
         </div>
         <div class="settings-list">
           <div class="settings-item">
@@ -147,14 +182,8 @@
               <span class="slider"></span>
             </label>
           </div>
-          <div class="settings-item">
-            <div class="settings-item-info">
-              <strong>脚本文件夹</strong>
-              <span class="muted" id="scriptFolderStatus">未选择脚本文件夹</span>
-            </div>
-            <button class="ghost" id="scriptFolderBtn">选择文件夹</button>
-          </div>
         </div>
+
         <div class="settings-about">
           <p class="muted repo-link" id="aboutRepoLink" title="在浏览器中打开 GitHub 仓库">AE工具箱 v0.2.2</p>
           <p class="muted">离线 After Effects 扩展面板</p>
@@ -181,6 +210,7 @@
     <!-- 按依赖顺序加载前端模块：core 必须先于其它模块，app 入口最后。 -->
     <script src="./js/core.js"></script>
     <script src="./js/util.js"></script>
+    <script src="./js/settings.js"></script>
     <script src="./js/ui.js"></script>
     <script src="./js/organizer.js"></script>
     <script src="./js/expressions.js"></script>

@@ -44,16 +44,10 @@
   }
 
   function loadSettings() {
-    try {
-      var value = localStorage.getItem("aelt.quietMode");
-      state.quietMode = value === "true";
-      if (els.quietModeToggle) els.quietModeToggle.checked = state.quietMode;
-    } catch (e) {}
-    try {
-      var debugVal = localStorage.getItem("aelt.debugMode");
-      state.debugMode = debugVal === "true";
-      if (els.debugModeToggle) els.debugModeToggle.checked = state.debugMode;
-    } catch (e) {}
+    state.quietMode = AELT.settings.get("quietMode", false) === true;
+    if (els.quietModeToggle) els.quietModeToggle.checked = state.quietMode;
+    state.debugMode = AELT.settings.get("debugMode", false) === true;
+    if (els.debugModeToggle) els.debugModeToggle.checked = state.debugMode;
     syncDebugTabVisibility();
   }
 
@@ -112,27 +106,7 @@
     });
   }
 
-  function testStorage() {
-    try {
-      var key = "aelt.storageTest";
-      var value = "ok-" + Date.now();
-      localStorage.setItem(key, value);
-      var stored = localStorage.getItem(key);
-      localStorage.removeItem(key);
-      if (stored === value) {
-        setStatus("本地存储可用。");
-      showToast("本地存储可用", "success");
-      } else {
-        setStatus("本地存储读取结果异常。");
-      showToast("本地存储读取结果异常", "error");
-      }
-      addDebug("storage test", { written: value, read: stored });
-    } catch (e) {
-      setStatus("本地存储不可用。");
-      showToast("本地存储不可用", "error");
-      addDebug("storage test failed", e.toString());
-    }
-  }
+
 
 
 AELT.ui = {
@@ -141,6 +115,5 @@ AELT.ui = {
   renderChangelog: renderChangelog,
   showChangelog: showChangelog,
   hideChangelog: hideChangelog,
-  pingHost: pingHost,
-  testStorage: testStorage
+  pingHost: pingHost
 };
