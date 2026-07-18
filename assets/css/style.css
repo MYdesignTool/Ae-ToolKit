@@ -12,6 +12,10 @@
   --accent-light: #a78bfa;
   --accent-pink: #d946ef;
   --accent-cyan: #06b6d4;
+  --warn-bg: rgba(250, 204, 21, .10);
+  --warn-border: rgba(250, 204, 21, .40);
+  --warn-fg: #fde047;
+  --warn-icon-bg: rgba(250, 204, 21, .18);
   --glass-bg: rgba(255, 255, 255, 0.04);
   --glass-border: rgba(139, 92, 246, 0.15);
   --radius: 16px;
@@ -582,13 +586,24 @@ img { max-width: 100%; height: auto; display: block; }
   border: 1px solid rgba(6, 182, 212, .35);
 }
 .install-note {
-  max-width: 760px; margin: 2.5rem auto 0;
+  display: flex; gap: 1rem; align-items: flex-start;
+  max-width: 760px; margin: 1.6rem auto 0;
   padding: 1.1rem 1.3rem; border-radius: var(--radius);
-  background: rgba(250, 204, 21, .07);
-  border: 1px solid rgba(250, 204, 21, .25);
+  background: var(--warn-bg);
+  border: 1px solid var(--warn-border);
+  border-left: 4px solid var(--warn-fg);
   font-size: .9rem; line-height: 1.8; color: var(--fg);
 }
-.install-note strong { color: #fde047; }
+.install-note__icon {
+  flex: 0 0 auto;
+  width: 34px; height: 34px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.1rem; line-height: 1;
+  background: var(--warn-icon-bg);
+  border: 1px solid var(--warn-border);
+}
+.install-note__body { flex: 1; min-width: 0; }
+.install-note strong { color: var(--warn-fg); }
 .install-note code {
   font-family: "SF Mono", "Fira Code", "Consolas", monospace;
   font-size: .85em; color: var(--accent-cyan);
