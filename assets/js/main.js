@@ -89,4 +89,27 @@
       });
     });
   }
+
+  // 自动获取 GitHub 最新 Release 版本号，避免每次手动更新发布页
+  // 兜底值：API 不可用时仍显示合理版本；成功则覆盖为线上最新版
+  (function () {
+    var REPO = "MYdesignTool/Ae-ToolKit";
+    var FALLBACK = "v0.2.3";
+    var badge = document.getElementById("app-version");
+    var download = document.querySelector('a.btn-primary[href*="releases/latest"]');
+
+    if (badge) {
+      badge.textContent = FALLBACK;
+      fetch("https://api.github.com/repos/" + REPO + "/releases/latest", {
+        headers: { Accept: "application/vnd.github+json" }
+      })
+        .then(function (res) { if (!res.ok) throw new Error("HTTP " + res.status); return res.json(); })
+        .then(function (data) {
+          if (!data || !data.tag_name) return;
+          badge.textContent = data.tag_name;
+          if (download) download.href = "https://github.com/" + REPO + "/releases/tag/" + data.tag_name;
+        })
+        .catch(function () { /* 保持兜底值，不影响页面 */ });
+    }
+  })();
 })();
