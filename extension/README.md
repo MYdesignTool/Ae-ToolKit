@@ -18,10 +18,39 @@
 
 ## 安装
 
-将下载的所有文件解压到名为`AeLocalToolkit/` 的文件夹，然后将 `AeLocalToolkit/` 文件夹放到 CEP 扩展目录：
+### 方式一：一键安装器（Windows 推荐）
 
-- Windows: `C:\Program Files (x86)\Common Files\Adobe\CEP\extensions\`
-- macOS: `/Library/Application Support/Adobe/CEP/extensions/`
+下载单个 Windows 安装器 `aetoolkit-installer.exe` 并双击运行，即可自动完成复制与配置，无需手动操作：
+
+双击后会弹出原生 Windows 安装向导窗口（无需浏览器）。阅读许可协议并勾选同意后点击「下一步」，在选择安装目录页确认路径（默认已填好用户级 CEP 目录，可点击「浏览…」自定义）后点击「安装」，完成后按提示重启 After Effects 即可。安装器会把扩展放到**用户级** CEP 目录（无需管理员权限），并自动写入 `PlayerDebugMode` 使未签名扩展可被加载。安装完成后重启 After Effects，在 `窗口 > 扩展 > AE Local Toolkit` 打开即可。
+
+> 安装器为单文件自包含程序（由 `installer/` 目录用 NSIS 构建，编译期内联全部扩展文件，运行时无需 Node 等任何外部依赖）。若系统提示「未知发布者」，属正常现象（未做代码签名），点「更多信息 → 仍要运行」即可；如需去除提示，可对安装器做代码签名，详见 `installer/README.md`。
+
+macOS 暂无安装器，请使用下方「方式二：手动安装」。
+
+### 重新打包安装器（开发用）
+
+`installer/` 源文件已纳入版本控制，仅 `installer/dist/`（构建产物）被忽略。每当扩展源文件（`client/`、`host/`、`CSXS/`、`data/` 等）有更新后，运行 `installer/build-installer.cmd` 即可自动重建安装器：
+
+```cmd
+installer\build-installer.cmd
+```
+
+脚本会先检测环境——若本机未安装 NSIS，会自动通过 `winget` 安装（无 winget 时回退到官方安装包静默安装），然后自动重新内联最新扩展文件并打包出单个 `aetoolkit-installer.exe`。产物位于 `installer/dist/`。签名细节见 `installer/README.md`。
+
+### 方式二：手动安装
+
+下载干净扩展包 `aetoolkit-extension.zip`（仅含扩展文件，不含安装器与开发脚本），解压后得到 `AeLocalToolkit/` 文件夹，将其整体复制到 CEP 扩展目录：
+
+- Windows（用户级，无需管理员）：`%APPDATA%\Adobe\CEP\extensions\`
+- Windows（系统级）：`C:\Program Files (x86)\Common Files\Adobe\CEP\extensions\`
+- macOS（用户级）：`~/Library/Application Support/Adobe/CEP/extensions/`
+- macOS（系统级）：`/Library/Application Support/Adobe/CEP/extensions/`
+
+若为**未签名**扩展，还需手动开启调试模式：
+
+- Windows：注册表 `HKEY_CURRENT_USER\Software\Adobe\CSXS.9\PlayerDebugMode` 设为 `1`（AE 2020；其他年份对应 CSXS.10~14）
+- macOS：`defaults write com.adobe.CSXS.9 PlayerDebugMode -bool true`
 
 启动 After Effects 2020 或更高版本，在 `窗口 > 扩展 > AeLocalToolkit` 中打开面板。
 
