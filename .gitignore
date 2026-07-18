@@ -3,3 +3,6 @@ data/settings.json
 
 # 用户保存的整理方案（随设备变化，不纳入版本控制；云端仅保留内置默认规则 data/organizer-rules.json）
 data/organizer-schemes/
+
+# 安装器构建产物（installer/dist/ 为自动生成的 exe，不纳入版本控制）
+installer/dist/
