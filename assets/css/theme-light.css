@@ -10,7 +10,7 @@ html[data-theme="light"] {
   --glass-bg: rgba(255,255,255,0.04);
   --glass-border: rgba(51,51,51,0.10);
   --grid-step: 55px;   /* 亮色网格 tile = 55px，漂移步长对齐以无缝循环 */
-  --warn-bg: #fff4e5;
+  --warn-bg: rgba(255, 244, 229, 0.72);
   --warn-border: #ea580c;
   --warn-fg: #9a3412;
   --warn-icon-bg: #fed7aa;

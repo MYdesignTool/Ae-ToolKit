@@ -594,6 +594,8 @@ img { max-width: 100%; height: auto; display: block; }
   border-left: 4px solid var(--warn-fg);
   font-size: .9rem; line-height: 1.8; color: var(--fg);
 }
+/* 玻璃伪元素(高光/反光)置于底层，内容需抬到上层避免被遮 */
+.install-note > * { position: relative; z-index: 4; }
 .install-note__icon {
   flex: 0 0 auto;
   width: 34px; height: 34px; border-radius: 50%;
