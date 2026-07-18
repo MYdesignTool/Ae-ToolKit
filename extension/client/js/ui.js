@@ -4,7 +4,7 @@
 // 检测。依赖 core.js 的 state/els 与 util.js 的辅助函数。
 // ============================================================================
 
-  var REPO_URL = "https://github.com/MYdesignTool/Ae-ToolKit";
+  var RELEASE_URL = "https://mydesigntool.github.io/MYpage/";
 
   // 在系统默认浏览器中打开外部链接：优先使用 CEP 提供的 API，
   // 非 CEP 环境（如本地浏览器调试）退回 window.open。
@@ -18,10 +18,10 @@
     try { window.open(url, "_blank"); } catch (e) {}
   }
 
-  // 设置页“AE工具箱”字样点击跳转仓库（脚本位于 body 末尾，DOM 已就绪，绑定一次）。
+  // 设置页“AE工具箱”字样点击跳转发布页（脚本位于 body 末尾，DOM 已就绪，绑定一次）。
   (function bindAboutRepoLink() {
     var link = document.getElementById("aboutRepoLink");
-    if (link) link.onclick = function () { openExternal(REPO_URL); };
+    if (link) link.onclick = function () { openExternal(RELEASE_URL); };
   })();
 
  function syncDebugTabVisibility() {
@@ -78,8 +78,8 @@
    modal.style.display = "flex";
    var closeBtn = document.getElementById("closeChangelogBtn");
    if (closeBtn) closeBtn.onclick = hideChangelog;
-   var repoBtn = document.getElementById("openRepoBtn");
-   if (repoBtn) repoBtn.onclick = function () { openExternal(REPO_URL); };
+  var repoBtn = document.getElementById("openRepoBtn");
+  if (repoBtn) repoBtn.onclick = function () { openExternal(RELEASE_URL); };
    modal.onclick = function (e) { if (e.target === this) hideChangelog(); };
  }
 

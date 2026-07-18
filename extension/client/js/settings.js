@@ -52,10 +52,14 @@ window.AELT = window.AELT || {};
   }
 
   // 立即写盘（防抖到点或强制调用）。
+  // 传输用 encodeURIComponent（对 % 等字符做 UTF-8 百分号编码，避免 escape/unescape 把 %XX 误当转义序列解码而损坏 JSON，
+  // 表达式代码里常见的 time%1 / 0xff 等会触发该问题）；单引号额外转 %27 以便安全嵌入 eval 字符串字面量。
+  // 文件可读性（缩进）由 host 端 saveSettings 在写盘前重新 JSON.stringify(obj, null, 2) 处理，
+  // 避免客户端直接带缩进经 escapeForEvalScript 后变成字面反斜杠-n 的非法 JSON。
   function persist() {
     if (saveTimer) { clearTimeout(saveTimer); saveTimer = null; }
     if (!cache) return;
-    var payload = escape(escapeForEvalScript(JSON.stringify(cache)));
+    var payload = encodeURIComponent(JSON.stringify(cache)).replace(/'/g, "%27");
     evalAe("AELT_saveSettings('" + payload + "')", function () {});
   }
 

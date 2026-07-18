@@ -1,6 +1,15 @@
 {
-  "version": "0.2.3",
+  "version": "0.2.4",
   "entries": [
+    {
+      "version": "0.2.4",
+      "date": "2026-07-18",
+      "changes": [
+        "修复: 设置无法持久化（0.2.3 引入的回归）——保存自定义表达式后 settings.json 被重置为单行，且关闭面板重开恢复默认设置",
+        "修复: 设置传输改用 encodeURIComponent，正确保留表达式代码中含 % 的字符（如 time%1、0xff），避免 JSON 损坏",
+        "优化: data/settings.json 写盘为带 2 空格缩进的可读格式，便于查看与手动编辑"
+      ]
+    },
     {
       "version": "0.2.3",
       "date": "2026-07-18",

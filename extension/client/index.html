@@ -13,7 +13,7 @@
           <h1>AE工具箱</h1>
           <p>本地化 AE 效率工具</p>
         </div>
-        <span class="version" id="versionLabel">0.2.2</span>
+        <span class="version" id="versionLabel">0.2.4</span>
       </header>
 
       <nav class="tabs" aria-label="Main sections">
@@ -185,7 +185,7 @@
         </div>
 
         <div class="settings-about">
-          <p class="muted repo-link" id="aboutRepoLink" title="在浏览器中打开 GitHub 仓库">AE工具箱 v0.2.2</p>
+          <p class="muted repo-link" id="aboutRepoLink" title="在浏览器中打开发布页">AE工具箱</p>
           <p class="muted">离线 After Effects 扩展面板</p>
         </div>
       </section>
@@ -198,13 +198,28 @@
        <div class="modal-header">
          <h2>更新日志</h2>
          <div class="modal-actions">
-           <button class="ghost mini" id="openRepoBtn" title="在浏览器中打开 GitHub 仓库">GitHub</button>
+           <button class="ghost mini" id="openRepoBtn" title="在浏览器中打开发布页">前往发布页</button>
            <button class="ghost mini" id="closeChangelogBtn">关闭</button>
          </div>
        </div>
        <div class="modal-body" id="changelogBody"></div>
      </div>
    </div>
+
+    <div class="modal-overlay" id="inputModal" style="display:none">
+      <div class="modal-content input-modal">
+        <div class="modal-header">
+          <h2 id="inputModalTitle">输入</h2>
+          <div class="modal-actions">
+            <button class="ghost mini" id="inputModalCancel">取消</button>
+            <button class="primary mini" id="inputModalOk">确定</button>
+          </div>
+        </div>
+        <div class="modal-body">
+          <input type="text" id="inputModalField" class="settings-input" />
+        </div>
+      </div>
+    </div>
 
     <div class="toast-container" id="toastContainer"></div>
     <!-- 按依赖顺序加载前端模块：core 必须先于其它模块，app 入口最后。 -->

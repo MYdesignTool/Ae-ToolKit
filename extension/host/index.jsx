@@ -395,8 +395,16 @@ AELocalToolkit.fileStorage = (function () {
     try {
       var f = getSettingsFile();
       if (!f) return { ok: false, error: "无法定位扩展目录，设置保存失败" };
+      // 客户端以 encodeURIComponent(JSON) 传输（% 等字符被安全编码，避免 %XX 歧义）；单引号已转 %27。
       var text = jsonText;
-      try { text = unescape(jsonText); } catch (d) { text = jsonText; }
+      try { text = decodeURIComponent(jsonText); } catch (d) { text = jsonText; }
+      // 写盘前重新缩进，保证 data/settings.json 人类可读（真实换行，而非字面反斜杠-n）。
+      try {
+        var obj = JSON.parse(text);
+        text = JSON.stringify(obj, null, 2);
+      } catch (pe) {
+        // 解析失败则原样写入，避免丢失数据
+      }
       if (!writeText(f, text)) {
         return { ok: false, error: "写入设置文件失败" };
       }
@@ -432,7 +440,7 @@ function AELT_ping() {
     moduleBase: AELocalToolkit.__moduleBase,
     organizerType: typeof AELocalToolkit.organizer,
     loadErrors: AELocalToolkit.__loadErrors || [],
-    message: "Host JSX loaded [v0.2.2]"
+    message: "Host JSX loaded [v0.2.4]"
   });
 }
 
