@@ -94,7 +94,7 @@
   // 兜底值：API 不可用时仍显示合理版本；成功则覆盖为线上最新版
   (function () {
     var REPO = "MYdesignTool/Ae-ToolKit";
-    var FALLBACK = "v0.2.3";
+    var FALLBACK = "v0.2.5";
     var badge = document.getElementById("app-version");
     var download = document.querySelector('a.btn-primary[href*="releases/latest"]');
 
