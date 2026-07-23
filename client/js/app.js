@@ -74,6 +74,26 @@
       AELT.settings.set("quietMode", state.quietMode);
       syncDebugTabVisibility();
     });
+    els.ignoreMainCompToggle.addEventListener("change", function () {
+      state.ignoreMainComp = els.ignoreMainCompToggle.checked;
+      AELT.settings.set("ignoreMainComp", state.ignoreMainComp);
+      var off = !state.ignoreMainComp;
+      if (els.ignoreMainCompField) els.ignoreMainCompField.style.display = off ? "none" : "";
+      if (els.ignoreMainCompNames) els.ignoreMainCompNames.disabled = off;
+      if (els.ignoreMainCompFuzzyToggle) {
+        els.ignoreMainCompFuzzyToggle.disabled = off;
+        var fzLbl = els.ignoreMainCompFuzzyToggle.closest(".inline-check");
+        if (fzLbl) fzLbl.classList.toggle("disabled", off);
+      }
+    });
+    els.ignoreMainCompNames.addEventListener("input", function () {
+      state.ignoreMainCompNames = els.ignoreMainCompNames.value;
+      AELT.settings.set("ignoreMainCompNames", state.ignoreMainCompNames);
+    });
+    els.ignoreMainCompFuzzyToggle.addEventListener("change", function () {
+      state.ignoreMainCompFuzzy = els.ignoreMainCompFuzzyToggle.checked;
+      AELT.settings.set("ignoreMainCompFuzzy", state.ignoreMainCompFuzzy);
+    });
     els.clearDebugBtn.addEventListener("click", function () {
       state.debugEntries = [];
       renderDebug();
@@ -122,6 +142,10 @@
       "updateExpressionBtn",
       "quietModeToggle",
       "debugModeToggle",
+      "ignoreMainCompToggle",
+      "ignoreMainCompNames",
+      "ignoreMainCompFuzzyToggle",
+      "ignoreMainCompField",
       "debugLog",
       "scriptFolderBtn",
       "refreshScriptsBtn",

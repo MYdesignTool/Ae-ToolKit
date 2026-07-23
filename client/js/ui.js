@@ -48,6 +48,25 @@
     if (els.quietModeToggle) els.quietModeToggle.checked = state.quietMode;
     state.debugMode = AELT.settings.get("debugMode", false) === true;
     if (els.debugModeToggle) els.debugModeToggle.checked = state.debugMode;
+
+    state.ignoreMainComp = AELT.settings.get("ignoreMainComp", false) === true;
+    if (els.ignoreMainCompToggle) els.ignoreMainCompToggle.checked = state.ignoreMainComp;
+    if (els.ignoreMainCompField) els.ignoreMainCompField.style.display = state.ignoreMainComp ? "" : "none";
+    // 名称默认 “Main”（未显式清空时回退到 Main，保证开箱即用）。
+    state.ignoreMainCompNames = AELT.settings.get("ignoreMainCompNames", "Main");
+    if (!state.ignoreMainCompNames) state.ignoreMainCompNames = "Main";
+    state.ignoreMainCompFuzzy = AELT.settings.get("ignoreMainCompFuzzy", false) === true;
+    if (els.ignoreMainCompNames) {
+      els.ignoreMainCompNames.value = state.ignoreMainCompNames;
+      els.ignoreMainCompNames.disabled = !state.ignoreMainComp;
+    }
+    if (els.ignoreMainCompFuzzyToggle) {
+      els.ignoreMainCompFuzzyToggle.checked = state.ignoreMainCompFuzzy;
+      var fzOff = !state.ignoreMainComp;
+      els.ignoreMainCompFuzzyToggle.disabled = fzOff;
+      var fzLbl = els.ignoreMainCompFuzzyToggle.closest(".inline-check");
+      if (fzLbl) fzLbl.classList.toggle("disabled", fzOff);
+    }
     syncDebugTabVisibility();
   }
 

@@ -216,6 +216,12 @@
 
  function organizeProject() {
    var scheme = buildHostScheme();
+   // 注入“忽略主合成”全局设置（来自客户端设置缓存，即时生效；不写入方案文件）。
+   scheme.ignoreMainComp = AELT.settings.get("ignoreMainComp", false) === true;
+   var ignoreNames = AELT.settings.get("ignoreMainCompNames", "Main");
+   if (!ignoreNames) ignoreNames = "Main";
+   scheme.ignoreMainCompNames = ignoreNames;
+   scheme.ignoreMainCompFuzzy = AELT.settings.get("ignoreMainCompFuzzy", false) === true;
    var validation = validateScheme(scheme);
    if (!validation.ok) {
      setStatus(validation.message);
@@ -235,7 +241,8 @@
           setStatus((result.messages && result.messages[0]) || "整理失败。");
           return;
         }
-        setStatus("整理完成：移动 " + result.moved + " 项，跳过 " + result.skipped + " 项，错误 " + result.errors + " 个。");
+        var ignoredMsg = (result.ignoredMainComp > 0) ? "，忽略主合成 " + result.ignoredMainComp + " 项" : "";
+        setStatus("整理完成：移动 " + result.moved + " 项，跳过 " + result.skipped + " 项，错误 " + result.errors + " 个" + ignoredMsg + "。");
         showToast("整理完成：移动 " + result.moved + " 项", "success");
       });
     });

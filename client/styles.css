@@ -206,6 +206,61 @@ button:focus-visible {
   color: var(--muted);
 }
 
+/* 字段标题行：文字与内联小对勾同一行 */
+.field-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+/* 行内小对勾（模糊匹配） */
+.inline-check {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  color: var(--muted);
+  cursor: pointer;
+  user-select: none;
+}
+.inline-check input {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 14px;
+  height: 14px;
+  margin: 0;
+  padding: 0;
+  border: 1px solid var(--line);
+  border-radius: 3px;
+  background: var(--bg);
+  cursor: pointer;
+  position: relative;
+  flex-shrink: 0;
+}
+.inline-check input:hover {
+  border-color: var(--accent-strong);
+}
+.inline-check input:checked {
+  background: var(--accent-strong);
+  border-color: var(--accent-strong);
+}
+.inline-check input:checked::after {
+  content: "";
+  position: absolute;
+  left: 4px;
+  top: 1px;
+  width: 3px;
+  height: 7px;
+  border: solid #fff;
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+}
+.inline-check.disabled,
+.inline-check input:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
 input,
 select,
 /* ===== 多行文本框（表达式代码编辑区） ===== */
@@ -546,9 +601,66 @@ textarea {
 
 /* ===== 设置页面 ===== */
 .settings-list, .settings-about { display: flex; flex-direction: column; gap: 12px; }
-.settings-item { display: flex; align-items: center; justify-content: space-between; background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); padding: 12px 16px; }
+.settings-item { position: relative; display: flex; align-items: center; justify-content: space-between; background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); padding: 12px 16px; }
 .settings-item-info { display: flex; flex-direction: column; gap: 3px; }
 .settings-item-info strong { font-size: 14px; }
+
+/* 标题行：标题与帮助问号图标同行 */
+.info-title { display: inline-flex; align-items: center; gap: 6px; }
+
+/* 圆圈问号帮助图标 */
+.help-icon {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 15px;
+  height: 15px;
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  font-size: 10px;
+  line-height: 1;
+  color: var(--muted);
+  cursor: help;
+  user-select: none;
+  flex-shrink: 0;
+}
+.help-icon:hover,
+.help-icon:focus {
+  color: var(--accent-strong);
+  border-color: var(--accent-strong);
+  outline: none;
+}
+
+/* 悬停问号图标才出现的提示气泡 */
+.tip {
+  display: none;
+  position: absolute;
+  left: 0;
+  bottom: calc(100% + 8px);
+  width: max-content;
+  max-width: 240px;
+  padding: 8px 10px;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--text);
+  background: #2b2b31;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4);
+  z-index: 60;
+  white-space: normal;
+}
+.tip::after {
+  content: "";
+  position: absolute;
+  top: 100%;
+  left: 9px;
+  border: 6px solid transparent;
+  border-top-color: #2b2b31;
+}
+.help-icon:hover .tip,
+.help-icon:focus .tip { display: block; }
 .settings-input { width: 160px; flex-shrink: 0; padding: 7px 10px; font-size: 13px; color: var(--text); background: var(--bg); border: 1px solid var(--line); border-radius: var(--radius); }
 .settings-input:focus { outline: none; border-color: var(--accent-strong); }
 .settings-about { margin-top: 20px; align-items: center; }

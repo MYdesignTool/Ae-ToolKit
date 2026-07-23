@@ -29,6 +29,7 @@ AELocalToolkit.organizer = (function () {
       skipped: 0,
       errors: 0,
       removedEmptyFolders: 0,
+      ignoredMainComp: 0,
       folders: {},
       messages: []
     };
@@ -125,9 +126,83 @@ AELocalToolkit.organizer = (function () {
     incrementFolder(summary, folderPath);
   }
 
-  function classifyItem(item, scheme, extMap, folders, summary) {
+  // ===== 忽略主合成（全局设置） =====
+  // 解析名称名单：支持字符串（逗号/空格/换行/中文逗号/分号分隔）或数组，去空白、去空项。
+  function parseIgnoreNames(raw) {
+    if (!raw) return [];
+    var arr = (typeof raw === "string") ? raw.split(/[\s,，;；]+/) : raw;
+    var out = [];
+    for (var i = 0; i < arr.length; i++) {
+      var n = String(arr[i]).replace(/^\s+|\s+$/g, "");
+      if (n) out.push(n);
+    }
+    return out;
+  }
+
+  // 从扩展目录 data/settings.json 读取忽略主合成配置（无参整理路径 / 客户端未注入时使用）。
+  function readIgnoreFromSettings() {
+    var cfg = { enabled: false, names: [], fuzzy: false };
+    try {
+      var res = AELocalToolkit.fileStorage.loadSettings();
+      if (res && res.ok && res.settings) {
+        var s = res.settings;
+        if (s.ignoreMainComp === true) cfg.enabled = true;
+        cfg.names = parseIgnoreNames(s.ignoreMainCompNames);
+        if (s.ignoreMainCompFuzzy === true) cfg.fuzzy = true;
+      }
+    } catch (e) {}
+    return cfg;
+  }
+
+  // 有效忽略配置：优先采用 scheme 注入值（来自客户端当前设置缓存，即时生效），
+  // 否则回退读取 settings.json（用于 AELT_organizeProject 无参路径）。
+  function getEffectiveIgnoreConfig(scheme) {
+    var fromScheme = !!(scheme && (scheme.ignoreMainComp === true || scheme.ignoreMainCompNames));
+    if (fromScheme) {
+      return {
+        enabled: scheme.ignoreMainComp === true,
+        names: parseIgnoreNames(scheme.ignoreMainCompNames),
+        fuzzy: scheme.ignoreMainCompFuzzy === true
+      };
+    }
+    return readIgnoreFromSettings();
+  }
+
+  // fuzzy=true 时为“包含式”部分匹配（名称含名单任一项即命中，仍忽略大小写）；
+  // fuzzy=false 时为精确匹配（不区分大小写）。
+  function nameMatchesIgnore(itemName, names, fuzzy) {
+    if (!names || !names.length) return false;
+    var target = String(itemName || "").toLowerCase();
+    for (var i = 0; i < names.length; i++) {
+      var n = String(names[i]).toLowerCase();
+      if (fuzzy) {
+        if (target.indexOf(n) !== -1) return true;
+      } else {
+        if (target === n) return true;
+      }
+    }
+    return false;
+  }
+
+  // 将素材移到工程根目录（若已在根目录则跳过）。
+  function moveToRoot(item, rootFolder, summary) {
+    if (item.parentFolder === rootFolder) {
+      summary.skipped++;
+      return;
+    }
+    item.parentFolder = rootFolder;
+    summary.moved++;
+  }
+
+  function classifyItem(item, scheme, extMap, folders, summary, rootFolder, ignoreConfig) {
     try {
       if (item instanceof CompItem) {
+        // 忽略主合成：命中名称名单的合成留在工程根目录，不进入 Comp 文件夹。
+        if (ignoreConfig && ignoreConfig.enabled && nameMatchesIgnore(item.name, ignoreConfig.names, ignoreConfig.fuzzy)) {
+          moveToRoot(item, rootFolder, summary);
+          summary.ignoredMainComp = (summary.ignoredMainComp || 0) + 1;
+          return;
+        }
         var compRule = findRuleByItemType(scheme, "CompItem");
         var compPath = compRule ? compRule.path : "Comp";
         moveToFolder(item, folders[compPath], compPath, summary);
@@ -189,6 +264,9 @@ AELocalToolkit.organizer = (function () {
       name: scheme.name || "整理方案",
       builtin: scheme.builtin === true,
       fallbackPath: normalizePath(scheme.fallbackPath || "Footage"),
+      ignoreMainComp: scheme.ignoreMainComp === true,
+      ignoreMainCompNames: scheme.ignoreMainCompNames || "",
+      ignoreMainCompFuzzy: scheme.ignoreMainCompFuzzy === true,
       rules: []
     };
 
@@ -229,6 +307,7 @@ AELocalToolkit.organizer = (function () {
     var summary = createSummary();
     scheme = normalizeScheme(scheme);
     summary.scheme = scheme.name;
+    var ignoreConfig = getEffectiveIgnoreConfig(scheme);
 
     if (!app.project) {
       summary.ok = false;
@@ -261,7 +340,7 @@ AELocalToolkit.organizer = (function () {
       // 省去“先全部移到根再分类”的二次重挂载，重挂载次数减半。
       var extMap = buildExtensionMap(scheme);
       for (var k = 0; k < allItems.length; k++) {
-        classifyItem(allItems[k], scheme, extMap, folders, summary);
+        classifyItem(allItems[k], scheme, extMap, folders, summary, rootFolder, ignoreConfig);
       }
 
       purgeEmptyFolders(rootFolder, rootFolder, summary);
