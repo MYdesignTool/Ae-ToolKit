@@ -440,7 +440,7 @@ function AELT_ping() {
     moduleBase: AELocalToolkit.__moduleBase,
     organizerType: typeof AELocalToolkit.organizer,
     loadErrors: AELocalToolkit.__loadErrors || [],
-    message: "Host JSX loaded [v0.2.4]"
+    message: "Host JSX loaded [v0.2.5]"
   });
 }
 

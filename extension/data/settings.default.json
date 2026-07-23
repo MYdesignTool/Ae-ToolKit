@@ -4,5 +4,8 @@
   "fallbackFolder": "Footage",
   "debugMode": false,
   "quietMode": false,
-  "scriptFolder": ""
+  "scriptFolder": "",
+  "ignoreMainComp": false,
+  "ignoreMainCompNames": "Main",
+  "ignoreMainCompFuzzy": false
 }

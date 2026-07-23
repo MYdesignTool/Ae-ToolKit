@@ -13,7 +13,7 @@
           <h1>AE工具箱</h1>
           <p>本地化 AE 效率工具</p>
         </div>
-        <span class="version" id="versionLabel">0.2.4</span>
+        <span class="version" id="versionLabel">0.2.5</span>
       </header>
 
       <nav class="tabs" aria-label="Main sections">
@@ -118,7 +118,7 @@
 
       <section class="view" id="settingsView">
         <div class="section-head">
-          <h2>工程整理文件夹</h2>
+          <h2>工程整理设置</h2>
         </div>
         <p class="muted">这些文件夹为所有整理方案全局共用，主界面只需配置素材路径规则。</p>
         <div class="settings-list">
@@ -143,6 +143,30 @@
             </div>
             <input type="text" id="fallbackFolderInput" class="settings-input" placeholder="Footage" />
           </div>
+        </div>
+
+        <div class="settings-list" style="margin-top:8px">
+          <div class="settings-item">
+            <div class="settings-item-info">
+              <span class="info-title">
+                <strong>忽略主合成</strong>
+                <span class="help-icon" tabindex="0" role="button" aria-label="帮助说明">?<span class="tip">开启后，匹配名称的合成在整理时不会移入 Comp 文件夹，而是保留在工程根目录。多个名称用逗号、空格或换行分隔。</span></span>
+              </span>
+              <span class="muted">命中名称的合成留在工程根目录而非 Comp 文件夹</span>
+            </div>
+            <label class="switch">
+              <input type="checkbox" id="ignoreMainCompToggle" />
+              <span class="slider"></span>
+            </label>
+          </div>
+        </div>
+        <div class="field" id="ignoreMainCompField" style="margin-top:8px">
+          <span class="field-head">忽略的合成名称（逗号 / 空格 / 换行分隔）
+            <label class="inline-check" title="名称包含名单中任意一项即命中（不区分大小写）">
+              <input type="checkbox" id="ignoreMainCompFuzzyToggle" /> 模糊匹配
+            </label>
+          </span>
+          <input type="text" id="ignoreMainCompNames" class="settings-input" placeholder="Main, 主合成, Intro" />
         </div>
 
         <div class="section-head" style="margin-top:8px">

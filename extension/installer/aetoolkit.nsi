@@ -14,7 +14,7 @@
 ; ============================================================================
 
 !define APPNAME "AE Local Toolkit"
-!define VERSION "0.2.4"
+!define VERSION "0.2.5"
 !define PUBLISHER "AE Local Toolkit"
 !define EXT_ID "AeLocalToolkit"
 
