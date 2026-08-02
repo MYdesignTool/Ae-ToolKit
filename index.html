@@ -275,7 +275,7 @@
           <span class="step-line" aria-hidden="true"></span>
           <div class="step-body">
             <h4>运行安装向导</h4>
-            <p>双击运行，按原生向导操作：阅读许可协议并勾选同意 → 确认安装路径（默认已填好用户级 CEP 目录，可「浏览…」自定义）→ 点击「安装」。安装器会自动写入 <code>PlayerDebugMode</code>，<strong>无需管理员权限</strong>。</p>
+            <p>双击运行，按原生向导操作：阅读许可协议并勾选同意 → 确认安装路径（默认已填好<strong>系统级</strong> CEP 目录 <code>C:\Program Files (x86)\Common Files\Adobe\CEP\extensions\AeLocalToolkit</code>，可「浏览…」自定义）→ 点击「安装」。安装到系统级目录<strong>需要管理员权限</strong>，弹出的 UAC 用户账户控制请点击「是」授权。安装器会自动写入 <code>PlayerDebugMode</code> 使扩展可被加载。</p>
           </div>
         </div>
         <div class="step glass">
@@ -305,15 +305,9 @@
           <span class="step-line" aria-hidden="true"></span>
           <div class="step-body">
             <h4>复制到扩展目录</h4>
-            <p>将 <code>AeLocalToolkit/</code> 文件夹整体复制到 CEP 扩展目录：</p>
-            <pre><code># Windows 用户级（无需管理员）
-%APPDATA%\Adobe\CEP\extensions\
-
-# Windows 系统级
+            <p>将 <code>AeLocalToolkit/</code> 文件夹整体复制到 CEP 扩展目录。<strong>只能使用系统级目录</strong>——用户级目录 After Effects 不识别，放进去面板不会显示：</p>
+            <pre><code># Windows 系统级（需管理员）
 C:\Program Files (x86)\Common Files\Adobe\CEP\extensions\
-
-# macOS 用户级
-~/Library/Application Support/Adobe/CEP/extensions\
 
 # macOS 系统级（需管理员）
 /Library/Application Support/Adobe/CEP/extensions\</code></pre>
@@ -324,9 +318,9 @@ C:\Program Files (x86)\Common Files\Adobe\CEP\extensions\
           <span class="step-line" aria-hidden="true"></span>
           <div class="step-body">
             <h4>开启调试模式（未签名时）</h4>
-            <p>若扩展未签名（通常已通过安装器或旧版写入，可跳过），需手动开启调试模式以加载未签名扩展：</p>
-            <pre><code># Windows 注册表
-HKEY_CURRENT_USER\Software\Adobe\CSXS.9\PlayerDebugMode = 1
+            <p>若扩展未签名（使用「方式一」安装器会自动写入系统级 <code>PlayerDebugMode</code> 到 HKLM，通常可跳过本步），需手动开启调试模式以加载未签名扩展：</p>
+            <pre><code># Windows 注册表（系统级，对所有用户生效）
+HKEY_LOCAL_MACHINE\Software\Adobe\CSXS.9\PlayerDebugMode = 1
 
 # macOS 终端
 defaults write com.adobe.CSXS.9 PlayerDebugMode -bool true</code></pre>
