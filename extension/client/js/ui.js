@@ -4,7 +4,7 @@
 // 检测。依赖 core.js 的 state/els 与 util.js 的辅助函数。
 // ============================================================================
 
-  var RELEASE_URL = "https://mydesigntool.github.io/MYpage/";
+  var RELEASE_URL = "https://mydesigntool.github.io/Ae-ToolKit/";
 
   // 在系统默认浏览器中打开外部链接：优先使用 CEP 提供的 API，
   // 非 CEP 环境（如本地浏览器调试）退回 window.open。
