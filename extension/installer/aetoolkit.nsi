@@ -3,7 +3,9 @@
 ; ============================================================================
 ;  AE Local Toolkit - NSIS 安装脚本
 ;  产出：单个 setup.exe（用户双击即运行，原生「许可协议 → 选择路径 → 安装」）。
-;  无需管理员权限：仅写入 %APPDATA% 下的用户目录 + 设置 HKCU 注册表。
+;  安装到系统级 CEP 扩展目录（C:\Program Files (x86)\Common Files\Adobe\CEP\extensions），
+;  使 After Effects 能正确识别并加载扩展（AE 不识别用户级 %APPDATA% 下的扩展）。
+;  需要管理员权限：写入 Program Files 目录 + 设置 HKLM 注册表。
 ;  相比 pkg 单文件，NSIS 运行时被广泛信任，几乎不会触发杀软误报。
 ;
 ;  构建（需安装 NSIS，免费）：
@@ -18,18 +20,18 @@
 !define PUBLISHER "AE Local Toolkit"
 !define EXT_ID "AeLocalToolkit"
 
-; 安装目标默认路径（与 Node 版 install.js 的 getTargetDir 一致）。
-!define DEFAULT_DIR "$APPDATA\Adobe\CEP\extensions\${EXT_ID}"
+; 安装目标默认路径：系统级 CEP 扩展目录（AE 实际识别的目录）。
+!define DEFAULT_DIR "$COMMONFILES32\Adobe\CEP\extensions\${EXT_ID}"
 
 ; ---------- 基础设置 ----------
 Name "${APPNAME} ${VERSION}"
 OutFile "dist\aetoolkit-installer.exe"
 InstallDir "${DEFAULT_DIR}"
-; 记住上次安装路径（写入 HKCU，无需管理员）。
-InstallDirRegKey HKCU "Software\${APPNAME}" "InstallDir"
+; 记住上次安装路径（写入 HKLM，系统级安装）。
+InstallDirRegKey HKLM "Software\${APPNAME}" "InstallDir"
 
-; 用户级安装（写 APPDATA + HKCU），不触发 UAC。
-RequestExecutionLevel user
+; 系统级安装（写 Program Files + HKLM），需要管理员权限，触发 UAC。
+RequestExecutionLevel admin
 
 ; 压缩（NSIS 自带 LZMA，体积小）。
 SetCompressor /SOLID lzma
@@ -58,8 +60,8 @@ VIAddVersionKey "FileVersion" "${VERSION}.0"
 !insertmacro MUI_PAGE_WELCOME
 !insertmacro MUI_PAGE_LICENSE "..\License.md"
 
-; 选择安装路径页（默认用户级 CEP 扩展目录）。
-!define MUI_DIRECTORYPAGE_TEXT_TOP "选择扩展安装位置。默认即可，除非您清楚 CEP 扩展目录的自定义布局。"
+; 选择安装路径页（默认系统级 CEP 扩展目录）。
+!define MUI_DIRECTORYPAGE_TEXT_TOP "选择扩展安装位置。默认即可（系统级 CEP 扩展目录，After Effects 可正常识别）。除非您清楚 CEP 扩展目录的自定义布局，否则请勿更改。"
 !define MUI_DIRECTORYPAGE_VARIABLE $INSTDIR
 !insertmacro MUI_PAGE_DIRECTORY
 
@@ -92,21 +94,21 @@ Section "Install" SecInstall
   File "..\License.md"
   File "..\README.md"
 
-  ; 写 PlayerDebugMode：覆盖 AE 2020~2025 对应的 CSXS 9~14（HKCU，无需管理员）。
+  ; 写 PlayerDebugMode：覆盖 AE 2020~2025 对应的 CSXS 9~14（HKLM，系统级对所有用户生效）。
   ${For} $R0 9 14
-    WriteRegStr HKCU "Software\Adobe\CSXS.$R0" "PlayerDebugMode" "1"
+    WriteRegStr HKLM "Software\Adobe\CSXS.$R0" "PlayerDebugMode" "1"
   ${Next}
 
   ; 记住安装路径。
-  WriteRegStr HKCU "Software\${APPNAME}" "InstallDir" "$INSTDIR"
+  WriteRegStr HKLM "Software\${APPNAME}" "InstallDir" "$INSTDIR"
 
   ; 写入卸载信息（添加/删除程序里可见）。
   WriteUninstaller "$INSTDIR\uninstall.exe"
-  WriteRegStr HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\${APPNAME}" "DisplayName" "${APPNAME}"
-  WriteRegStr HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\${APPNAME}" "UninstallString" '"$INSTDIR\uninstall.exe"'
-  WriteRegStr HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\${APPNAME}" "DisplayVersion" "${VERSION}"
-  WriteRegStr HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\${APPNAME}" "Publisher" "${PUBLISHER}"
-  WriteRegStr HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\${APPNAME}" "InstallLocation" "$INSTDIR"
+  WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\${APPNAME}" "DisplayName" "${APPNAME}"
+  WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\${APPNAME}" "UninstallString" '"$INSTDIR\uninstall.exe"'
+  WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\${APPNAME}" "DisplayVersion" "${VERSION}"
+  WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\${APPNAME}" "Publisher" "${PUBLISHER}"
+  WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\${APPNAME}" "InstallLocation" "$INSTDIR"
 
   ; 详情输出（安装日志区可见文件数）。
   ${GetSize} "$INSTDIR" "/S=0K" $0 $1 $2
@@ -120,6 +122,6 @@ Section "Uninstall"
   ; 删除扩展目录（含卸载程序自身）。
   RMDir /r "$INSTDIR"
   ; 清理「添加/删除程序」注册表项（保留 PlayerDebugMode，避免影响其他未签名扩展）。
-  DeleteRegKey HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\${APPNAME}"
-  DeleteRegKey HKCU "Software\${APPNAME}"
+  DeleteRegKey HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\${APPNAME}"
+  DeleteRegKey HKLM "Software\${APPNAME}"
 SectionEnd
