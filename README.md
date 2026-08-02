@@ -1,61 +1,42 @@
-# MYpage
+# Ae-ToolKit
 
-一个基于 **GitHub Pages** 搭建的静态网站。
+After Effects 离线扩展工具集 —— 项目整理 · 表达式管理 · 脚本启动 · 完全离线运行
 
-## 项目结构
+本仓库为 **Ae-ToolKit 项目主仓库**，同时承载两部分内容：
 
-```
-.
-├── index.html                      # 网站入口页面（Ae-ToolKit 发布页）
-├── assets/
-│   ├── css/
-│   │   ├── style.css               # 主样式（液态玻璃 / 响应式）
-│   │   └── theme-light.css         # 亮色主题
-│   ├── img/
-│   │   ├── logo.svg                # 站点 Logo
-│   │   ├── feature-organizer.png   # 功能截图：项目整理器
-│   │   ├── feature-expression.png  # 功能截图：表达式管理器
-│   │   └── feature-script.svg      # 功能截图：脚本启动器
-│   └── js/
-│       ├── main.js                 # 交互脚本（含自动获取最新版本号）
-│       ├── effects.js              # 背景动效（矩阵 / 光标）
-│       └── code-showcase.js        # 代码展示面板
-├── .github/
-│   └── workflows/
-│       └── jekyll-gh-pages.yml     # 自动构建并部署到 GitHub Pages
-└── README.md
-```
+| 目录 | 内容 | 说明 |
+| --- | --- | --- |
+| **仓库根目录** | GitHub Pages 发布页 | `index.html` + `assets/`，静态宣传/下载页，由 GitHub Actions 自动部署 |
+| [`extension/`](extension/README.md) | AE 扩展本体（产品） | CEP 扩展：`client/`（面板 UI）+ `host/`（ExtendScript 后端）+ `CSXS/`（清单）+ `data/`（配置） |
 
-## 版本号自动更新
+## 快速入口
 
-发布页顶部的版本徽标（如 `v0.2.3`）**无需手动维护**：`assets/js/main.js` 会在页面加载时调用
-GitHub 公开 API 拉取 `MYdesignTool/Ae-ToolKit` 的最新 Release `tag_name` 并自动填充徽标与下载按钮链接。
+- **发布页源码**：`index.html`（根目录），版本徽标由 `assets/js/main.js` 运行时从 GitHub Release API 自动获取，无需手动维护。
+- **扩展安装说明**：见 [`extension/README.md`](extension/README.md)（含一键安装器与手动安装两种方式）。
+- **扩展构建**：`extension/installer/build-installer.cmd` 一键重建安装器（`aetoolkit-installer.exe`）与干净扩展包（`aetoolkit-extension.zip`）。
+- **Release**：安装包与扩展包通过 GitHub Release 分发，发布页自动同步版本号。
 
-- 成功时：显示线上最新版本号，下载按钮指向对应 Release。
-- 失败时（如 API 限流 / 网络异常）：保留代码中的兜底值，页面照常显示。
+## 目录结构
 
-> 因此每次发版后，只需在 GitHub 创建新 Release，发布页会自动同步，无需改代码。
-
-## 本地预览
-
-直接用浏览器打开 `index.html` 即可，或启动一个简单的本地服务器：
-
-```bash
-# Python
-python -m http.server 8000
-
-# Node
-npx serve .
+```text
+Ae-ToolKit/                    # 本仓库
+  index.html                   # 发布页入口（GitHub Pages 根目录发布）
+  assets/                      # 发布页静态资源
+  .github/workflows/           # GitHub Pages 部署工作流
+  extension/                   # AE 扩展本体
+    CSXS/                      # CEP 清单
+    client/                    # 面板前端 UI
+    host/                      # ExtendScript 后端
+    data/                      # JSON 配置（含默认规则/表达式）
+    docs/                      # 架构与安装文档
+    installer/                 # NSIS 安装器构建
+    README.md                  # 扩展详细说明
 ```
 
-然后访问 `http://localhost:8000`。
+## 当前状态
 
-## 部署到 GitHub Pages
+当前版本 **v0.2.5**。详见 [`extension/README.md`](extension/README.md) 与面板内更新日志。
 
-1. 将代码推送到 GitHub 仓库（默认分支，如 `main`）。
-2. 在仓库 **Settings → Pages** 中，选择：
-   - Source: `Deploy from a branch`
-   - Branch: `main` / `/(root)`（根目录发布）
-3. 保存后等待几分钟，访问 `https://<用户名>.github.io/<仓库名>/` 即可。
+## 许可证
 
-> 如需完全跳过 Jekyll 构建（例如使用了以下划线 `_` 开头的目录），可在根目录添加一个空的 `.nojekyll` 文件。
+本项目采用 **[GNU General Public License v3.0](https://www.gnu.org/licenses/gpl-3.0.html)**。任何使用、修改或分发本项目代码的衍生作品，必须同样以 GPLv3 开源，并保留原始版权声明。

@@ -1,0 +1,12 @@
+# GitHub Pages (Jekyll) 构建产物
+_site/
+
+# 发布页本地缓存 / 临时文件
+.sass-cache/
+.jekyll-cache/
+.jekyll-metadata
+
+# 扩展的本地产物（详见 extension/.gitignore）
+extension/data/settings.json
+extension/data/organizer-schemes/
+extension/installer/dist/
