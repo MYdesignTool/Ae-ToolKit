@@ -41,6 +41,8 @@
     var visibleTabs = document.querySelectorAll('.tab:not([style*="display: none"])').length;
     var tabsEl = document.querySelector(".tabs");
     if (tabsEl && visibleTabs > 0) tabsEl.style.gridTemplateColumns = "repeat(" + visibleTabs + ", 1fr)";
+    // tab 数量变化会改变各 tab 宽度，需重新对齐滑动指示器
+    if (AELT.app && AELT.app.positionTabIndicator) AELT.app.positionTabIndicator(true);
   }
 
   function loadSettings() {

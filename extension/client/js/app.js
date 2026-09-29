@@ -5,6 +5,28 @@
 // 中完成启动，保证 els 就绪后再绑定脚本事件。本文件必须最后加载。
 // ============================================================================
 
+  // 顶部 Tab 的滑动高亮指示器：把宽度与水平位移同步到当前激活的 tab。
+  // 首次定位不做过渡（避免从 0 滑入）；之后切换 / 显隐 / 缩放时平滑滑动。
+  function positionTabIndicator(animate) {
+    var tabsEl = document.querySelector(".tabs");
+    if (!tabsEl) return;
+    var indicator = tabsEl.querySelector(".tab-indicator");
+    var active = tabsEl.querySelector(".tab.active");
+    if (!indicator || !active) return;
+    var tabsRect = tabsEl.getBoundingClientRect();
+    var activeRect = active.getBoundingClientRect();
+    if (!animate) indicator.style.transition = "none";
+    indicator.style.width = activeRect.width + "px";
+    // 相对 .tabs 的 padding box 左边缘（扣除边框宽度），与指示器的 left:0 基准一致
+    var offsetX = activeRect.left - tabsRect.left - tabsEl.clientLeft;
+    indicator.style.transform = "translateX(" + offsetX + "px)";
+    tabsEl.classList.add("tabs-ready");
+    if (!animate) {
+      // 下一帧恢复过渡，保证后续切换具备滑动动画
+      setTimeout(function () { indicator.style.transition = ""; }, 0);
+    }
+  }
+
   function bindEvents() {
     document.querySelectorAll(".tab").forEach(function (tab) {
       tab.addEventListener("click", function () {
@@ -12,6 +34,8 @@
         document.querySelectorAll(".view").forEach(function (item) { item.classList.remove("active"); });
         tab.classList.add("active");
         $(tab.dataset.view + "View").classList.add("active");
+        // 指示器滑动到新的激活项
+        positionTabIndicator(true);
       });
     });
 
@@ -201,6 +225,10 @@
     bindEvents();
     bindScriptEvents();
 
+    // 首次对齐 Tab 滑动指示器（无过渡），并在面板尺寸变化时重新对齐
+    positionTabIndicator(false);
+    window.addEventListener("resize", function () { positionTabIndicator(true); });
+
     // 先告诉 host 扩展根目录（设置文件 data/settings.json 依赖它定位），
     // 再加载设置（从扩展目录读取，而非易失的 localStorage），最后才初始化数据。
     initHostModuleBase(function () {
@@ -274,5 +302,6 @@ AELT.app = {
   cacheEls: cacheEls,
   bindEvents: bindEvents,
   init: init,
+  positionTabIndicator: positionTabIndicator,
   loadChangelogFromHost: loadChangelogFromHost
 };

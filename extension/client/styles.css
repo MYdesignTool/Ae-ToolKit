@@ -11,6 +11,13 @@
   --accent-strong: #4f8cff;
   --danger: #f06f6f;
   --radius: 8px;
+
+  /* ===== 统一动效令牌（Motion Tokens）===== */
+  --motion-instant: 60ms;
+  --motion-fast: 90ms;
+  --motion-normal: 140ms;
+  --motion-slow: 180ms;
+  --ease-ui: cubic-bezier(0.2, 0, 0, 1);
 }
 
 /* ===== 全局重置 ===== */
@@ -107,6 +114,7 @@ h2 {
 
 /* ===== 标签页导航栏 ===== */
 .tabs {
+  position: relative;
   display: grid;
   grid-template-columns: repeat(5, 1fr);
   background: var(--panel);
@@ -118,6 +126,8 @@ h2 {
 
 /* ===== 单个标签按钮 ===== */
 .tab {
+  position: relative;
+  z-index: 1;
   height: 30px;
   border: 0;
   border-radius: 6px;
@@ -126,10 +136,38 @@ h2 {
   cursor: pointer;
 }
 
+.tab:hover {
+  color: var(--text);
+  background: rgba(255, 255, 255, 0.06);
+}
+
+/* 兜底：JS 接管前，激活项使用自身背景 */
 .tab.active {
   background: var(--panel-soft);
   color: var(--text);
 }
+
+/* ===== 滑动高亮指示器 =====
+   JS 会同步其 width / translateX 到当前激活的 tab，
+   切换时在 tab 之间平滑左右滑动，而不是直接跳变。 */
+.tab-indicator {
+  position: absolute;
+  top: 3px;
+  left: 0;
+  height: 30px;
+  border-radius: 6px;
+  background: var(--panel-soft);
+  opacity: 0;
+  pointer-events: none;
+  z-index: 0;
+  transition:
+    transform var(--motion-normal) var(--ease-ui),
+    width var(--motion-normal) var(--ease-ui);
+}
+
+/* JS 成功定位后：指示器显示，激活项自身背景让位给指示器 */
+.tabs.tabs-ready .tab-indicator { opacity: 1; }
+.tabs.tabs-ready .tab.active { background: transparent; }
 
 /* ===== 视图面板容器（默认隐藏） ===== */
 .view {
@@ -145,6 +183,14 @@ h2 {
   overflow: hidden;
   min-height: 0;
   gap: 14px;
+  /* 切换 Tab 时新视图的轻量进入动画；display 由 none 变 flex 会自动重新触发 */
+  animation: viewIn var(--motion-slow) var(--ease-ui);
+}
+
+/* 视图进入：上浮 + 淡入 */
+@keyframes viewIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
 }
 
 /* ===== 区块标题与按钮行 ===== */
@@ -171,10 +217,20 @@ button {
   color: var(--text);
   cursor: pointer;
   outline: none;
+  transition:
+    background-color var(--motion-fast) var(--ease-ui),
+    border-color var(--motion-fast) var(--ease-ui),
+    color var(--motion-fast) var(--ease-ui),
+    transform var(--motion-instant) var(--ease-ui);
 }
 
 button:hover {
   border-color: #4a4a4a;
+}
+
+/* 轻微按压反馈：仅做位移缩放，不影响布局与响应 */
+button:active {
+  transform: scale(0.96);
 }
 
 button:focus-visible {
@@ -236,6 +292,9 @@ button:focus-visible {
   cursor: pointer;
   position: relative;
   flex-shrink: 0;
+  transition:
+    background-color var(--motion-fast) var(--ease-ui),
+    border-color var(--motion-fast) var(--ease-ui);
 }
 .inline-check input:hover {
   border-color: var(--accent-strong);
@@ -271,6 +330,23 @@ textarea {
   background: #121212;
   color: var(--text);
   outline: none;
+  transition:
+    background-color var(--motion-fast) var(--ease-ui),
+    border-color var(--motion-fast) var(--ease-ui),
+    color var(--motion-fast) var(--ease-ui);
+}
+
+input:hover,
+select:hover,
+textarea:hover {
+  border-color: #4a4a4a;
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+  border-color: var(--accent-strong);
+  background: #161616;
 }
 
 input {
@@ -375,6 +451,14 @@ textarea {
   height: auto;
   min-height: 58px;
   cursor: pointer;
+  transition:
+    background-color var(--motion-fast) var(--ease-ui),
+    border-color var(--motion-fast) var(--ease-ui);
+}
+
+.expression-item:hover {
+  border-color: #4a4a4a;
+  background: var(--panel-soft);
 }
 
 /* ===== 表达式列表项选中状态 ===== */
@@ -410,16 +494,17 @@ textarea {
   margin-bottom: 6px;
   font-size: 13px;
   white-space: nowrap;
-  animation: toastIn .3s ease forwards;
+  animation: toastIn var(--motion-slow) var(--ease-ui) forwards;
   pointer-events: none;
   box-shadow: 0 4px 20px rgba(0,0,0,.5);
   color: #eee;
 }
 .toast.success { border-color: #4caf50; background: #1e3a1e; }
 .toast.error { border-color: #f06f6f; background: #3a1e1e; color: #f06f6f; }
-.toast.out { animation: toastOut .3s ease forwards; }
-@keyframes toastIn { from { transform: translateY(-100%); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
-@keyframes toastOut { from { transform: translateY(0); opacity: 1; } to { transform: translateY(-100%); opacity: 0; } }
+.toast.out { animation: toastOut var(--motion-normal) var(--ease-ui) forwards; }
+/* 顶部通知改为小幅淡入上浮（-4px），替代整块滑入，更克制 */
+@keyframes toastIn { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes toastOut { from { opacity: 1; transform: translateY(0); } to { opacity: 0; transform: translateY(-8px); } }
 
 /* ===== 整理工程：不确定进度条（仅作"程序未卡死"提示，非真实百分比） ===== */
 /* 面板中央悬浮的小窗口：遮罩层压暗并模糊背后区域 */
@@ -433,6 +518,7 @@ textarea {
   background: rgba(0, 0, 0, .4);
   -webkit-backdrop-filter: blur(1.5px) saturate(120%);
   backdrop-filter: blur(1.5px) saturate(120%);
+  animation: overlayIn var(--motion-normal) var(--ease-ui);
 }
 .organize-progress.hidden { display: none; }
 
@@ -465,7 +551,7 @@ textarea {
   box-shadow: 0 0 8px rgba(59, 130, 246, .7);
   animation: organizeSweep 1.4s cubic-bezier(.4, 0, .2, 1) infinite;
 }
-/* 流动斜纹，增强“活动中”观感 */
+/* 流动斜纹，增强"活动中"观感 */
 .organize-progress-indeterminate::after {
   content: "";
   position: absolute;
@@ -498,7 +584,7 @@ textarea {
   letter-spacing: .2px;
   text-align: center;
 }
-/* 跳动的小圆点，提示“进行中” */
+/* 跳动的小圆点，提示"进行中" */
 .organize-progress-label::before {
   content: "";
   width: 7px; height: 7px;
@@ -521,13 +607,18 @@ textarea {
   align-items: center;
   justify-content: center;
   z-index: 100;
+  /* 打开时遮罩淡入（display 由 none 变 flex 会自动重新触发） */
+  animation: overlayIn var(--motion-normal) var(--ease-ui);
 }
 /* ===== 弹窗内容面板 ===== */
 .modal-content {
   background: #202020; border: 1px solid #353535; border-radius: 8px;
   max-width: 500px; width: 90%; max-height: 80vh;
   display: flex; flex-direction: column;
+  animation: modalIn var(--motion-slow) var(--ease-ui);
 }
+@keyframes overlayIn { from { opacity: 0; } to { opacity: 1; } }
+@keyframes modalIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
 /* ===== 弹窗头部 ===== */
 .modal-header {
   display: flex; justify-content: space-between; align-items: center;
@@ -559,6 +650,14 @@ textarea {
 .rule-item {
   display: flex; flex-direction: column; gap: 4px;
   padding: 8px 10px;
+  transition:
+    background-color var(--motion-fast) var(--ease-ui),
+    border-color var(--motion-fast) var(--ease-ui);
+}
+
+.rule-item:hover {
+  border-color: #4a4a4a;
+  background: var(--panel-soft);
 }
 .rule-header {
   display: flex; align-items: flex-start; gap: 8px;
@@ -669,8 +768,27 @@ textarea {
 /* ===== 开关切换控件 ===== */
 .switch { position: relative; display: inline-block; width: 44px; height: 24px; flex-shrink: 0; }
 .switch input { opacity: 0; width: 0; height: 0; }
-.slider { position: absolute; cursor: pointer; inset: 0; background: #353535; border-radius: 24px; transition: .2s; }
-.slider::before { content: ""; position: absolute; height: 18px; width: 18px; left: 3px; bottom: 3px; background: #9d9d9d; border-radius: 50%; transition: .2s; }
+.slider {
+  position: absolute;
+  cursor: pointer;
+  inset: 0;
+  background: #353535;
+  border-radius: 24px;
+  transition: background-color var(--motion-normal) var(--ease-ui);
+}
+.slider::before {
+  content: "";
+  position: absolute;
+  height: 18px;
+  width: 18px;
+  left: 3px;
+  bottom: 3px;
+  background: #9d9d9d;
+  border-radius: 50%;
+  transition:
+    transform var(--motion-normal) var(--ease-ui),
+    background-color var(--motion-normal) var(--ease-ui);
+}
 .switch input:checked + .slider { background: var(--accent-strong); }
 .switch input:checked + .slider::before { transform: translateX(20px); background: white; }
 
@@ -694,9 +812,12 @@ textarea {
   cursor: pointer;
   min-height: 52px;
   overflow: hidden;
+  transition:
+    background-color var(--motion-fast) var(--ease-ui),
+    border-color var(--motion-fast) var(--ease-ui);
 }
-.script-item:hover { border-color: #4a4a4a; }
-.script-item.active { border-color: var(--accent-strong); }
+.script-item:hover { border-color: #4a4a4a; background: var(--panel-soft); }
+.script-item.active { border-color: var(--accent-strong); background: rgba(79, 140, 255, 0.16); }
 .script-fav {
   flex-shrink: 0;
   width: 24px;
@@ -707,12 +828,15 @@ textarea {
   cursor: pointer;
   color: var(--muted);
   font-size: 19px;
-  transition: transform 0.15s, color 0.15s;
+  transition:
+    transform var(--motion-fast) var(--ease-ui),
+    color var(--motion-fast) var(--ease-ui);
   border-radius: 4px;
   margin-left: auto;
 }
 .script-fav.favored { color: #f0c84f; }
-.script-fav:hover { transform: scale(1.25); color: #f0c84f; }
+.script-fav:hover { transform: scale(1.12); color: #f0c84f; }
+.script-fav:active { transform: scale(0.92); }
 
 .search-row {
   display: flex;
@@ -733,7 +857,9 @@ textarea {
   font-size: 16px;
   cursor: pointer;
   padding: 0;
-  transition: color 0.15s, border-color 0.15s;
+  transition:
+    color var(--motion-fast) var(--ease-ui),
+    border-color var(--motion-fast) var(--ease-ui);
 }
 .fav-toggle.active { color: #f0c84f; border-color: #f0c84f; }
 .fav-toggle:hover { border-color: #4a4a4a; }
