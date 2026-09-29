@@ -33,12 +33,14 @@ AELocalToolkit.launcher = (function() {
       } else if (items[i].name.match(/\.(jsx|jsxbin)$/)) {
         var fsName = items[i].fsName;
         var fileName = fsName.replace(/^.*[\\\/]/, "");
+        var scriptBase = fileName.replace(/\.(jsx|jsxbin)$/, "");
+        var iconFsName = basePath.replace(/\\/g, "/") + "/image/" + scriptBase + ".png";
         files.push({
-          name: fileName.replace(/\.(jsx|jsxbin)$/, ""),
+          name: scriptBase,
           relativePath: fsName.substr(basePath.length + 1),
           absoluteURI: items[i].absoluteURI,
           fsName: fsName,
-          iconPath: File(fsName.replace(/\.(jsx|jsxbin)$/, ".png")).exists ? "file:///" + fsName.replace(/\\/g, "/").replace(/\.(jsx|jsxbin)$/, ".png") : ""
+          iconPath: File(iconFsName).exists ? "file:///" + iconFsName : ""
         });
       }
     }
