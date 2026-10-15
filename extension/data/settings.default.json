@@ -7,5 +7,7 @@
   "scriptFolder": "",
   "ignoreMainComp": false,
   "ignoreMainCompNames": "Main",
-  "ignoreMainCompFuzzy": false
+  "ignoreMainCompFuzzy": false,
+  "userExpressions": [],
+  "scriptFavorites": []
 }

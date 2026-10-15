@@ -1,4 +1,4 @@
-﻿// ============================================================================
+// ============================================================================
 // AE Local Toolkit — 面板/调试/设置模块 (client/js/ui.js)
 // 负责 Debug 选项卡可见性、设置读取、更新日志弹窗、AE 连接检测与本地存储
 // 检测。依赖 core.js 的 state/els 与 util.js 的辅助函数。
@@ -93,7 +93,7 @@
    if (!modal || !body) return;
    var entries = (state.changelog && state.changelog.entries) || [];
    body.innerHTML = entries.map(function (entry) {
-     return '<div class="changelog-item"><strong>v' + entry.version + '</strong> <span class="muted">' + entry.date + '</span><ul>' +
+     return '<div class="changelog-item"><strong>v' + escapeHtml(entry.version) + '</strong> <span class="muted">' + escapeHtml(entry.date) + '</span><ul>' +
        (entry.changes || []).map(function (c) { return "<li>" + escapeHtml(c) + "</li>"; }).join("") + "</ul></div>";
    }).join("") || '<p class="muted">暂无更新日志</p>';
    modal.style.display = "flex";
@@ -110,7 +110,7 @@
  }
 
   function pingHost() {
-    evalAe("AELT_ping()", function (result) {
+    callHost('AELT_ping', [], function (result) {
       if (result.loadErrors && result.loadErrors.length) {
         addDebug("host load errors", result.loadErrors);
         setStatus("Host 模块加载失败，详见 Debug。");

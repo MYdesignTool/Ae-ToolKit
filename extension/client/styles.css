@@ -1,4 +1,4 @@
-﻿/* ===== 自定义属性（暗色主题变量） ===== */
+/* ===== 自定义属性（暗色主题变量） ===== */
 :root {
   color-scheme: dark;
   --bg: #171717;
@@ -380,7 +380,6 @@ textarea {
 
 /* ===== 列表项卡片通用样式 ===== */
 .rule-item,
-.expression-item,
 .changelog-item,
 .debug-item,
 .selection-status {
@@ -412,29 +411,12 @@ textarea {
   gap: 8px;
 }
 
-.rule-row {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 8px;
-}
-
-.rule-actions {
-  display: flex;
-  justify-content: flex-end;
-}
-
 .mini {
   min-width: 64px;
   height: 28px;
 }
 
-.rule-item strong,
-.expression-item strong {
-  font-size: 13px;
-}
-
 .rule-item span,
-.expression-item span,
 .changelog-item li {
   color: var(--muted);
 }
@@ -443,28 +425,7 @@ textarea {
   max-height: 180px;
 }
 
-.expression-item {
-  display: grid;
-  gap: 5px;
-  text-align: left;
-  width: 100%;
-  height: auto;
-  min-height: 58px;
-  cursor: pointer;
-  transition:
-    background-color var(--motion-fast) var(--ease-ui),
-    border-color var(--motion-fast) var(--ease-ui);
-}
-
-.expression-item:hover {
-  border-color: #4a4a4a;
-  background: var(--panel-soft);
-}
-
 /* ===== 表达式列表项选中状态 ===== */
-.expression-item.active {
-  border-color: var(--accent-strong);
-}
 
 /* ===== 底部状态栏 ===== */
 .status {
@@ -598,7 +559,6 @@ textarea {
   50%      { opacity: 1;  transform: scale(1.2); }
 }
 
-
 /* ===== 弹窗遮罩层 ===== */
 .modal-overlay {
   position: fixed; inset: 0;
@@ -673,30 +633,13 @@ textarea {
   font-size: 14px;
 }
 .icon-btn:hover { background: rgba(240,111,111,0.12); }
-.rule-criteria-row { display: flex; gap: 10px; }
-.rule-criterion { flex: 1; min-width: 0; }
-.checkbox-row {
-  display: flex; align-items: center; gap: 6px;
-  color: #9d9d9d; cursor: pointer; padding: 2px 0; font-size: 12px;
-}
-.checkbox-row input[type="checkbox"],
-.check-label input[type="checkbox"] {
-  width: 14px; height: 14px; margin: 0; padding: 0;
-  cursor: pointer; accent-color: #4f8cff;
-}
+
 /* ===== AE 类型复选框标签 ===== */
-.check-label {
-  display: flex; align-items: center; gap: 6px;
-  color: #9d9d9d; cursor: pointer; padding: 2px 0; font-size: 12px;
-}
-.rule-section input[type="text"] {
-  height: 28px; font-size: 12px; margin-top: 4px;
-}
+
 /* 整理视图内：规则区撑满剩余高度并内部滚动，随窗口大小自适应 */
 #organizerView .rule-grid { flex: 1 1 auto; min-height: 0; max-height: none; overflow-y: auto; }
 /* 设置视图内容较多时整体滚动，避免小窗口溢出被裁切 */
 #settingsView { overflow-y: auto; }
-
 
 /* ===== 设置页面 ===== */
 .settings-list, .settings-about { display: flex; flex-direction: column; gap: 12px; }
@@ -798,44 +741,42 @@ textarea {
   min-height: 0;
   overflow-y: auto;
   display: grid;
-  gap: 4px;
+  gap: 8px;
   align-content: start;
 }
 .script-item {
-  display: flex;
+  display: grid;
+  grid-template-columns: 144px minmax(0, 1fr) 28px;
   align-items: center;
-  gap: 8px;
-  padding: 6px 10px;
+  gap: 12px;
+  height: 64px;
+  padding: 12px;
   border: 1px solid var(--line);
-  border-radius: var(--radius);
+  border-radius: 10px;
   background: var(--panel);
   cursor: pointer;
-  min-height: 52px;
   overflow: hidden;
+  outline-offset: -2px;
   transition:
     background-color var(--motion-fast) var(--ease-ui),
     border-color var(--motion-fast) var(--ease-ui);
 }
 .script-item:hover { border-color: #4a4a4a; background: var(--panel-soft); }
-.script-item.active { border-color: var(--accent-strong); background: rgba(79, 140, 255, 0.16); }
+.script-item:active { background: #2b3038; }
+.script-item.active { border-color: var(--accent-strong); background: rgba(79, 140, 255, 0.12); }
 .script-fav {
-  flex-shrink: 0;
-  width: 24px;
-  height: 24px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
+  min-width: 28px;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
   color: var(--muted);
   font-size: 19px;
-  transition:
-    transform var(--motion-fast) var(--ease-ui),
-    color var(--motion-fast) var(--ease-ui);
-  border-radius: 4px;
-  margin-left: auto;
 }
 .script-fav.favored { color: #f0c84f; }
-.script-fav:hover { transform: scale(1.12); color: #f0c84f; }
+.script-fav:hover { color: #f0c84f; background: rgba(240, 200, 79, 0.08); }
 .script-fav:active { transform: scale(0.92); }
 
 .search-row {
@@ -876,27 +817,89 @@ textarea {
   background: #121212;
 }
 
+/* Every banner occupies the same clipped frame, regardless of the source dimensions. */
 .script-icon {
-  flex-shrink: 0;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
+  display: block;
+  width: 144px;
+  height: 36px;
+  border-radius: 8px;
+  overflow: hidden;
+  background: var(--panel-soft);
 }
-.placeholder-svg { display: block; }
-.script-icon-img { max-height: 36px; max-width: 200px; height: auto; width: auto; object-fit: contain; display: block; border-radius: 8px; }
+.script-icon-img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: inherit;
+}
 .script-name {
-  flex: 1;
+  min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
   font-size: 13px;
+  font-weight: 500;
+  line-height: 1.6;
 }
-.script-folder {
-  flex-shrink: 0;
+/* Compact controls retain the existing dropdown/editor and banner list. */
+[hidden] { display: none !important; }
+.topbar p { font-size: 12px; }
+button { white-space: nowrap; }
+button:disabled { opacity: .4; cursor: default; transform: none; }
+button:focus-visible, .script-item:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.tab { min-width: 0; }
+#expressionsView { gap: 12px; }
+#selectionStatus {
+  padding: 2px 0;
+  border: 0;
+  background: transparent;
   color: var(--muted);
-  font-size: 11px;
-  max-width: 120px;
+  font-size: 12px;
+  line-height: 1.6;
   overflow: hidden;
-  text-overflow: ellipsis;
   white-space: nowrap;
+  text-overflow: ellipsis;
+  flex-shrink: 0;
+}
+.expression-picker { display: flex; gap: 8px; flex-shrink: 0; }
+.expression-picker > input { flex: 0 0 36%; min-width: 0; }
+.expression-picker .expression-list { flex: 1; min-width: 0; display: block; }
+.expression-picker select { width: 100%; }
+.expression-code-field { flex: 1; min-height: 140px; max-height: clamp(240px, 52vh, 480px); gap: 8px; }
+.expression-editor-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-shrink: 0; }
+.expression-editor-head > label { color: var(--text); font-size: 12px; }
+.expression-manage { display: flex; align-items: center; gap: 4px; }
+.expression-manage button { height: 28px; min-width: 0; padding: 0 8px; font-size: 12px; background: transparent; border-color: transparent; }
+.expression-manage button:hover { background: var(--panel-soft); border-color: var(--line); }
+.expression-code-field textarea { flex: 1; min-height: 100px; resize: none; padding: 12px; font-size: 13px; line-height: 1.75; }
+.expression-actions { justify-content: flex-start; flex-shrink: 0; gap: 8px; }
+.expression-actions button { height: 34px; padding: 0 14px; }
+#applyExpressionBtn { min-width: 160px; }
+.status { height: 26px; min-height: 26px; margin-top: auto; padding-top: 7px; font-size: 11px; flex-shrink: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.confirm-dialog { width: 100%; max-width: 380px; padding: 20px; display: flex; flex-direction: column; gap: 12px; }
+.modal-overlay { padding: 18px; }
+.confirm-dialog h2 { font-size: 14px; }
+#confirmMessage { color: var(--muted); font-size: 12px; line-height: 1.8; overflow-wrap: anywhere; }
+.confirm-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 8px; }
+.confirm-actions button { min-width: 76px; flex: 0 0 76px; height: 32px; white-space: nowrap; }
+#inputModalField { width: 100%; }
+.toast-container { top: auto; bottom: 38px; }
+.toast { white-space: normal; max-width: 100%; font-size: 12px; }
+@media (max-width: 400px) {
+  .app { padding: 12px; gap: 10px; }
+  .topbar h1 { font-size: 18px; }
+  .settings-input { width: 125px; }
+  .script-item { grid-template-columns: 104px minmax(0, 1fr) 28px; gap: 10px; height: 56px; padding: 10px; }
+  .script-icon { width: 104px; height: 26px; }
+  .script-name { font-size: 12px; }
+  .expression-manage { gap: 0; }
+  .expression-manage button { padding: 0 6px; }
+}
+@media (max-height: 600px) {
+  .app { padding: 12px; gap: 10px; }
+  #expressionsView { gap: 8px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
 }

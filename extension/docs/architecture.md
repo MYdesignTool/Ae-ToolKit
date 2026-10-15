@@ -1,76 +1,17 @@
-# 架构说明
-# Architecture Notes
+# 架构与维护
 
-## Local-Only Principle
+前端无框架、无构建步骤，按依赖顺序加载脚本。`callHost(name, args, callback)` 是唯一桥接入口，参数统一用 JSON 字面量编码，不混用 escape、URI 编码和字符串拼接。路径以原生路径传输；图片从 File.fsName 转换为浏览器 file URL，不把 ExtendScript 的 absoluteURI 路径直接当作网页地址。
 
-The panel does not call remote APIs. V1 data lives in:
+面板从自身 URL 得到根目录，一次调用 `AELT_setModuleBase`，依次加载 json、storage、organizer、expressions、launcher。失败明确返回，不扫描其他扩展、不复制临时脚本执行。`AELT_bootstrap` 读取只读 JSON，默认规则保持单一来源。
 
-- Shipped JSON files under `data/`
-- `data/settings.json` for user settings (favorites, folders, toggles, custom expressions); `data/settings.default.json` is the cloud default
-- `data/organizer-schemes/` for user-saved organize schemes (git-ignored); built-in default rules ship as `organizer-rules.json`
-- AE project state through host JSX calls
+ExtendScript 的 `host/lib/json.jsx` 是 ES3 兼容的严格 JSON 解析器，不使用 eval。模块加载与用户选定脚本使用 `$.evalFile`，属于明确的脚本执行入口。
 
-## Runtime Layers
+`storage.jsx` 集中处理用户目录、校验、迁移、替换写入和备份。`settings.js` 用内存快照串行保存，避免异步返回乱序覆盖。设置读取失败时停止写入，仍可导入备份恢复。
 
-| Layer | Path | Purpose |
-| --- | --- | --- |
-| CEP manifest | `CSXS/manifest.xml` | Registers the AE panel |
-| Panel UI | `client/` | 模块化前端：`js/core.js`(状态/兜底) + `js/util.js`(工具) + `js/ui.js`(面板/调试/设置) + `js/organizer.js`(整理) + `js/expressions.js`(表达式) + `js/scripts.js`(脚本启动器) + `js/app.js`(入口) |
-| AE host script | `host/index.jsx` | Runs ExtendScript inside After Effects |
-| Data | `data/` | Stores default rules, default expressions, changelog; per-device `settings.json` (user settings; `settings.default.json` is the cloud default, auto-created as a clean config copy on first launch if missing); per-device `organizer-schemes/` (user-saved organize schemes, git-ignored; built-in default rules ship as `organizer-rules.json`) |
-| Docs | `docs/` | Install and architecture notes |
+表达式只处理选中的可用属性；批次签名包含合成、图层和属性路径，用于防止目标变化。面板保留原来的覆盖确认和安静模式；宿主接口也支持跳过已有表达式。失败尝试恢复原值，撤销组在 finally 关闭。实际表达式求值仍需宿主回归。
 
-## Host API
+脚本扫描维护本次文件集合，运行入口只接受其中的 JSX/JSXBIN。选择行不重建 DOM，保留双击和焦点。保留横幅列表及单次名称显示，优先匹配所选脚本根目录内 image 文件夹，再回退到脚本旁图片。第三方脚本不是沙箱代码，具有 AE 脚本权限。
 
-前端通过 `evalScript` 调用以下全局 JSX 函数，每个函数返回 JSON 字符串（含简短结果摘要）：
+Pages 只发布 index.html 与 assets/。安装器和 ZIP 使用明确文件清单，版本来自 changelog.json。网页没有 CDN 高亮库和持续 Canvas 特效。
 
-### 整理（Organizer）
-- `AELT_organizeProject()` — 使用默认方案整理当前工程
-- `AELT_organizeProjectWithScheme(schemeJson)` — 使用指定方案（JSON 字符串）整理
-- `AELT_loadOrganizerSchemes()` — 加载全部整理方案（内置默认 + 本地 `data/organizer-schemes/`）
-- `AELT_saveOrganizerScheme(schemeJson)` — 保存方案到 `data/organizer-schemes/`
-- `AELT_deleteOrganizerScheme(id)` — 删除指定方案
-
-### 表达式（Expressions）
-- `AELT_getSelectedPropertySummary()` — 获取选中属性摘要
-- `AELT_applyExpression(expression, overwriteExisting)` — 应用表达式
-- `AELT_removeExpressions()` — 移除表达式
-
-### 设置（Settings）
-- `AELT_loadSettings()` — 读取 `data/settings.json`（缺失时回退 `settings.default.json`）
-- `AELT_saveSettings(jsonText)` — 写入 `data/settings.json`
-
-### 脚本启动器（Script Launcher）
-- `AELT_selectScriptFolder()` — 弹出文件夹选择对话框
-- `AELT_scanScripts(folderPath)` — 扫描脚本
-- `AELT_launchScript(filePath)` — 运行脚本
-
-### 通用（Common）
-- `AELT_setModuleBase(path)` — 注入扩展根目录
-- `AELT_ping()` — 连接检测
-- `AELT_readFile(path)` — 读取扩展内文件（如 `data/changelog.json`）
-
-## Extension Points
-
-前端与主机均已模块化，沿用“全局命名空间 + 多文件顺序加载”范式，无构建步骤：
-
-- 主机端：`host/index.jsx` 为入口，脚本启动器逻辑已内联其中；其余模块（如 `host/modules/organizer.jsx`）通过 `$.evalFile` 加载，统一挂在 `AELocalToolkit` 命名空间。
-- 前端：`client/index.html` 按依赖顺序加载 `client/js/` 下的 core → util → ui → organizer → expressions → scripts → app，模块函数均为全局函数，并挂到 `window.AELT` 命名空间下供调试。
-
-新增功能建议遵循此模式：
-
-1. 主机逻辑放入 `host/modules/` 对应模块，并暴露一个 `AELT_*` 函数。
-2. 前端调用位于 `client/js/` 对应模块（如整理在 organizer.js、表达式在 expressions.js）。
-3. 调试时通过 Debug 面板查看原始返回。
-4. 默认数据放入 `data/`（含 `settings.default.json` 默认设置）；用户数据（收藏/文件夹/开关/自定义表达式）放入设备本地的 `data/settings.json`，该文件被 `.gitignore` 忽略，不会污染版本控制。
-
----
-
-### 架构概览
-
-AE Local Toolkit 遵循纯本地原则：
-- 不调用远程 API，所有数据存储在本地
-- 数据来源：data/ 下的 JSON 文件（含设备本地 `settings.json` 与 `organizer-schemes/`）+ AE 项目状态
-- 运行时层次：CEP 清单 -> 前端 UI -> ExtendScript 主机操作 AE
-- API 通信：前端通过 evalScript 调用 AELT_* 函数，主机返回 JSON 结果
-- 扩展机制：新增模块需添加 JSX 逻辑 + 暴露 AELT_* 函数 + 在前端中调用
+验证：`node --test tests/*.test.cjs`；浏览器交互测试见 `tests/browser.cjs`，需要 Playwright。模拟测试不替代 AE 2023 / 新版 AE 回归。

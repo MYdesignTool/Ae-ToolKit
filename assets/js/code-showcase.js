@@ -1,5 +1,5 @@
-// Ae-ToolKit 发布页 · 代码展示（截取自本地仓库 D:\Project\Code\AeLocalToolkit）
-// 使用 String.raw 保留源码中的反斜杠与转义，textContent 注入避免 HTML 注入
+// Ae-ToolKit 发布页 · API 使用示例（非源码镜像）
+// 示例通过 textContent 显示，复制失败会明确提示。
 
 (function () {
   "use strict";
@@ -11,60 +11,9 @@
   };
 
   var SNIPPETS = {
-    organizer: String.raw`var defaultScheme = {
-  id: "preset-default",
-  name: "默认整理方案",
-  builtin: true,
-  fallbackPath: "Footage",
-  rules: [
-    { path: "Comp",  itemTypes: ["CompItem"], extensions: [] },
-    { path: "Image", itemTypes: [], extensions: ["PNG","JPG","TIFF","EXR","WEBP"] },
-    { path: "Video", itemTypes: [], extensions: ["MP4","MOV","MKV","WEBM"] },
-    { path: "Audio", itemTypes: [], extensions: ["MP3","WAV","FLAC"] },
-    { path: "Footage", itemTypes: [], extensions: [] }
-  ]
-};`,
-
-    expressions: String.raw`function applyExpression(expression, overwrite) {
-  var summary = resultBase();
-  var selected = getSelectedProperties();
-  if (!selected.ok) return summary;
-
-  app.beginUndoGroup("AE Local Toolkit");
-  for (var i = 0; i < selected.properties.length; i++) {
-    var prop = selected.properties[i];
-    if (hasExpression(prop) && !overwrite) {
-      summary.existing++; continue;
-    }
-    try {
-      prop.expression = expression;
-      prop.expressionEnabled = true;
-      summary.applied++;
-    } catch (e) { summary.errors++; }
-  }
-  app.endUndoGroup();
-  return summary;
-}`,
-
-    launcher: String.raw`function collectScripts(folder, basePath) {
-  var items = folder.getFiles();
-  items.sort(sortByName);
-  var files = [];
-  for (var i = 0; i < items.length; i++) {
-    if (items[i] instanceof Folder)
-      files = files.concat(collectScripts(items[i], basePath));
-    else if (items[i].name.match(/\.(jsx|jsxbin)$/))
-      files.push({ name: items[i].name, fsName: items[i].fsName });
-  }
-  return files;
-}
-
-function launchScript(filePath) {
-  var file = new File(decodeURI(filePath));
-  if (!file.exists) return { ok: false };
-  $.evalFile(file);
-  return { ok: true };
-}`
+    organizer: 'AELocalToolkit.organizer.organizeProjectWithScheme({\n  name: "素材整理",\n  fallbackPath: "Footage",\n  rules: [\n    { path: "Image", itemTypes: [], extensions: ["PNG", "JPG"] },\n    { path: "Video", itemTypes: [], extensions: ["MP4", "MOV"] }\n  ]\n});',
+    expressions: '// 默认保留已有表达式\nAELocalToolkit.expressions.applyExpression(\n  "wiggle(5, 20)",\n  false\n);\n\n// 整批操作可在 AE 中一次撤销。',
+    launcher: '// 先扫描用户选择的脚本目录\nvar result = AELocalToolkit.launcher.scanScripts(folderPath);\n\n// 只运行此次扫描找到的 JSX / JSXBIN 文件\nif (result.ok && result.scripts.length) {\n  AELocalToolkit.launcher.launchScript(result.scripts[0].fsName);\n}'
   };
 
   function init() {
@@ -80,14 +29,9 @@ function launchScript(filePath) {
       current = key;
       view.textContent = SNIPPETS[key] || "";
       if (fileEl) fileEl.textContent = META[key] || "";
-      if (window.hljs) {
-        try {
-          view.removeAttribute("data-highlighted");
-          window.hljs.highlightElement(view);
-        } catch (e) {}
-      }
       tabs.forEach(function (t) {
         t.classList.toggle("active", t.getAttribute("data-key") === key);
+        t.setAttribute('aria-pressed', String(t.getAttribute('data-key')===key));
       });
     }
 
@@ -97,18 +41,16 @@ function launchScript(filePath) {
       });
     });
 
+    var copyTimer;
+    function copiedLabel(text) { clearTimeout(copyTimer); copyBtn.textContent=text; copyTimer=setTimeout(function () { copyBtn.textContent="复制"; },1800); }
     if (copyBtn) {
       copyBtn.addEventListener("click", function () {
         var text = SNIPPETS[current] || "";
-        var done = function () {
-          var old = copyBtn.textContent;
-          copyBtn.textContent = "已复制";
-          setTimeout(function () { copyBtn.textContent = old; }, 1400);
-        };
+        var done = function () { copiedLabel("已复制"); };
         if (navigator.clipboard && navigator.clipboard.writeText) {
-          navigator.clipboard.writeText(text).then(done, done);
+          navigator.clipboard.writeText(text).then(done, function () { copiedLabel('复制失败，请手动选择'); });
         } else {
-          done();
+          copiedLabel("请手动选择代码复制");
         }
       });
     }

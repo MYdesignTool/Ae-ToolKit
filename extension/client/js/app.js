@@ -1,4 +1,4 @@
-﻿// ============================================================================
+// ============================================================================
 // AE Local Toolkit — 前端入口 (client/js/app.js)
 // 缓存 DOM 元素、绑定整理/表达式面板事件、初始化数据加载；并调用 scripts.js
 // 暴露的 bindScriptEvents()/restoreScriptFolder()，统一在一个 DOMContentLoaded
@@ -30,12 +30,18 @@
   function bindEvents() {
     document.querySelectorAll(".tab").forEach(function (tab) {
       tab.addEventListener("click", function () {
+        var previous=document.querySelector('.tab.active');
+        if (previous===tab) { if (tab.dataset.view==='expressions') refreshSelection(); return; }
+        var tabs=Array.from(document.querySelectorAll('.tab'));
+        document.documentElement.style.setProperty('--view-offset', tabs.indexOf(tab)>tabs.indexOf(previous) ? '8px' : '-8px');
         document.querySelectorAll(".tab").forEach(function (item) { item.classList.remove("active"); });
         document.querySelectorAll(".view").forEach(function (item) { item.classList.remove("active"); });
+        document.querySelectorAll('.tab').forEach(function (item) { item.setAttribute('aria-selected', String(item === tab)); item.tabIndex = item === tab ? 0 : -1; });
         tab.classList.add("active");
         $(tab.dataset.view + "View").classList.add("active");
         // 指示器滑动到新的激活项
         positionTabIndicator(true);
+        if (tab.dataset.view === 'expressions') refreshSelection();
       });
     });
 
@@ -45,7 +51,7 @@
      if (newId === "preset-default") {
        for (var si = 0; si < state.organizerSchemes.length; si++) {
          if (state.organizerSchemes[si].id === "preset-default") {
-           state.organizerSchemes[si] = cloneData(fallbackRules);
+           state.organizerSchemes[si] = cloneData(state.rules);
            break;
          }
        }
@@ -81,13 +87,7 @@
       replaceOrAppendScheme(scheme);
       renderRules();
     });
-    els.refreshSelectionBtn.addEventListener("click", refreshSelection);
-    els.applyExpressionBtn.addEventListener("click", applyExpression);
-    els.removeExpressionBtn.addEventListener("click", removeExpressions);
-    els.saveExpressionBtn.addEventListener("click", saveExpression);
-    els.deleteExpressionBtn.addEventListener("click", deleteExpression);
-    els.pingHostBtn.addEventListener("click", pingHost);
-    els.updateExpressionBtn.addEventListener("click", updateExpression);
+    els.pingHostBtn.addEventListener('click', pingHost);
     els.debugModeToggle.addEventListener("change", function () {
       state.debugMode = els.debugModeToggle.checked;
       AELT.settings.set("debugMode", state.debugMode);
@@ -123,22 +123,11 @@
       renderDebug();
       els.statusBar.textContent = "Debug 已清空";
     });
-    els.expressionSearch.addEventListener("input", renderExpressions);
-
-    els.expressionList.addEventListener("click", function (event) {
-      var button = event.target.closest("[data-expression-id]");
-      if (!button) return;
-      var id = button.getAttribute("data-expression-id");
-      var selected = state.expressions.find(function (item) { return item.id === id; });
-      if (!selected) return;
-      state.selectedExpressionId = id;
-      els.expressionCode.value = selected.code;
-      renderExpressions();
-    });
   }
 
   function cacheEls() {
     [
+      "dataLocation", "exportDataBtn", "importDataBtn",
       "versionLabel",
       "statusBar",
       "ruleGrid",
@@ -182,118 +171,60 @@
     });
   }
 
-  // 从面板自身 URL 推导扩展根目录：面板入口为 <root>/client/index.html，
-  // 去掉该后缀即得到扩展根目录（host/ 与 client/ 并列）。
   function getExtensionRoot() {
-    try {
-      var href = window.location.href;
-      href = href.replace(/^file:\/\/?/, "");
-      href = href.split("?")[0].split("#")[0];
-      href = href.replace(/\/client\/index\.html$/i, "");
-      // file:// 路径中空格等被 URL 编码为 %20，需解码为真实字符，否则找不到文件夹
-      try { href = decodeURIComponent(href); } catch (d) {}
-      // 去掉 Windows 盘符前的多余斜杠：/C:/... -> C:/...
-      href = href.replace(/^\/([A-Za-z]:)/, "$1");
-      return href;
-    } catch (e) {
-      return "";
-    }
+    var url = new URL(window.location.href);
+    var path = decodeURIComponent(url.pathname).replace(/\/client\/index\.html$/i, '');
+    return url.hostname ? '//' + url.hostname + path : path.replace(/^\/([A-Za-z]:)/, '$1');
   }
-
-  // 告诉 host 扩展根目录，使其能定位 host/modules 下的模块。
-  // 本 CEP 环境下 host 的 $.fileName 不可靠（返回 80，指向 AE 自身目录），
-  // 因此必须由客户端提供路径。
-  function initHostModuleBase(callback) {
-    var root = getExtensionRoot();
-    if (!root) {
-      addDebug("module base", "无法从 window.location 推导扩展根目录");
-      if (callback) callback(false);
-      return;
-    }
-    evalAe('AELT_setModuleBase("' + escape(root) + '")', function (result) {
-      if (result && result.loadErrors && result.loadErrors.length) {
-        addDebug("host module load errors", result.loadErrors);
-      } else {
-        addDebug("host module base", result && result.moduleBase);
-      }
-      if (callback) callback(true);
-    });
-  }
-
   function init() {
-    cacheEls();
-    bindEvents();
-    bindScriptEvents();
-
-    // 首次对齐 Tab 滑动指示器（无过渡），并在面板尺寸变化时重新对齐
+    cacheEls(); bindEvents(); bindScriptEvents(); bindExpressionEvents();
     positionTabIndicator(false);
-    window.addEventListener("resize", function () { positionTabIndicator(true); });
-
-    // 先告诉 host 扩展根目录（设置文件 data/settings.json 依赖它定位），
-    // 再加载设置（从扩展目录读取，而非易失的 localStorage），最后才初始化数据。
-    initHostModuleBase(function () {
-      AELT.settings.load(function () {
-        restoreScriptFolder();
-
-        var root = getExtensionRoot();
-        Promise.all([
-          loadJson("../data/organizer-rules.json", fallbackRules),
-          loadJson("../data/default-expressions.json", fallbackExpressions)
-        ]).then(function (results) {
-          state.rules = normalizeScheme(results[0]);
-          state.organizerSchemes = [state.rules];
-          state.selectedSchemeId = state.rules.id;
-          state.expressions = results[1].expressions.concat(getUserExpressions());
-          renderRules();
-          renderExpressions();
-          loadSettings();
-          pingHost();
-          loadOrganizerSchemesFromHost();
-          refreshSelection();
-          loadChangelogFromHost(root);
-        }).catch(function () {
-          state.rules = normalizeScheme(fallbackRules);
-          state.organizerSchemes = [state.rules];
-          state.selectedSchemeId = state.rules.id;
-          state.expressions = cloneData(fallbackExpressions).expressions.concat(getUserExpressions());
-          renderRules();
-          renderExpressions();
-          loadSettings();
-          setStatus("已使用内置数据启动。");
-          pingHost();
-          refreshSelection();
-          loadChangelogFromHost(root);
-        });
+    window.addEventListener('resize', function () { positionTabIndicator(false); });
+    window.addEventListener('focus', function () { if ($('expressionsView').classList.contains('active')) refreshSelection(); });
+    document.querySelector('.tabs').addEventListener('keydown', function (event) {
+      if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) return;
+      var tabs = Array.from(document.querySelectorAll('.tab')).filter(function (tab) { return tab.style.display !== 'none'; });
+      var index = tabs.indexOf(document.activeElement);
+      index = event.key === 'Home' ? 0 : event.key === 'End' ? tabs.length - 1 : (index + (event.key === 'ArrowRight' ? 1 : -1) + tabs.length) % tabs.length;
+      event.preventDefault(); tabs[index].click(); tabs[index].focus();
+    });
+    function bootstrap() {
+      callHost('AELT_bootstrap', [], function (result) {
+        if (!result.ok) { setStatus(result.messages.join(' ')); showToast('默认数据加载失败，请重新安装扩展', 'error'); return; }
+        state.rules = normalizeScheme(result.rules);
+        state.organizerSchemes = [cloneData(state.rules)]; state.selectedSchemeId = state.rules.id;
+        state.expressions = result.expressions.concat(getUserExpressions()); state.changelog = result.changelog;
+        renderRules(); renderExpressions(); loadSettings(); renderChangelog();
+        state.ready = true; loadOrganizerSchemesFromHost(); restoreScriptFolder(); refreshSelection();
+      });
+    }
+    callHost('AELT_setModuleBase', [getExtensionRoot()], function (result) {
+      if (!result.ok) { setStatus((result.messages || result.loadErrors || []).join(' ')); showToast('主机初始化失败，请检查扩展安装', 'error'); return; }
+      AELT.settings.load(function () { bootstrap(); });
+    });
+    els.exportDataBtn.addEventListener('click', function () {
+      AELT.settings.persist(function (saved) {
+        if (!saved.ok) return;
+        callHost('AELT_exportUserData', [], function (result) { if (!result.cancelled) showToast(result.ok ? '备份已导出' : result.messages.join(' '), result.ok ? 'success' : 'error'); });
       });
     });
-  }
-
-  // 通过 host（ExtendScript）读取更新日志文件。
-  // CEP 中 fetch 本地 file:// 资源常被安全策略拦截/不可用，故改由 host 直接读文件，
-  // 保证数据单一来源、且前端无需硬编码兜底。文件缺失或解析失败时 state.changelog
-  // 为 null，由 renderChangelog 显示“未找到更新日志”。
-  function loadChangelogFromHost(root) {
-    if (!root) {
-      state.changelog = null;
-      renderChangelog();
-      return;
-    }
-    evalAe('AELT_readFile("' + escape(root + "/data/changelog.json") + '")', function (result) {
-      if (result && result.ok && result.text) {
-        try {
-          state.changelog = JSON.parse(result.text);
-        } catch (e) {
-          state.changelog = null;
-          addDebug("changelog parse failed", e.toString());
+    els.importDataBtn.addEventListener('click', function () {
+      showConfirmDialog('导入将替换当前设置并合并整理方案。未保存的表达式草稿会丢失，原数据会自动备份。继续？', function (ok) {
+        if (!ok) return;
+        function importBackup() {
+          callHost('AELT_importUserData', [], function (result) {
+            if (result.cancelled) return;
+            if (!result.ok) { showToast(result.messages.join(' '), 'error'); return; }
+            window.location.reload();
+          });
         }
-      } else {
-        state.changelog = null;
-        if (result && result.exists === false) addDebug("changelog file not found", root + "/data/changelog.json");
-      }
-      renderChangelog();
+        if (AELT.settings.isLoaded()) AELT.settings.persist(function (saved) { if (saved.ok) importBackup(); });
+        else importBackup();
+      });
     });
+    document.addEventListener('visibilitychange', function () { if (document.hidden) AELT.settings.persist(); });
+    window.addEventListener('beforeunload', function () { AELT.settings.persist(); });
   }
-
 
 // 应用启动：DOM 就绪后执行 init（此时所有模块脚本均已加载完成）。
 document.addEventListener("DOMContentLoaded", init);
@@ -303,5 +234,4 @@ AELT.app = {
   bindEvents: bindEvents,
   init: init,
   positionTabIndicator: positionTabIndicator,
-  loadChangelogFromHost: loadChangelogFromHost
 };

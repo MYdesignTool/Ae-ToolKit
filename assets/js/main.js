@@ -12,15 +12,30 @@
     var btn = document.getElementById("theme-toggle");
     var saved = null;
     try { saved = localStorage.getItem("theme"); } catch (e) {}
-    root.setAttribute("data-theme", saved === "dark" ? "dark" : "light");
+    root.setAttribute('data-theme', saved === 'dark' ? 'dark' : 'light');
+    if (btn) btn.setAttribute('aria-pressed', String(saved === 'dark'));
     if (btn) {
       btn.addEventListener("click", function () {
         var next = root.getAttribute("data-theme") === "light" ? "dark" : "light";
         root.setAttribute("data-theme", next);
+        btn.setAttribute('aria-pressed', String(next === 'dark'));
         try { localStorage.setItem("theme", next); } catch (e) {}
       });
     }
   })();
+
+  var motion = window.matchMedia('(prefers-reduced-motion: reduce)');
+  var menuButton = document.getElementById('mobile-toggle');
+  var navLinks = document.querySelector('.nav-links');
+  function closeMenu() { navLinks.classList.remove('open'); menuButton.setAttribute('aria-expanded', 'false'); }
+  menuButton.addEventListener('click', function () { var open=navLinks.classList.toggle('open'); menuButton.setAttribute('aria-expanded', String(open)); });
+  document.addEventListener('keydown', function (event) { if (event.key==='Escape') closeMenu(); });
+
+  var preview = document.getElementById('image-preview');
+  document.querySelectorAll('.preview-button').forEach(function (button) {
+    button.addEventListener('click', function () { var image=button.querySelector('img'); var target=preview.querySelector('img'); target.src=image.src; target.alt=image.alt; preview.showModal(); });
+  });
+  preview.addEventListener('click', function (event) { if (event.target===preview) preview.close(); });
 
   // 年份
   var yearEl = document.getElementById("year");
@@ -35,8 +50,8 @@
       if (!el) return;
       e.preventDefault();
       // 关闭移动端菜单
-      document.querySelector(".nav-links")?.classList.remove("open");
-      el.scrollIntoView({ behavior: "smooth", block: "start" });
+      closeMenu();
+      el.scrollIntoView({ behavior: motion.matches ? "auto" : "smooth", block: "start" });
     });
   });
 
@@ -74,7 +89,7 @@
   }
 
   // 液态玻璃：鼠标跟随高光（仅精确指针设备），覆盖所有玻璃元素（含导航栏）
-  if (window.matchMedia && window.matchMedia("(pointer:fine)").matches) {
+  if (!motion.matches && window.matchMedia("(pointer:fine)").matches) {
     document.querySelectorAll(".glass, .site-header").forEach(function (card) {
       card.addEventListener("mousemove", function (e) {
         var r = card.getBoundingClientRect();
@@ -94,7 +109,7 @@
   // 兜底值：API 不可用时仍显示合理版本；成功则覆盖为线上最新版
   (function () {
     var REPO = "MYdesignTool/Ae-ToolKit";
-    var FALLBACK = "v0.2.6";
+    var FALLBACK = "查看最新版本";
     var badge = document.getElementById("app-version");
     var download = document.querySelector('a.btn-primary[href*="releases/latest"]');
 

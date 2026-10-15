@@ -1,225 +1,140 @@
-﻿// ============================================================================
-// AE Local Toolkit — 表达式模块 (client/js/expressions.js)
-// 表达式下拉渲染、应用/移除、自定义表达式保存/删除/更新，以及选中属性刷新。
-// 依赖 core.js 的 state/els 与 util.js 的存储/规范化函数。
-// ============================================================================
-
- function renderExpressions() {
-   var query = els.expressionSearch.value.trim().toLowerCase();
-   var html = '<select class="expression-select">';
-   html += '<option value="">-- 选择表达式 --</option>';
-   state.expressions
-     .filter(function (item) {
-       var haystack = [item.name, item.category, item.description, (item.tags || []).join(" ")].join(" ").toLowerCase();
-       return !query || haystack.indexOf(query) >= 0;
-     })
-     .forEach(function (item) {
-       var selected = item.id === state.selectedExpressionId ? " selected" : "";
-       html += '<option value="' + escapeHtml(item.id) + '"' + selected + ">" + escapeHtml(item.name + " · " + item.category) + "</option>";
-     });
-   html += "</select>";
-   els.expressionList.innerHTML = html || '<div class="selection-status">没有匹配的表达式</div>';
-   var sel = els.expressionList.querySelector("select");
-   if (sel) sel.onchange = function () {
-     var id = this.value;
-     if (!id) { state.selectedExpressionId = null; els.expressionCode.value = ""; if (els.updateExpressionBtn) els.updateExpressionBtn.style.display = "none"; return; }
-     var found = state.expressions.find(function (item) { return item.id === id; });
-     if (!found) return;
-     state.selectedExpressionId = id;
-     els.expressionCode.value = found.code;
-      if (els.updateExpressionBtn) {
-        els.updateExpressionBtn.style.display = found.builtin ? "none" : "";
-      }
-   };
- }
-
- function refreshSelection() {
-    evalAe("AELT_getSelectedPropertySummary()", function (result) {
-      if (!result.ok) {
-        els.selectionStatus.textContent = result.messages.join(" ");
-        return;
-      }
-      els.selectionStatus.textContent = "已选择 " + result.total + " 个属性，已有表达式 " + result.existing + " 个，不支持 " + result.skipped + " 个。";
-    });
+/* Preserve the original search + dropdown + editor workflow. */
+function selectedExpression() { return state.expressions.find(function (item) { return item.id === state.selectedExpressionId; }); }
+function expressionDirty() {
+  var item = selectedExpression();
+  return els.expressionCode.value !== (item ? item.code.replace(/\r\n?/g, '\n') : '');
+}
+function syncExpressionEditor() {
+  var item = selectedExpression(), busy = state.expressionBusy;
+  els.expressionCode.readOnly = busy;
+  els.saveExpressionBtn.disabled = busy || !els.expressionCode.value.trim();
+  els.updateExpressionBtn.hidden = !item || item.builtin;
+  els.updateExpressionBtn.disabled = busy || !expressionDirty();
+  els.deleteExpressionBtn.hidden = !item || item.builtin;
+  els.deleteExpressionBtn.disabled = busy;
+  els.refreshSelectionBtn.disabled = busy;
+  els.applyExpressionBtn.disabled = busy || !els.expressionCode.value.trim();
+  els.removeExpressionBtn.disabled = busy || !(state.selection && state.selection.existing);
+  els.applyExpressionBtn.textContent = busy && state.expressionOperation === 'apply' ? '应用中…' : '应用到选中属性';
+  els.removeExpressionBtn.textContent = busy && state.expressionOperation === 'remove' ? '移除中…' : '移除表达式';
+}
+function renderExpressions() {
+  var query = els.expressionSearch.value.trim().toLowerCase();
+  var items = state.expressions.filter(function (item) {
+    return [item.name, item.category, item.description, (item.tags || []).join(' ')].join(' ').toLowerCase().indexOf(query) >= 0;
+  });
+  els.expressionList.innerHTML = '<select class="expression-select" aria-label="选择表达式"><option value="">' + (items.length ? '选择表达式…' : '没有匹配的表达式') + '</option>' + items.map(function (item) {
+    return '<option value="' + escapeHtml(item.id) + '"' + (item.id === state.selectedExpressionId ? ' selected' : '') + '>' + escapeHtml(item.name + ' · ' + item.category) + '</option>';
+  }).join('') + '</select>';
+  syncExpressionEditor();
+}
+function selectExpression(id) {
+  if (state.expressionBusy) { renderExpressions(); return; }
+  if (id === state.selectedExpressionId) return;
+  function select() {
+    state.selectedExpressionId = id || null;
+    var item = selectedExpression();
+    els.expressionCode.value = item ? item.code : '';
+    renderExpressions();
   }
-
-  function applyExpression() {
-    var expression = els.expressionCode.value;
-    if (!expression.trim()) {
-      setStatus("表达式内容为空。");
+  if (expressionDirty()) confirmAction('当前编辑内容尚未保存，切换后会丢弃修改。继续？', function (ok) { if (ok) select(); else renderExpressions(); });
+  else select();
+}
+function refreshSelection(callback) {
+  if (!state.ready) { if (callback) callback({ok:false}); return; }
+  callHost('AELT_getSelectedPropertySummary', [], function (result) {
+    state.selection = result.ok ? result : null;
+    els.selectionStatus.textContent = result.ok ? '已选 ' + result.supported + ' 个属性 · 已有表达式 ' + result.existing + ' 个' + (result.skipped ? ' · 不支持 ' + result.skipped + ' 个' : '') : result.messages.join(' ');
+    els.selectionStatus.title = result.ok ? [result.comp].concat(result.names || []).join('\n') : result.messages.join(' ');
+    syncExpressionEditor();
+    if (callback) callback(result);
+  });
+}
+function finishExpressionBatch(result, removing) {
+  state.expressionBusy = false;
+  var count = (removing ? result.removed : result.applied) || 0;
+  var message = (removing ? '已移除 ' : '已应用 ') + count + ' 项，跳过 ' + (result.skipped || 0) + ' 项';
+  if (result.errors) message += '，失败 ' + result.errors + ' 项';
+  else if (!result.ok) message = '操作未完成';
+  setStatus(message);
+  els.statusBar.title = message + (result.messages && result.messages.length ? '\n' + result.messages.join('\n') : '');
+  if (!result.ok) showToast((result.messages && result.messages[0]) || message, 'error');
+  refreshSelection();
+}
+function runExpressionBatch(removing) {
+  if (state.expressionBusy || (!removing && !els.expressionCode.value.trim())) return;
+  state.expressionOperation = null;
+  state.expressionBusy = true; syncExpressionEditor();
+  var code = els.expressionCode.value;
+  refreshSelection(function (summary) {
+    if (!summary.ok || !summary.supported || (removing && !summary.existing)) {
+      state.expressionBusy = false; syncExpressionEditor();
+      setStatus(summary.messages ? summary.messages.join(' ') : removing ? '选中属性没有表达式。' : '请先选择可应用表达式的属性。');
       return;
     }
-
-    evalAe("AELT_getSelectedPropertySummary()", function (summary) {
-      if (!summary.ok) {
-        setStatus(summary.messages.join(" "));
-        return;
-      }
-
-      function runApply() {
-        var script = "AELT_applyExpression('" + escapeForEvalScript(expression) + "', true)";
-        evalAe(script, function (result) {
-          setStatus("已应用 " + result.applied + " 个属性，跳过 " + result.skipped + " 个，错误 " + result.errors + " 个。");
-          showToast("已应用表达式到 " + result.applied + " 个属性", "success");
-          refreshSelection();
-        });
-      }
-      if (summary.existing > 0) {
-        confirmAction("检测到 " + summary.existing + " 个属性已有表达式，是否覆盖？", function (overwrite) {
-          if (!overwrite) {
-            setStatus("已取消应用表达式。");
-            return;
-          }
-          runApply();
-        });
-        return;
-      }
-      runApply();
-    });
-  }
-
-  function removeExpressions() {
-    confirmAction("确认移除选中属性上的表达式？", function (ok) {
-      if (!ok) {
-        setStatus("已取消移除表达式。");
-        return;
-      }
-
-      evalAe("AELT_removeExpressions()", function (result) {
-        if (!result.ok) {
-          setStatus(result.messages.join(" "));
-          return;
-        }
-        setStatus("已移除 " + result.removed + " 个表达式，跳过 " + result.skipped + " 个，错误 " + result.errors + " 个。");
-        showToast("已移除 " + result.removed + " 个表达式", "success");
-        refreshSelection();
-      });
-    });
-  }
-
-  function saveExpression() {
-    var code = els.expressionCode.value.trim();
-    if (!code) {
-      setStatus("表达式内容为空。");
-      return;
+    function run() {
+      state.expressionOperation = removing ? 'remove' : 'apply'; syncExpressionEditor();
+      // Preserve the existing confirmation-before-overwrite policy and quiet-mode setting.
+      callHost(removing ? 'AELT_removeExpressions' : 'AELT_applyExpression', removing ? [summary.selectionKey] : [code, true, summary.selectionKey], function (result) { finishExpressionBatch(result, removing); });
     }
-
-    showInputDialog("保存为自定义表达式", "自定义表达式", function (name) {
-      if (!name) return;
-
-      var items = getUserExpressions();
-      var item = {
-        id: "user-" + Date.now(),
-        name: name,
-        category: "自定义",
-        description: "用户保存的本地表达式。",
-        code: code,
-        tags: ["自定义"],
-        builtin: false,
-        favorite: false
-      };
-
-      items.push(item);
-      if (!setUserExpressions(items)) {
-        setStatus("保存失败：当前 CEP 本地存储不可用。");
-        showToast("保存失败", "error");
-        return;
-      }
-      state.expressions.push(item);
-      state.selectedExpressionId = item.id;
-      renderExpressions();
-      setStatus("已保存到本地表达式库。");
-      showToast("表达式已保存", "success");
+    if (removing || summary.existing) {
+      confirmAction(removing ? '移除选中属性上的 ' + summary.existing + ' 个表达式？可在 AE 中撤销。' : '已有 ' + summary.existing + ' 个属性包含表达式，是否覆盖？', function (ok) {
+        if (ok) run(); else { state.expressionBusy = false; syncExpressionEditor(); }
+      }, {title:removing ? '移除表达式' : '覆盖表达式', confirmLabel:removing ? '移除' : '覆盖', destructive:removing});
+    } else run();
+  });
+}
+function applyExpression() { runExpressionBatch(false); }
+function removeExpressions() { runExpressionBatch(true); }
+function saveExpression(update) {
+  if (state.expressionBusy) return;
+  var selected = selectedExpression(), code = els.expressionCode.value.trim();
+  if (!code || (update && (!selected || selected.builtin))) return;
+  showInputDialog(update ? '更新表达式名称' : '保存为自定义表达式', update ? selected.name : '自定义表达式', function (name) {
+    if (!name) return;
+    var item = {id:update ? selected.id : createId('user'), name:name, code:code, builtin:false, category:'自定义', description:'用户保存的本地表达式。', tags:['自定义']};
+    var before = cloneData(getUserExpressions()), items = cloneData(before);
+    var index = items.findIndex(function (entry) { return entry.id === item.id; });
+    if (index < 0) items.push(item); else items[index] = item;
+    state.expressionOperation = 'save'; state.expressionBusy = true; syncExpressionEditor();
+    setUserExpressions(items, function (result) {
+      state.expressionBusy = false;
+      if (!result.ok) { AELT.settings.set('userExpressions', before); syncExpressionEditor(); return; }
+      state.expressions = state.expressions.filter(function (entry) { return entry.builtin; }).concat(items);
+      state.selectedExpressionId = item.id; els.expressionCode.value = code;
+      renderExpressions(); setStatus(update ? '表达式已更新。' : '已保存到自定义表达式。');
     });
-  }
-
-  function deleteExpression() {
-    if (!state.selectedExpressionId) {
-      setStatus("请先选择一个自定义表达式。");
-      showToast("请先选择一个自定义表达式", "error");
-      return;
-    }
-
-    var selected = state.expressions.find(function (item) {
-      return item.id === state.selectedExpressionId;
+  });
+}
+function deleteExpression() {
+  var selected = selectedExpression();
+  if (state.expressionBusy || !selected || selected.builtin) return;
+  confirmAction('删除自定义表达式“' + selected.name + '”？', function (ok) {
+    if (!ok) return;
+    var before = cloneData(getUserExpressions()), next = before.filter(function (item) { return item.id !== selected.id; });
+    state.expressionOperation = 'save'; state.expressionBusy = true; syncExpressionEditor();
+    setUserExpressions(next, function (result) {
+      state.expressionBusy = false;
+      if (!result.ok) { AELT.settings.set('userExpressions', before); syncExpressionEditor(); return; }
+      state.expressions = state.expressions.filter(function (item) { return item.id !== selected.id; });
+      state.selectedExpressionId = null; els.expressionCode.value = '';
+      renderExpressions(); setStatus('自定义表达式已删除。');
     });
-
-    if (!selected || selected.builtin) {
-      setStatus("内置表达式不能删除。");
-      showToast("内置表达式不能删除", "error");
-      return;
-    }
-
-    confirmAction("确认删除这个自定义表达式？", function (ok) {
-      if (!ok) return;
-
-      var next = getUserExpressions().filter(function (item) {
-        return item.id !== state.selectedExpressionId;
-      });
-      if (!setUserExpressions(next)) {
-        setStatus("删除失败：当前 CEP 本地存储不可用。");
-        showToast("删除失败", "error");
-        return;
-      }
-      state.expressions = state.expressions.filter(function (item) {
-        return item.id !== state.selectedExpressionId;
-      });
-      state.selectedExpressionId = null;
-      els.expressionCode.value = "";
-      renderExpressions();
-      setStatus("已删除自定义表达式。");
-      showToast("自定义表达式已删除", "success");
-    });
-  }
-
-  function updateExpression() {
-    if (!state.selectedExpressionId) {
-      setStatus("请先选择一个自定义表达式。");
-      showToast("请先选择一个自定义表达式", "error");
-      return;
-    }
-    var selected = state.expressions.find(function (item) {
-      return item.id === state.selectedExpressionId;
-    });
-    if (!selected || selected.builtin) {
-      setStatus("内置表达式不能编辑。");
-      showToast("内置表达式不能编辑", "error");
-      return;
-    }
-    var code = els.expressionCode.value.trim();
-    if (!code) {
-      setStatus("表达式内容为空。");
-      return;
-    }
-    showInputDialog("更新表达式名称", selected.name, function (name) {
-      if (!name) return;
-      selected.name = name;
-      selected.code = code;
-      var userItems = getUserExpressions();
-      for (var i = 0; i < userItems.length; i++) {
-        if (userItems[i].id === state.selectedExpressionId) {
-          userItems[i] = selected;
-          break;
-        }
-      }
-      if (!setUserExpressions(userItems)) {
-        setStatus("保存失败：当前 CEP 本地存储不可用。");
-        showToast("保存失败", "error");
-        return;
-      }
-      renderExpressions();
-      setStatus("表达式已更新。");
-      showToast("表达式已更新", "success");
-    });
-  }
-
-
-AELT.expressions = {
-  renderExpressions: renderExpressions,
-  refreshSelection: refreshSelection,
-  applyExpression: applyExpression,
-  removeExpressions: removeExpressions,
-  saveExpression: saveExpression,
-  deleteExpression: deleteExpression,
-  updateExpression: updateExpression
-};
+  }, {title:'删除表达式',confirmLabel:'删除',destructive:true});
+}
+function bindExpressionEvents() {
+  els.expressionSearch.addEventListener('input', renderExpressions);
+  els.expressionList.addEventListener('change', function (event) { if (event.target.matches('.expression-select')) selectExpression(event.target.value); });
+  els.expressionCode.addEventListener('input', syncExpressionEditor);
+  els.expressionCode.addEventListener('keydown', function (event) {
+    if ((event.ctrlKey || event.metaKey) && event.key === 'Enter') { event.preventDefault(); applyExpression(); }
+    if (event.key === 'Tab') { event.preventDefault(); event.target.setRangeText('  ', event.target.selectionStart, event.target.selectionEnd, 'end'); syncExpressionEditor(); }
+  });
+  els.refreshSelectionBtn.addEventListener('click', function () { refreshSelection(); });
+  els.applyExpressionBtn.addEventListener('click', applyExpression);
+  els.removeExpressionBtn.addEventListener('click', removeExpressions);
+  els.saveExpressionBtn.addEventListener('click', function () { saveExpression(false); });
+  els.updateExpressionBtn.addEventListener('click', function () { saveExpression(true); });
+  els.deleteExpressionBtn.addEventListener('click', deleteExpression);
+}
+AELT.expressions = {bindEvents:bindExpressionEvents,renderExpressions:renderExpressions,refreshSelection:refreshSelection};

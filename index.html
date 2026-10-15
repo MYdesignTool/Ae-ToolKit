@@ -4,10 +4,9 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Ae-ToolKit — After Effects 离线扩展工具集</title>
-  <meta name="description" content="Ae-ToolKit 是一款完全离线运行的 After Effects CEP 扩展面板，集成项目整理器、表达式管理器、脚本启动器三大核心功能。支持 AE 2020+，纯 AI 开发，开源免费。">
+  <meta name="description" content="Ae-ToolKit 是一款完全离线运行的 After Effects CEP 扩展面板，集成项目整理器、表达式管理器、脚本启动器三大核心功能。支持 AE 2023+，开源 · 本地优先，开源免费。">
   <link rel="icon" type="image/svg+xml" href="assets/img/logo.svg?v=3">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css">
-  <link rel="stylesheet" href="assets/css/style.css?v=30">
+  <link rel="stylesheet" href="assets/css/style.css?v=030">
   <link rel="stylesheet" href="assets/css/theme-light.css?v=3">
 </head>
 <body>
@@ -27,7 +26,7 @@
         <img src="assets/img/logo.svg?v=3" alt="Ae-ToolKit" class="logo-icon">
         Ae-ToolKit
       </a>
-      <ul class="nav-links">
+      <ul class="nav-links" id="nav-links">
         <li><a href="#features">功能</a></li>
         <li><a href="#code">代码</a></li>
         <li><a href="#structure">结构</a></li>
@@ -37,7 +36,7 @@
       <button class="theme-toggle" id="theme-toggle" type="button" aria-label="切换主题" title="切换亮色 / 暗色主题">
         <span class="bulb">💡</span>
       </button>
-      <button class="mobile-toggle" aria-label="菜单" onclick="document.querySelector('.nav-links').classList.toggle('open')">
+      <button class="mobile-toggle" aria-label="菜单" id="mobile-toggle" aria-expanded="false" aria-controls="nav-links">
         <span></span><span></span><span></span>
       </button>
     </nav>
@@ -45,10 +44,9 @@
 
   <!-- ===== Hero ===== -->
   <section id="hero" class="hero">
-    <canvas class="hero-fx" id="matrix-fx"></canvas>
     <div class="hero-overlay"></div>
     <div class="hero-content container">
-      <div class="hero-badge"><span id="app-version">v0.2.6</span> · GPLv3 · 完全离线运行</div>
+      <div class="hero-badge"><span id="app-version">v0.3.0</span> · GPLv3 · 完全离线运行</div>
       <h1 class="hero-title">
         After Effects<br>
         <span class="gradient-text">离线扩展工具集</span>
@@ -68,7 +66,7 @@
         </a>
       </div>
       <p class="hero-note">
-        ✨ 纯 AI 开发 &nbsp;·&nbsp; 支持 AE 2020+ &nbsp;·&nbsp; CEP 扩展面板
+        ✨ 开源 · 本地优先 &nbsp;·&nbsp; 支持 AE 2023+ &nbsp;·&nbsp; CEP 扩展面板
       </p>
     </div>
   </section>
@@ -79,13 +77,11 @@
       <h2 class="section-title">
         <span class="title-accent">//</span> 核心功能
       </h2>
-      <p class="section-subtitle">三大模块覆盖素材管理、代码复用与工作流加速</p>
+      <p class="section-subtitle">三大模块覆盖素材管理、代码复用与工作流加速。以下为界面预览，示例数据仅用于展示。</p>
       <div class="feature-grid">
 
         <article class="feature-card glass">
-          <div class="feature-img-wrap">
-            <img src="assets/img/feature-organizer.png" alt="项目整理器" loading="lazy">
-          </div>
+          <div class="feature-img-wrap"><button class="preview-button" type="button" aria-label="放大面板预览"><img src="assets/img/feature-organizer.png" alt="工程整理面板预览" width="520" height="880" loading="lazy"></button></div>
           <h3>📁 项目整理器</h3>
           <p>按预设规则自动分类素材（图片、视频、音频、PSD、3D 等）。支持自定义多方案与嵌套文件夹结构，整理完成后自动清除空文件夹。</p>
           <ul class="feature-list">
@@ -96,28 +92,24 @@
         </article>
 
         <article class="feature-card glass">
-          <div class="feature-img-wrap">
-            <img src="assets/img/feature-expression.png" alt="表达式管理器" loading="lazy">
-          </div>
+          <div class="feature-img-wrap"><button class="preview-button" type="button" aria-label="放大面板预览"><img src="assets/img/feature-expression.png" alt="批量表达式面板预览" width="520" height="880" loading="lazy"></button></div>
           <h3>⚡ 表达式管理器</h3>
           <p>批量应用或移除 After Effects 表达式，内置示例库。支持用户自定义表达式收藏、搜索与编辑，操作前确认覆盖或删除。</p>
           <ul class="feature-list">
             <li>一键批量操作</li>
             <li>自定义表达式库</li>
-            <li>安全确认机制</li>
+            <li>明确覆盖策略与结果反馈</li>
           </ul>
         </article>
 
         <article class="feature-card glass">
-          <div class="feature-img-wrap">
-            <img src="assets/img/feature-script.svg" alt="脚本启动器" loading="lazy">
-          </div>
+          <div class="feature-img-wrap"><button class="preview-button" type="button" aria-label="放大面板预览"><img src="assets/img/feature-script.png" alt="脚本集面板预览" width="520" height="880" loading="lazy"></button></div>
           <h3>▶️ 脚本启动器</h3>
-          <p>浏览并运行本地 <code>.jsx</code> / <code>.jsxbin</code> 脚本文件。支持收藏夹、实时搜索过滤、仅显示收藏项，并自动关联显示 PNG 图标。</p>
+          <p>浏览并运行本地 <code>.jsx</code> / <code>.jsxbin</code> 脚本文件。支持收藏夹、实时搜索过滤、仅显示收藏项，并自动关联显示 多格式缩略图。</p>
           <ul class="feature-list">
             <li>快速启动任意脚本</li>
             <li>收藏夹与搜索</li>
-            <li>PNG 图标关联</li>
+            <li>多格式图片与缺图占位</li>
           </ul>
         </article>
 
@@ -175,7 +167,7 @@
               <li class="tree-folder">client/ <span class="tree-desc">前端 UI（AE 面板内运行）</span>
                 <ul>
                   <li class="tree-folder">images/ <span class="tree-desc">图标与图片资源</span>
-                    <ul><li class="tree-file">placeholder.png <span class="tree-desc">占位图标</span></li></ul>
+                    <ul><li class="tree-file">placeholder.svg <span class="tree-desc">占位图标</span></li></ul>
                   </li>
                   <li class="tree-folder">js/ <span class="tree-desc">前端逻辑脚本</span>
                     <ul>
@@ -198,7 +190,7 @@
                   <li class="tree-file">changelog.json <span class="tree-desc">版本更新记录</span></li>
                   <li class="tree-file">default-expressions.json <span class="tree-desc">内置表达式预设</span></li>
                   <li class="tree-file">organizer-rules.json <span class="tree-desc">默认整理规则</span></li>
-                  <li class="tree-file">settings.default.json <span class="tree-desc">默认设置（扩展工作目录存储）</span></li>
+                  <li class="tree-file">settings.default.json <span class="tree-desc">随扩展分发的只读默认设置</span></li>
                 </ul>
               </li>
               <li class="tree-folder">docs/ <span class="tree-desc">项目文档</span>
@@ -275,7 +267,7 @@
           <span class="step-line" aria-hidden="true"></span>
           <div class="step-body">
             <h4>运行安装向导</h4>
-            <p>双击运行，按原生向导操作：阅读许可协议并勾选同意 → 确认安装路径（默认已填好<strong>系统级</strong> CEP 目录 <code>C:\Program Files (x86)\Common Files\Adobe\CEP\extensions\AeLocalToolkit</code>，可「浏览…」自定义）→ 点击「安装」。安装到系统级目录<strong>需要管理员权限</strong>，弹出的 UAC 用户账户控制请点击「是」授权。安装器会自动写入 <code>PlayerDebugMode</code> 使扩展可被加载。</p>
+            <p>双击运行，按原生向导操作：阅读许可协议并勾选同意 → 确认固定的系统级安装目录→ 点击「安装」。安装到系统级目录<strong>需要管理员权限</strong>，弹出的 UAC 用户账户控制请点击「是」授权。未签名开发包需要在组件页明确选择启用当前用户的调试模式。</p>
           </div>
         </div>
         <div class="step glass">
@@ -284,7 +276,7 @@
             <h4>打开面板</h4>
             <p>按提示重启 After Effects，通过菜单路径打开面板：</p>
             <p><code>窗口(W) → 扩展 → AE Local Toolkit</code></p>
-            <p class="step-note">💡 若系统提示「未知发布者」属正常现象（安装器未做代码签名），点「更多信息 → 仍要运行」即可。</p>
+            <p class="step-note">安装前请核对下载来源与版本，按组织的安装策略处理系统提示。</p>
           </div>
         </div>
       </div>
@@ -305,7 +297,7 @@
           <span class="step-line" aria-hidden="true"></span>
           <div class="step-body">
             <h4>复制到扩展目录</h4>
-            <p>将 <code>AeLocalToolkit/</code> 文件夹整体复制到 CEP 扩展目录。<strong>只能使用系统级目录</strong>——用户级目录 After Effects 不识别，放进去面板不会显示：</p>
+            <p>将 <code>AeLocalToolkit/</code> 文件夹整体复制到 CEP 扩展目录。可使用以下系统级目录；也可使用 Adobe 官方支持的用户级 CEP 目录。避免同时保留多个同 ID 的扩展副本：</p>
             <pre><code># Windows 系统级（需管理员）
 C:\Program Files (x86)\Common Files\Adobe\CEP\extensions\
 
@@ -318,12 +310,12 @@ C:\Program Files (x86)\Common Files\Adobe\CEP\extensions\
           <span class="step-line" aria-hidden="true"></span>
           <div class="step-body">
             <h4>开启调试模式（未签名时）</h4>
-            <p>若扩展未签名（使用「方式一」安装器会自动写入系统级 <code>PlayerDebugMode</code> 到 HKLM，通常可跳过本步），需手动开启调试模式以加载未签名扩展：</p>
-            <pre><code># Windows 注册表（系统级，对所有用户生效）
-HKEY_LOCAL_MACHINE\Software\Adobe\CSXS.9\PlayerDebugMode = 1
+            <p>未签名开发包需开启对应 CEP 版本的调试模式。AE 2023/2024 使用 CSXS.11，AE 2025 起使用 CSXS.12。已签名 CEP 扩展不需要此设置：</p>
+            <pre><code># Windows 注册表（当前用户，字符串值）
+HKEY_CURRENT_USER\Software\Adobe\CSXS.11\PlayerDebugMode = 1
 
 # macOS 终端
-defaults write com.adobe.CSXS.9 PlayerDebugMode -bool true</code></pre>
+defaults write com.adobe.CSXS.11 PlayerDebugMode -bool true</code></pre>
           </div>
         </div>
         <div class="step glass">
@@ -348,7 +340,7 @@ defaults write com.adobe.CSXS.9 PlayerDebugMode -bool true</code></pre>
           <strong>Ae-ToolKit</strong>
         </div>
         <p class="footer-desc">
-          一款由 <mark class="ai-tag">纯 AI 开发</mark> 的 After Effects CEP 扩展<br>
+          一款由 <mark class="ai-tag">开源 · 本地优先</mark> 的 After Effects CEP 扩展<br>
           所有代码（包括日志及文档）均由 AI 完成
         </p>
       </div>
@@ -356,17 +348,15 @@ defaults write com.adobe.CSXS.9 PlayerDebugMode -bool true</code></pre>
         <div class="footer-links">
           <a href="https://github.com/MYdesignTool/Ae-ToolKit" target="_blank" rel="noopener">GitHub 仓库</a>
           <a href="https://github.com/MYdesignTool/Ae-ToolKit/issues" target="_blank" rel="noopener">问题反馈</a>
-          <a href="https://github.com/MYdesignTool/Ae-ToolKit/blob/main/LICENSE" target="_blank" rel="noopener">GPL v3.0 许可证</a>
+          <a href="https://github.com/MYdesignTool/Ae-ToolKit/blob/main/extension/License.md" target="_blank" rel="noopener">GPL v3.0 许可证</a>
         </div>
         <p class="copyright">&copy; 2026 MYdesignTool. All rights reserved.</p>
       </div>
     </div>
   </footer>
 
-  <canvas id="cursor-fx" aria-hidden="true"></canvas>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
-  <script src="assets/js/main.js?v=16"></script>
-  <script src="assets/js/effects.js?v=17"></script>
-  <script src="assets/js/code-showcase.js?v=13"></script>
+  <dialog class="image-preview" id="image-preview" aria-label="面板预览"><form method="dialog"><button>关闭预览</button></form><img alt="" /></dialog>
+  <script src="assets/js/main.js?v=030"></script>
+  <script src="assets/js/code-showcase.js?v=030"></script>
 </body>
 </html>
