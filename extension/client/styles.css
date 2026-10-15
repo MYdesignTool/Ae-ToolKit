@@ -876,6 +876,7 @@ button:focus-visible, .script-item:focus-visible { outline: 2px solid var(--acce
 .expression-actions { justify-content: flex-start; flex-shrink: 0; gap: 8px; }
 .expression-actions button { height: 34px; padding: 0 14px; }
 #applyExpressionBtn { min-width: 160px; }
+#dataLocation { overflow-wrap: anywhere; }
 .status { height: 26px; min-height: 26px; margin-top: auto; padding-top: 7px; font-size: 11px; flex-shrink: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
 .confirm-dialog { width: 100%; max-width: 380px; padding: 20px; display: flex; flex-direction: column; gap: 12px; }
 .modal-overlay { padding: 18px; }

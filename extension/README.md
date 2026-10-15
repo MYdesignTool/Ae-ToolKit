@@ -1,6 +1,6 @@
 # AE Local Toolkit
 
-离线 After Effects 工具箱，最低支持 AE 2023（23.x）和 CEP 11，兼容新版 CEP 12。开发版本 0.3.0。
+离线 After Effects 工具箱，最低支持 AE 2023（23.x）和 CEP 11，兼容新版 CEP 12。开发版本 0.3.1。
 
 ## 批量表达式
 
@@ -30,12 +30,16 @@
 
 ## 数据与备份
 
-数据写入 `Folder.userData/AE Local Toolkit/`，通常 Windows 为 `%APPDATA%/AE Local Toolkit/`，设置页显示实际路径。
+设置、脚本收藏、自定义表达式和全部自定义整理方案，统一保存在扩展文件夹内的 data/user-data.json。内置默认规则保持单独分发，更新时不会覆盖个人数据。
 
-首次读取迁移旧扩展的 `data/settings.json` 和 `data/organizer-schemes/`，保留原文件。迁移完成后不会重新导入已删除的旧方案。损坏 JSON 不会作为代码执行，也不会被默认值静默覆盖。
+换电脑：保存完成并关闭 AE 后，复制整个 AeLocalToolkit 文件夹到新电脑可写的用户级 CEP 目录，再打开面板即可，不需要先导出再导入。user-data.json 是完整数据，旁边的 .bak 是上一次成功保存前的完整快照。安装器更新前还会备份整个 data 到 backups/before-版本-时间/。
 
-保存先写临时文件再替换，保留 `.bak`；主文件缺失时恢复备份。设置页可导入、导出完整 JSON 备份。导入替换设置、合并方案，同 ID 以导入内容为准；导入前保存 `before-import.json`。损坏旧设置备份为 `settings-before-import-corrupt.json`。磁盘故障可能导致部分方案导入，可用导入前备份恢复。
+脚本目录和收藏如果位于扩展文件夹内，会存为相对路径，移动文件夹后自动对应新位置。例如将脚本放进 AeLocalToolkit/scripts，并在设置里选择它；其 image 子目录也一并复制。扩展外的脚本、图片和 AE 工程不会被配置文件复制，换电脑时需另行携带，并按实际位置重新选择脚本目录。
 
-卸载保留用户目录及旧安装目录的 `data/`。升级前建议导出备份。跨设备或切换安装位置请使用导入导出。
+首次升级会整合旧版 data/settings.json、data/organizer-schemes/ 以及上一版 Folder.userData/AE Local Toolkit/ 中的数据，保留所有源文件。如果两处同时存在，上一版用户目录的设置和同 ID 方案优先；其他方案合并。此后始终以本扩展的 user-data.json 为准，不会重新导入已删除的旧方案。
+
+保存先写临时文件再替换，失败保留原数据；主文件缺失时恢复 .bak。设置页仍可导入、导出完整 JSON 备份。导入源保留为 last-import.json；导入前保存 before-import.json，替换设置并合并同 ID 方案，最终单次写入完整数据；损坏原文件保留为 before-import-corrupt.json。
+
+安装器直接运行即可升级，无需卸载。它只更新程序和内置默认 JSON，保留个人文件；从旧系统级安装迁移时，先复制数据，在新版写入后将旧清单重命名停用，旧目录与数据保留。卸载保留 data、backups 和扩展根目录额外的个人脚本目录。手动升级应将新包合并覆盖到旧文件夹，保留原 data，避免先删除旧文件夹。
 
 [安装](docs/install.md) · [构建](installer/README.md) · [GPLv3](License.md)

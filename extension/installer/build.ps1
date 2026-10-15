@@ -24,13 +24,13 @@ if (-not $stagingRoot.StartsWith($tempRoot, [StringComparison]::OrdinalIgnoreCas
 try {
   $packageRoot = Join-Path $stagingRoot 'AeLocalToolkit'
   New-Item -ItemType Directory -Force -Path $packageRoot | Out-Null
-  foreach ($directory in @('CSXS','client','host','data')) { Copy-Item -LiteralPath (Join-Path $extensionRoot $directory) -Destination $packageRoot -Recurse -Force }
+  foreach ($directory in @('CSXS','client','host')) { Copy-Item -LiteralPath (Join-Path $extensionRoot $directory) -Destination $packageRoot -Recurse -Force }
   foreach ($file in @('License.md','README.md')) { Copy-Item -LiteralPath (Join-Path $extensionRoot $file) -Destination $packageRoot -Force }
-  $localSettings = Join-Path $packageRoot 'data\settings.json'
-  if (Test-Path -LiteralPath $localSettings) { Remove-Item -LiteralPath $localSettings -Force }
-  $localSchemes = [IO.Path]::GetFullPath((Join-Path $packageRoot 'data\organizer-schemes'))
-  if (-not $localSchemes.StartsWith($stagingRoot + [IO.Path]::DirectorySeparatorChar, [StringComparison]::OrdinalIgnoreCase)) { throw 'Invalid local scheme staging path' }
-  if (Test-Path -LiteralPath $localSchemes) { Remove-Item -LiteralPath $localSchemes -Recurse -Force }
+  $packageData = Join-Path $packageRoot 'data'
+  New-Item -ItemType Directory -Force -Path $packageData | Out-Null
+  foreach ($defaultFile in @('settings.default.json','organizer-rules.json','default-expressions.json','changelog.json')) {
+    Copy-Item -LiteralPath (Join-Path $extensionRoot ('data\' + $defaultFile)) -Destination $packageData -Force
+  }
   Compress-Archive -LiteralPath $packageRoot -DestinationPath (Join-Path $output 'aetoolkit-extension.zip') -Force
 } finally {
   if (Test-Path -LiteralPath $stagingRoot) { Remove-Item -LiteralPath $stagingRoot -Recurse -Force }

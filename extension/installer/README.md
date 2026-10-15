@@ -1,11 +1,13 @@
-# Windows 构建
+# Windows 构建与更新验证
 
-显式安装 NSIS 后执行 `build-installer.cmd` 或 `./build.ps1`。脚本不会下载或静默安装依赖。版本来自 `../data/changelog.json`，必须与 manifest 一致。
+显式安装 NSIS 后执行 `build-installer.cmd` 或 `./build.ps1`。脚本不会下载或安装依赖。版本来自 `../data/changelog.json`，必须与 manifest 一致。
 
-产物在 dist/：安装器 `aetoolkit-installer.exe` 和干净扩展包 `aetoolkit-extension.zip`。ZIP 排除本地设置、用户方案和开发文件。脚本输出 SHA256，不会上传、发布或执行安装器。
+产物在 dist/：`aetoolkit-installer.exe` 和 `aetoolkit-extension.zip`。只打包 CSXS、client、host、许可证、README 和四个默认 JSON；不包含便携用户数据、迁移源、备份、个人脚本或开发文件。输出 SHA256，不上传、不运行安装器。
 
-NSIS 编译通过 /DVERSION 传入版本，不应直接无参调用 makensis。安装目录固定；卸载校验目录和清单，只删除已知程序路径，保留用户目录及遗留 data/。
+安装器固定使用当前用户的 CEP 目录。直接运行即可覆盖更新，更新前备份完整 data；个人配置不在覆盖清单内。兼容原标准系统级位置和注册表记录的位置，确认扩展 ID 后复制数据并停用旧清单，不调用旧版卸载器。卸载保留 data、backups 和扩展根目录额外的个人脚本目录。
 
-开发模式为组件页默认不选的显式选项，仅影响当前用户 CSXS.11 / .12，不再批量写 HKLM 的 CSXS.9～14。当前源码包需要 CEP 开发模式或单独的 CEP 签名。
+`node tests/installer.cjs` 会将同一份 NSIS 源码编译为隔离测试包，只在 `.artifacts/upgrade-随机值/` 下执行安装、更新和卸载，不写注册表、不接触真实 CEP 目录。检查旧数据迁移、清单停用、连续覆盖更新、用户数据逐字节保留、程序文件替换及卸载保留数据。
 
-`sign-win.ps1` 用于安装器 Authenticode 签名，与 CEP 签名不同；签名不保证 SmartScreen 必然消失。
+`TEST_ROOT` 是编译期测试入口，正式构建不设置它。正式安装器仍请求管理员权限以迁移旧系统级副本；当前用户的数据目录本身不需要提权即可保存。
+
+开发模式为组件页默认不选的选项，仅影响当前用户 CSXS.11 / .12。`sign-win.ps1` 用于安装器 Authenticode 签名，与 CEP 签名不同。

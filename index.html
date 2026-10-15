@@ -46,7 +46,7 @@
   <section id="hero" class="hero">
     <div class="hero-overlay"></div>
     <div class="hero-content container">
-      <div class="hero-badge"><span id="app-version">v0.3.0</span> · GPLv3 · 完全离线运行</div>
+      <div class="hero-badge"><span id="app-version">v0.3.1</span> · GPLv3 · 完全离线运行</div>
       <h1 class="hero-title">
         After Effects<br>
         <span class="gradient-text">离线扩展工具集</span>
@@ -185,11 +185,12 @@
                   <li class="tree-file">styles.css <span class="tree-desc">面板样式</span></li>
                 </ul>
               </li>
-              <li class="tree-folder">data/ <span class="tree-desc">默认配置数据</span>
+              <li class="tree-folder">data/ <span class="tree-desc">默认配置与便携用户数据</span>
                 <ul>
                   <li class="tree-file">changelog.json <span class="tree-desc">版本更新记录</span></li>
                   <li class="tree-file">default-expressions.json <span class="tree-desc">内置表达式预设</span></li>
                   <li class="tree-file">organizer-rules.json <span class="tree-desc">默认整理规则</span></li>
+                  <li class="tree-file">user-data.json <span class="tree-desc">本地设置、收藏、表达式及整理方案（不随安装包分发）</span></li>
                   <li class="tree-file">settings.default.json <span class="tree-desc">随扩展分发的只读默认设置</span></li>
                 </ul>
               </li>
@@ -224,7 +225,7 @@
             </ul>
           </li>
         </ul>
-        <p class="tree-note">注：<code>data/settings.json</code>、<code>data/organizer-schemes/</code> 与 <code>installer/dist/</code> 为本地用户数据或构建产物，已通过 <code>.gitignore</code> 排除，不纳入云端仓库与 Release。</p>
+        <p class="tree-note">注：<code>data/user-data.json</code>、备份、旧版本地数据与 <code>installer/dist/</code> 为本地用户数据或构建产物，已通过 <code>.gitignore</code> 排除，不纳入云端仓库与 Release。</p>
       </div>
     </div>
   </section>
@@ -241,7 +242,7 @@
       <div class="install-note glass" role="note">
         <span class="install-note__icon" aria-hidden="true">⚠️</span>
         <div class="install-note__body">
-          <strong>安装前必读（两种方式均需要）</strong>：本工具会在本地写入文件（整理素材、保存方案与自定义表达式），需开启 AE 脚本写权限。打开 After Effects 2020+：
+          <strong>安装前必读（两种方式均需要）</strong>：本工具会在本地写入文件（整理素材、保存方案与自定义表达式），需开启 AE 脚本写权限。打开 After Effects 2023+：
           <br>
           <strong>中文：</strong>编辑 → 首选项 → 脚本与表达式 → 勾选「允许脚本写入文件和访问网络」
           <br>
@@ -267,7 +268,7 @@
           <span class="step-line" aria-hidden="true"></span>
           <div class="step-body">
             <h4>运行安装向导</h4>
-            <p>双击运行，按原生向导操作：阅读许可协议并勾选同意 → 确认固定的系统级安装目录→ 点击「安装」。安装到系统级目录<strong>需要管理员权限</strong>，弹出的 UAC 用户账户控制请点击「是」授权。未签名开发包需要在组件页明确选择启用当前用户的调试模式。</p>
+            <p>更新前关闭 AE，直接运行新版安装器，无需卸载。向导先备份数据，再更新程序，设置与预设保留在扩展文件夹中。安装到当前用户的 CEP 目录；迁移并停用旧系统级副本需要管理员授权。未签名开发包需在组件页选择开发模式。</p>
           </div>
         </div>
         <div class="step glass">
@@ -297,12 +298,12 @@
           <span class="step-line" aria-hidden="true"></span>
           <div class="step-body">
             <h4>复制到扩展目录</h4>
-            <p>将 <code>AeLocalToolkit/</code> 文件夹整体复制到 CEP 扩展目录。可使用以下系统级目录；也可使用 Adobe 官方支持的用户级 CEP 目录。避免同时保留多个同 ID 的扩展副本：</p>
-            <pre><code># Windows 系统级（需管理员）
-C:\Program Files (x86)\Common Files\Adobe\CEP\extensions\
+            <p>将 <code>AeLocalToolkit/</code> 文件夹整体复制到 CEP 扩展目录。推荐以下可写的用户级目录，让设置随文件夹保存。避免同时保留多个同 ID 的扩展副本：</p>
+            <pre><code># Windows 用户级
+%APPDATA%\Adobe\CEP\extensions\
 
-# macOS 系统级（需管理员）
-/Library/Application Support/Adobe/CEP/extensions\</code></pre>
+# macOS 用户级
+~/Library/Application Support/Adobe/CEP/extensions/</code></pre>
           </div>
         </div>
         <div class="step glass">

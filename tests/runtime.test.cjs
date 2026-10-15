@@ -12,23 +12,23 @@ test('invalid JSON never executes and malformed numbers/objects are rejected',()
  for(const text of ['({x:1})','{"a":(globalThis.pwned=true)}','[1,]','{"x":1,}','01','1.','true x','"\n"','{"__proto__":{"x":1}}','{"a":undefined}','1e999']) {ctx.input=text;assert.throws(()=>vm.runInContext('AELocalToolkit.json.parse(input)',ctx),text);}
  assert.equal(ctx.pwned,undefined);
 });
-test('migrate settings to user directory without modifying legacy source',()=>{
+test('consolidate legacy settings in the extension without modifying the source',()=>{
  const env=storage();env.files.set('/extension/data/settings.json','{"compFolder":"原合成","userExpressions":[]}');
- const result=JSON.parse(env.call('AELocalToolkit.storage.loadSettings()'));assert.equal(result.ok,true);assert.equal(result.settings.compFolder,'原合成');assert.ok(env.files.has('/user/AE Local Toolkit/settings.json'));assert.ok(env.files.has('/extension/data/settings.json'));
+ const result=JSON.parse(env.call('AELocalToolkit.storage.loadSettings()'));assert.equal(result.ok,true);assert.equal(result.settings.compFolder,'原合成');assert.ok(env.files.has('/extension/data/user-data.json'));assert.ok(env.files.has('/extension/data/settings.json'));
 });
 test('invalid settings are preserved and not replaced with defaults',()=>{
- const env=storage();const target='/user/AE Local Toolkit/settings.json';env.files.set(target,'{broken');
+ const env=storage();const target='/extension/data/user-data.json';env.files.set(target,'{broken');
  assert.equal(JSON.parse(env.call('AELocalToolkit.storage.loadSettings()')).ok,false);assert.equal(env.files.get(target),'{broken');
 });
 test('failed atomic replacement restores original data and later recovers backup',()=>{
- const env=storage(),target='/user/AE Local Toolkit/settings.json';env.call('AELocalToolkit.storage.loadSettings()');const original=env.files.get(target);
+ const env=storage(),target='/extension/data/user-data.json';env.call('AELocalToolkit.storage.loadSettings()');const original=env.files.get(target);
  env.fault.rename=p=>p===target;
  assert.throws(()=>env.call('AELocalToolkit.storage.saveSettings({compFolder:"NEW"})'));assert.equal(env.files.get(target),original);
- delete env.fault.rename;env.call('AELocalToolkit.storage.saveSettings({compFolder:"OK"})');assert.equal(JSON.parse(env.files.get(target)).compFolder,'OK');assert.equal(env.files.get(target+'.bak'),original);
+ delete env.fault.rename;env.call('AELocalToolkit.storage.saveSettings({compFolder:"OK"})');assert.equal(JSON.parse(env.files.get(target)).settings.compFolder,'OK');assert.equal(env.files.get(target+'.bak'),original);
  env.files.delete(target);assert.equal(JSON.parse(env.call('AELocalToolkit.storage.loadSettings()')).settings.compFolder,'Comp');
 });
 test('failed temporary write leaves the existing settings untouched',()=>{
- const env=storage(),target='/user/AE Local Toolkit/settings.json';env.call('AELocalToolkit.storage.loadSettings()');const old=env.files.get(target);env.fault.write=true;
+ const env=storage(),target='/extension/data/user-data.json';env.call('AELocalToolkit.storage.loadSettings()');const old=env.files.get(target);env.fault.write=true;
  assert.throws(()=>env.call('AELocalToolkit.storage.saveSettings({compFolder:"bad"})'));assert.equal(env.files.get(target),old);
 });
 test('migration runs once so deleting a migrated scheme does not resurrect it',()=>{

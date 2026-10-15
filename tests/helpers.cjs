@@ -6,8 +6,9 @@ exports.root = root;
 exports.source = file => fs.readFileSync(path.join(root, file), 'utf8');
 exports.context = (extra = {}) => vm.createContext({ console, AELT: {}, ...extra });
 exports.run = (context, file) => vm.runInContext(exports.source(file), context, { filename: file });
-exports.storage = () => {
-  const files = new Map(), folders = new Set(['/user', '/extension/data', '/extension/data/organizer-schemes']);
+exports.storage = (options = {}) => {
+  const moduleRoot = options.root || "/extension";
+  const files = new Map(), folders = new Set(['/user', moduleRoot + '/data', moduleRoot + '/data/organizer-schemes']);
   const fault = {};
   function normalize(p) { return String(p).replace(/\\/g, '/').replace(/\/$/, ''); }
   function File(p) { if (!(this instanceof File)) return new File(p); this.fullName = normalize(p); }
@@ -29,10 +30,10 @@ exports.storage = () => {
   Folder.prototype.create=function(){folders.add(this.fullName);return true;};
   Folder.prototype.getFiles=function(pattern){const suffix=pattern?pattern.slice(1):'',prefix=this.fullName+'/';const found=[...files.keys()].filter(p=>p.startsWith(prefix)&&!p.slice(prefix.length).includes('/')&&p.endsWith(suffix)).map(p=>new File(p));return pattern?found:found.concat([...folders].filter(p=>p.startsWith(prefix)&&!p.slice(prefix.length).includes('/')).map(p=>new Folder(p)));};
   Folder.userData=new Folder('/user');
-  const context=exports.context({File,Folder,AELocalToolkit:{moduleBase:'/extension'}});
+  const context=exports.context({File,Folder,AELocalToolkit:{moduleBase:moduleRoot}});
   exports.run(context,'extension/host/lib/json.jsx');
   vm.runInContext('AELocalToolkit.returnResult = AELocalToolkit.json.stringify; AELocalToolkit.error = function(e) { return AELocalToolkit.returnResult({ok:false,messages:[String(e)]}); };',context);
-  for(const name of ['settings.default.json','organizer-rules.json']) files.set('/extension/data/'+name,exports.source('extension/data/'+name));
+  for(const name of ['settings.default.json','organizer-rules.json']) files.set(moduleRoot+'/data/'+name,exports.source('extension/data/'+name));
   exports.run(context,'extension/host/modules/storage.jsx');
   return {context, files, folders, fault, call:code=>vm.runInContext(code,context)};
 };

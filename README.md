@@ -1,6 +1,6 @@
 # AE Local Toolkit
 
-面向 After Effects 2023 及更新版本的离线 CEP 工具箱：工程整理、脚本启动、批量表达式。当前开发版本 **0.3.0**。
+面向 After Effects 2023 及更新版本的离线 CEP 工具箱：工程整理、脚本启动、批量表达式。当前开发版本 **0.3.1**。
 
 - [扩展使用说明](extension/README.md)
 - [安装说明](extension/docs/install.md)
@@ -9,7 +9,7 @@
 
 ## 目录与验证
 
-`extension/client/` 是无框架、无构建步骤的面板，最低 CEP 11 / Chromium 88；`extension/host/` 使用 ES3 兼容 ExtendScript。默认配置在 `extension/data/`，用户数据在 `Folder.userData/AE Local Toolkit/`。
+`extension/client/` 是无框架、无构建步骤的面板，最低 CEP 11 / Chromium 88；`extension/host/` 使用 ES3 兼容 ExtendScript。默认配置在 `extension/data/`，用户数据统一保存在扩展内 `data/user-data.json`，复制整个扩展文件夹即可携带设置及预设。安装器支持更新前备份和保留数据覆盖更新。
 
 `index.html` 和 `assets/` 是 GitHub Pages 发布页；部署只包含这两项。`extension/installer/` 提供 Windows 安装器及干净 ZIP。
 

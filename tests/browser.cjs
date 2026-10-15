@@ -18,7 +18,7 @@ async function main(){
  await page.addInitScript(data=>{
   let settings=data.settings;window.__calls=[];
   const api={
-   AELT_setModuleBase:()=>({ok:true}),AELT_loadSettings:()=>({ok:true,settings,path:'用户数据 / AE Local Toolkit'}),AELT_saveSettings:value=>{settings=value;return{ok:true};},
+   AELT_setModuleBase:()=>({ok:true}),AELT_loadSettings:()=>({ok:true,settings,path:'C:/Users/示例用户/AppData/Roaming/Adobe/CEP/extensions/AeLocalToolkit/data/user-data.json'}),AELT_saveSettings:value=>{settings=value;return{ok:true};},
    AELT_bootstrap:()=>({ok:true,...data}),AELT_loadOrganizerSchemes:()=>({ok:true,schemes:[data.rules]}),AELT_getSelectedPropertySummary:()=>({ok:true,total:3,supported:3,existing:1,skipped:0,names:['标题 / 位置','图形 / 旋转','图形 / 缩放'],comp:'片头动画',selectionKey:'example'}),
    AELT_applyExpression:(code,overwrite)=>code==='bad'?({ok:false,applied:0,errors:3,skipped:0,messages:['表达式无效；原表达式已保留']}):({ok:true,applied:overwrite?3:2,errors:0,skipped:overwrite?0:1,messages:[]}),
    AELT_removeExpressions:()=>({ok:true,removed:1,errors:0,skipped:2,messages:[]}),AELT_ping:()=>({ok:true,appVersion:'模拟宿主'}),
