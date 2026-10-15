@@ -173,23 +173,5 @@
     });
   }
 
-  // Preserve the bundled version offline and never downgrade it to an older release.
-  var badge = document.getElementById('app-version');
-  var download = document.querySelector('[data-download]');
-  var bundled = badge.textContent.replace(/^v/, '').split('.').map(Number);
-  var controller = new AbortController(), timeout = setTimeout(function () { controller.abort(); }, 5000);
-  fetch('https://api.github.com/repos/MYdesignTool/Ae-ToolKit/releases/latest', { signal: controller.signal, headers: { Accept: 'application/vnd.github+json' } })
-    .then(function (response) { if (!response.ok) throw new Error('Release unavailable'); return response.json(); })
-    .then(function (data) {
-      var match = /^v?(\d+)\.(\d+)\.(\d+)$/.exec(data.tag_name || '');
-      if (!match) return;
-      var version = match.slice(1).map(Number), order = 0;
-      for (var i = 0; i < 3; i++) { if (version[i] !== bundled[i]) { order = version[i] - bundled[i]; break; } }
-      if (order < 0) return;
-      badge.textContent = data.tag_name;
-      download.href = 'https://github.com/MYdesignTool/Ae-ToolKit/releases/tag/' + encodeURIComponent(data.tag_name);
-      download.querySelector('[data-download-label]').textContent = '下载 ' + match.slice(1).join('.');
-    })
-    .catch(function () { /* Static download and version stay available offline. */ })
-    .finally(function () { clearTimeout(timeout); });
+  // Release metadata is rendered together at deployment from the shared changelog.
 })();
