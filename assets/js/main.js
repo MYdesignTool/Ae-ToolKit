@@ -91,7 +91,14 @@
       return c.classList && c.classList.contains("reveal");
     });
     var idx = sibs.indexOf(el);
-    if (idx > 0) el.style.transitionDelay = Math.min(idx * 45, 90) + "ms";
+    if (idx > 0 && !motion.matches) {
+      el.style.transitionDelay = Math.min(idx * 45, 90) + "ms";
+      el.addEventListener('transitionend', function clearEntranceDelay(event) {
+        if (event.target !== el || event.propertyName !== 'opacity') return;
+        el.style.removeProperty('transition-delay');
+        el.removeEventListener('transitionend', clearEntranceDelay);
+      });
+    }
   });
 
   if ("IntersectionObserver" in window) {
@@ -114,26 +121,37 @@
   // One highlight update per frame, with no background timer or touch tracking.
   if (window.matchMedia('(pointer:fine)').matches) {
     document.querySelectorAll('.glass, .site-header').forEach(function (card) {
-      var frame = 0, pointer;
+      var frame = 0, pointer, lightX = 30, lightY = 0, returning = false, last = 0;
+      function paintLight(now) {
+        frame = 0;
+        if (returning) {
+          var dt = Math.min((now - last) / 1000, .05), blend = 1 - Math.exp(-dt * 14);
+          last = now; lightX += (30 - lightX) * blend; lightY += (0 - lightY) * blend;
+        } else {
+          var rect = card.getBoundingClientRect();
+          lightX = (pointer.clientX - rect.left) / rect.width * 100;
+          lightY = (pointer.clientY - rect.top) / rect.height * 100;
+          var tiltScale = card.classList.contains('site-header') ? .35 : 1;
+          card.style.setProperty('--tilt-x', (0.5 - lightY / 100) * 3 * tiltScale + 'deg');
+          card.style.setProperty('--tilt-y', (lightX / 100 - 0.5) * 4 * tiltScale + 'deg');
+        }
+        card.style.setProperty('--mx', lightX + '%'); card.style.setProperty('--my', lightY + '%');
+        if (returning) {
+          if (Math.abs(lightX - 30) + Math.abs(lightY) > .05) frame = requestAnimationFrame(paintLight);
+          else { lightX = 30; lightY = 0; card.style.removeProperty('--mx'); card.style.removeProperty('--my'); }
+        }
+      }
+      card.addEventListener('pointerenter', function () { card.style.removeProperty('transition-delay'); });
       card.addEventListener('pointermove', function (event) {
         if (motion.matches) return;
-        pointer = event;
-        if (frame) return;
-        frame = requestAnimationFrame(function () {
-          frame = 0;
-          var rect = card.getBoundingClientRect();
-          card.style.setProperty('--mx', (pointer.clientX - rect.left) / rect.width * 100 + '%');
-          card.style.setProperty('--my', (pointer.clientY - rect.top) / rect.height * 100 + '%');
-          if (card.classList.contains('feature-card')) {
-            card.style.setProperty('--tilt-x', (0.5 - (pointer.clientY - rect.top) / rect.height) * 3 + 'deg');
-            card.style.setProperty('--tilt-y', ((pointer.clientX - rect.left) / rect.width - 0.5) * 4 + 'deg');
-          }
-        });
+        returning = false; pointer = event;
+        if (!frame) frame = requestAnimationFrame(paintLight);
       });
       card.addEventListener('pointerleave', function () {
         cancelAnimationFrame(frame); frame = 0;
-        card.style.removeProperty('--mx'); card.style.removeProperty('--my');
         card.style.removeProperty('--tilt-x'); card.style.removeProperty('--tilt-y');
+        if (motion.matches) { lightX = 30; lightY = 0; card.style.removeProperty('--mx'); card.style.removeProperty('--my'); return; }
+        returning = true; last = performance.now(); frame = requestAnimationFrame(paintLight);
       });
     });
   }

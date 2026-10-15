@@ -190,7 +190,12 @@ code { padding:1px 5px; border-radius:5px; color:var(--accent); background:var(-
   -webkit-mask-composite:xor; mask-composite:exclude;
 }
 .glass::before,.site-header::before { background:radial-gradient(ellipse at var(--mx,30%) var(--my,0%),var(--glass-highlight),transparent 58%),linear-gradient(150deg,rgba(255,255,255,.09),transparent 32%,transparent 72%,rgba(139,179,255,.06)); }
-.feature-card:hover,.js .feature-card.reveal.in:hover { transform:perspective(1000px) translateY(-5px) rotateX(var(--tilt-x,0deg)) rotateY(var(--tilt-y,0deg)); }
+.site-header { transition:transform .3s var(--ease),box-shadow .3s var(--ease); }
+.feature-card { --hover-lift:-5px; }
+.site-header { --hover-lift:0px; }
+@media (hover:hover) and (pointer:fine) and (prefers-reduced-motion:no-preference) {
+ .glass:hover,.js .glass.reveal.in:hover,.site-header:hover { transform:perspective(1000px) translateY(var(--hover-lift,-2px)) rotateX(var(--tilt-x,0deg)) rotateY(var(--tilt-y,0deg)); }
+}
 .pg-blob-1 { animation:ambient-blue 26s ease-in-out infinite alternate; }
 .pg-blob-2 { animation:ambient-violet 31s ease-in-out infinite alternate; }
 .pg-caustic { position:absolute; inset:-25%; background:conic-gradient(from 135deg at 58% 40%,transparent 0deg,var(--orb-blue) 38deg,transparent 70deg,transparent 190deg,var(--orb-violet) 235deg,transparent 290deg); filter:blur(65px); opacity:.45; animation:ambient-caustic 38s linear infinite; }
@@ -237,6 +242,8 @@ html[data-theme=light] { --title-glint:#527ee5; }
 .footer-top { position:relative; }
 @media (max-width:768px) {
  .hero-title { margin-left:auto; margin-right:auto; }
+ /* Center the Chinese characters optically, compensating for the full-width ending punctuation. */
+ .hero-title .title-line { transform:translateX(.48em); }
  .release-banner img { right:12px; bottom:-9px; width:390px; height:130px; }
  .release-banner-copy { z-index:3; }
 

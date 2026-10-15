@@ -36,11 +36,12 @@
       float light = 0.;
       for (int i=0; i<4; i++) {
         float age = u_time - u_ripples[i].z;
-        if (u_ripples[i].w > 0. && age >= 0. && age < 2.3) {
+        bool trail = u_ripples[i].w < .5;
+        if (u_ripples[i].w > 0. && age >= 0. && age < (trail ? .65 : 2.3)) {
           vec2 radial = p.xy - u_ripples[i].xy;
           float radius = length(radial);
-          float band = radius - age * 280.;
-          float envelope = exp(-pow(band / 38., 2.)) * exp(-age * 1.05) * u_ripples[i].w;
+          float band = radius - age * (trail ? 150. : 280.);
+          float envelope = exp(-pow(band / (trail ? 24. : 38.), 2.)) * exp(-age * (trail ? 8. : 1.05)) * u_ripples[i].w;
           p.xy += radial / max(radius, 1.) * sin(band * .075) * envelope * 16.;
           p.z += cos(band * .075) * envelope * 26.;
           light += envelope * .13;
@@ -69,6 +70,7 @@
   let width = 1, height = 1, dpr = 1, frame = 0, visible = true, time = 0, last = 0;
   let pointer = [0, 0, 0], targetPointer = [0, 0, 0];
   let ripples = new Float32Array(16), rippleIndex = 0;
+  let stroke = null, strokeDragged = false;
   let dark = root.dataset.theme === 'dark' ? 1 : 0;
 
   function stop() { cancelAnimationFrame(frame); frame = 0; }
@@ -144,16 +146,35 @@
     }
     count = points.length / 11; geometry = new Float32Array(points); initialize();
   }
+  function addRipple(x, y, strength) {
+    const i = rippleIndex++ % 4 * 4;
+    ripples.set([x, y, time, strength], i); wake();
+  }
+  function isControl(event) { return event.target.closest('a,button') && !event.target.closest('#particle-logo'); }
+  scene.addEventListener('pointerdown', event => {
+    strokeDragged = false;
+    if (event.pointerType !== 'mouse' || event.button !== 0 || motion.matches || isControl(event)) return;
+    event.preventDefault();
+    stroke = { x:event.clientX, y:event.clientY, at:event.timeStamp };
+  });
   scene.addEventListener('pointermove', event => {
     if (event.pointerType === 'touch' || motion.matches) return;
     const r = button.getBoundingClientRect(); targetPointer = [event.clientX-r.left-width/2,event.clientY-r.top-height/2,1];
+    if (!(event.buttons & 1)) stroke = null;
+    if (!stroke || isControl(event)) return;
+    if (Math.hypot(event.clientX-stroke.x,event.clientY-stroke.y) < 10 || event.timeStamp-stroke.at < 60) return;
+    addRipple(targetPointer[0],targetPointer[1],.42);
+    stroke = { x:event.clientX, y:event.clientY, at:event.timeStamp }; strokeDragged = true;
   });
-  scene.addEventListener('pointerleave', () => { targetPointer[2] = 0; });
+  scene.addEventListener('pointerleave', () => { targetPointer[2] = 0; stroke = null; });
+  window.addEventListener('pointerup', () => { stroke = null; });
+  window.addEventListener('pointercancel', () => { stroke = null; });
+  window.addEventListener('blur', () => { stroke = null; targetPointer[2] = 0; });
   scene.addEventListener('click', event => {
-    if (event.target.closest('a,button') && !event.target.closest('#particle-logo')) return;
-    if (motion.matches || !program) return;
-    const r = button.getBoundingClientRect(), i = rippleIndex++ % 4 * 4;
-    ripples.set([event.detail ? event.clientX-r.left-width/2 : 0,event.detail ? event.clientY-r.top-height/2 : 0,time,1], i); wake();
+    if (isControl(event) || motion.matches || !program) return;
+    if (event.detail && strokeDragged) { strokeDragged = false; return; }
+    const r = button.getBoundingClientRect();
+    addRipple(event.detail ? event.clientX-r.left-width/2 : 0,event.detail ? event.clientY-r.top-height/2 : 0,1);
   });
   canvas.addEventListener('webglcontextlost', event => { event.preventDefault(); stop(); program = null; button.dataset.renderer = 'fallback'; });
   canvas.addEventListener('webglcontextrestored', initialize);

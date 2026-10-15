@@ -47,6 +47,14 @@ async function main(){
  await p.mouse.move(2,2);await p.waitForFunction(()=>__gpu.values.u_pointer[2]<.003);
  await p.locator('#particle-logo').focus();await p.keyboard.press('Enter');await p.waitForTimeout(40);
  assert.ok(await p.evaluate(()=>{const r=__gpu.values['u_ripples[0]'];return [0,4,8,12].some(i=>r[i]===0&&r[i+1]===0&&r[i+3]===1);}), 'keyboard ripple starts at the center');
+ // A held left button leaves small waves, and releasing it does not add a large click ripple.
+ await p.mouse.move(x,y);await p.mouse.down();
+ for(let i=1;i<=6;i++){await p.waitForTimeout(75);await p.mouse.move(x+i*12,y+Math.sin(i)*14);}
+ await p.waitForTimeout(50);
+ const trail=await p.evaluate(()=>__gpu.values['u_ripples[0]']);assert.equal(trail.length,16);assert.ok([0,4,8,12].every(i=>Math.abs(trail[i+3]-.42)<.001),'drag uses bounded gentle wake slots');
+ await p.screenshot({path:path.join(out,'drag-water.png')});
+ await p.mouse.up();await p.waitForTimeout(80);assert.deepEqual(await p.evaluate(()=>__gpu.values['u_ripples[0]']),trail,'release does not trigger a full click ripple');
+ await p.mouse.move(x+110,y+40);await p.waitForTimeout(80);assert.deepEqual(await p.evaluate(()=>__gpu.values['u_ripples[0]']),trail,'hover after release stops emitting wake');
  await p.locator('#theme-toggle').click();await p.waitForFunction(()=>document.documentElement.dataset.theme==='dark');await p.waitForTimeout(700);
  assert.equal(await p.evaluate(()=>__gpu.values.u_dark),1);await p.screenshot({path:path.join(out,'hero-dark.png')});
  // Three rapid toggles must finish in light, including a click during an existing transition.
@@ -65,6 +73,31 @@ async function main(){
  for(const width of [390,768,1440]){await p.setViewportSize({width,height:width===1440?1000:844});await p.waitForTimeout(100);assert.ok(await p.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),'viewport fits '+width);await p.screenshot({path:path.join(out,'viewport-'+width+'.png')});}
  assert.ok(await p.locator('.site-header[data-refracted=true]').count());
  await p.locator('#features').scrollIntoViewIfNeeded();await p.evaluate(()=>new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r))));await p.screenshot({path:path.join(out,'glass-features.png')});
+ // Leaving a glass panel interpolates its highlight back to the resting position.
+ await p.emulateMedia({reducedMotion:'no-preference'});
+ const card=p.locator('.feature-card').first();await card.scrollIntoViewIfNeeded();const cr=await card.boundingBox();
+ await p.mouse.move(cr.x+cr.width*.8,cr.y+cr.height*.65);await p.waitForTimeout(80);
+ const initialLight=await card.evaluate(e=>parseFloat(e.style.getPropertyValue('--mx')));assert.ok(initialLight>65);
+ await p.mouse.move(2,2);const immediate=await card.evaluate(e=>e.style.getPropertyValue('--mx'));assert.notEqual(immediate,'','highlight is retained on leave');
+ await p.waitForTimeout(140);const middleLight=await card.evaluate(e=>parseFloat(e.style.getPropertyValue('--mx')));assert.ok(middleLight>30&&middleLight<initialLight,'highlight returns through intermediate positions');
+ await p.waitForFunction(()=>document.querySelector('.feature-card').style.getPropertyValue('--mx')==='');
+ // Every feature card responds at its corners without an inherited entrance delay.
+ for(const feature of await p.locator('.feature-card').all()){
+  await feature.scrollIntoViewIfNeeded();const r=await feature.boundingBox();
+  await p.mouse.move(r.x+r.width*.82,r.y+r.height*.25);await p.waitForTimeout(90);
+  assert.ok(await feature.evaluate(e=>getComputedStyle(e).transitionDelay.split(',').every(v=>parseFloat(v)===0)));
+  assert.ok(await feature.evaluate(e=>parseFloat(e.style.getPropertyValue('--tilt-y'))>1),'all three cards receive pointer tilt');
+  assert.notEqual(await feature.evaluate(e=>getComputedStyle(e).transform),'none');
+  await p.mouse.move(2,2);
+ }
+ for(const panel of await p.locator('.release-card,.code-panel,.step,.site-header').all()){
+  await panel.scrollIntoViewIfNeeded();const r=await panel.boundingBox();
+  const header=await panel.evaluate(e=>e.classList.contains('site-header'));
+  await p.mouse.move(r.x+r.width*.75,header?r.y+r.height*.4:Math.max(100,Math.min(900,r.y+r.height*.4)));await p.waitForTimeout(80);
+  assert.ok(await panel.evaluate(e=>Math.abs(parseFloat(e.style.getPropertyValue('--tilt-y')))>0),'glass surface receives tilt: '+await panel.getAttribute('class'));
+  assert.notEqual(await panel.evaluate(e=>getComputedStyle(e).transform),'none');
+  await p.mouse.move(2,2);
+ }
  const staticPage=await context.newPage();staticPage.on('pageerror',e=>errors.push(e.message));
  await staticPage.addInitScript(()=>{const get=HTMLCanvasElement.prototype.getContext;HTMLCanvasElement.prototype.getContext=function(t,...a){return t==='webgl'?null:get.call(this,t,...a);};});await staticPage.goto(base);await staticPage.waitForFunction(()=>document.querySelector('#particle-logo').dataset.renderer==='fallback');assert.equal(await staticPage.locator('.particle-fallback').evaluate(e=>e.complete&&e.naturalWidth>0),true);await staticPage.close();
  const touch=await browser.newContext({viewport:{width:390,height:844},hasTouch:true,isMobile:true});await touch.route('https://api.github.com/**',r=>r.fulfill({status:503,body:''}));
@@ -73,7 +106,7 @@ async function main(){
  await mobile.touchscreen.tap(touchLogo.x+touchLogo.width/2,touchLogo.y+touchLogo.height/2);await mobile.waitForFunction(()=>__gpu.values['u_ripples[0]'][3]===1);assert.equal(await mobile.locator('.title-shine').first().evaluate(e=>getComputedStyle(e).display),'none');
  const cdp=await touch.newCDPSession(mobile),start=await mobile.evaluate(()=>scrollY),tx=touchLogo.x+touchLogo.width/2,ty=Math.min(720,touchLogo.y+touchLogo.height*.8);
  await cdp.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[{x:tx,y:ty}]});for(let i=1;i<=5;i++){await cdp.send('Input.dispatchTouchEvent',{type:'touchMove',touchPoints:[{x:tx,y:ty-i*30}]});await mobile.waitForTimeout(20);}await cdp.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});await mobile.waitForTimeout(150);assert.ok(await mobile.evaluate(()=>scrollY)>start,'dragging the logo can scroll the mobile page');await touch.close();
- assert.deepEqual(errors,[]);console.log('Visuals passed: GPU formation, pointer repulsion, bounded and keyboard ripples, theme transitions, letter light, offscreen/reduced-motion pause, context recovery, WebGL fallback, responsive glass and native touch scrolling.');
+ assert.deepEqual(errors,[]);console.log('Visuals passed: GPU formation, pointer repulsion, bounded drag water trails, smooth highlight return, three-card tilt, keyboard ripples, theme transitions, letter light, offscreen/reduced-motion pause, context recovery, WebGL fallback, responsive glass and native touch scrolling.');
  }finally{await context.close();await browser.close();server.close();}
 }
 main().catch(e=>{console.error(e);server.close();process.exitCode=1;});
