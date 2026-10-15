@@ -121,38 +121,55 @@
   // One highlight update per frame, with no background timer or touch tracking.
   if (window.matchMedia('(pointer:fine)').matches) {
     document.querySelectorAll('.glass, .site-header').forEach(function (card) {
-      var frame = 0, pointer, lightX = 30, lightY = 0, returning = false, last = 0;
+      var frame = 0, pointer = null, active = false, last = 0;
+      var lightX = 30, lightY = 0, lightAlpha = 0, aimX = 30, aimY = 0;
+      function resetLight() {
+        cancelAnimationFrame(frame); frame = 0; pointer = null; active = false;
+        lightX = aimX = 30; lightY = aimY = lightAlpha = 0;
+        ['--mx','--my','--sheen-opacity','--tilt-x','--tilt-y'].forEach(function (name) { card.style.removeProperty(name); });
+      }
       function paintLight(now) {
         frame = 0;
-        if (returning) {
-          var dt = Math.min((now - last) / 1000, .05), blend = 1 - Math.exp(-dt * 14);
-          last = now; lightX += (30 - lightX) * blend; lightY += (0 - lightY) * blend;
-        } else {
+        if (motion.matches) { resetLight(); return; }
+        var dt = Math.min((now - last) / 1000, .05), follow = 1 - Math.exp(-dt * 12), fade = 1 - Math.exp(-dt * 10);
+        last = now;
+        if (pointer) {
           var rect = card.getBoundingClientRect();
-          lightX = (pointer.clientX - rect.left) / rect.width * 100;
-          lightY = (pointer.clientY - rect.top) / rect.height * 100;
+          var px = Math.max(0,Math.min(100,(pointer.clientX - rect.left) / rect.width * 100));
+          var py = Math.max(0,Math.min(100,(pointer.clientY - rect.top) / rect.height * 100));
+          // A broad reflection moves less than the pointer, rather than acting as a spotlight.
+          aimX = 30 + (px - 30) * .45; aimY = 5 + py * .3;
           var tiltScale = card.classList.contains('site-header') ? .35 : 1;
-          card.style.setProperty('--tilt-x', (0.5 - lightY / 100) * 3 * tiltScale + 'deg');
-          card.style.setProperty('--tilt-y', (lightX / 100 - 0.5) * 4 * tiltScale + 'deg');
+          card.style.setProperty('--tilt-x', (0.5 - py / 100) * 3 * tiltScale + 'deg');
+          card.style.setProperty('--tilt-y', (px / 100 - 0.5) * 4 * tiltScale + 'deg');
+          pointer = null;
         }
+        lightX += (aimX - lightX) * follow; lightY += (aimY - lightY) * follow;
+        lightAlpha += ((active ? 1 : 0) - lightAlpha) * fade;
         card.style.setProperty('--mx', lightX + '%'); card.style.setProperty('--my', lightY + '%');
-        if (returning) {
-          if (Math.abs(lightX - 30) + Math.abs(lightY) > .05) frame = requestAnimationFrame(paintLight);
-          else { lightX = 30; lightY = 0; card.style.removeProperty('--mx'); card.style.removeProperty('--my'); }
-        }
+        card.style.setProperty('--sheen-opacity', lightAlpha.toFixed(4));
+        if (Math.abs(aimX-lightX) + Math.abs(aimY-lightY) > .05 || Math.abs((active?1:0)-lightAlpha) > .002) frame = requestAnimationFrame(paintLight);
+        else if (!active) resetLight();
       }
-      card.addEventListener('pointerenter', function () { card.style.removeProperty('transition-delay'); });
-      card.addEventListener('pointermove', function (event) {
-        if (motion.matches) return;
-        returning = false; pointer = event;
-        if (!frame) frame = requestAnimationFrame(paintLight);
+      function wakeLight() {
+        if (!frame) { last = performance.now(); frame = requestAnimationFrame(paintLight); }
+      }
+      function trackPointer(event) {
+        if (motion.matches || event.pointerType === 'touch') return;
+        active = true; pointer = event; wakeLight();
+      }
+      card.addEventListener('pointerenter', function (event) {
+        card.style.removeProperty('transition-delay'); trackPointer(event);
       });
-      card.addEventListener('pointerleave', function () {
-        cancelAnimationFrame(frame); frame = 0;
+      card.addEventListener('pointermove', trackPointer);
+      function leaveLight() {
+        pointer = null; active = false; aimX = 30; aimY = 0;
         card.style.removeProperty('--tilt-x'); card.style.removeProperty('--tilt-y');
-        if (motion.matches) { lightX = 30; lightY = 0; card.style.removeProperty('--mx'); card.style.removeProperty('--my'); return; }
-        returning = true; last = performance.now(); frame = requestAnimationFrame(paintLight);
-      });
+        if (motion.matches) resetLight(); else wakeLight();
+      }
+      card.addEventListener('pointerleave', leaveLight);
+      card.addEventListener('pointercancel', leaveLight);
+      motion.addEventListener('change', function () { if (motion.matches) resetLight(); });
     });
   }
 
