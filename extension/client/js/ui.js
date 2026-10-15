@@ -138,3 +138,30 @@ AELT.ui = {
   hideChangelog: hideChangelog,
   pingHost: pingHost
 };
+
+function allowMotion() { return !window.matchMedia('(prefers-reduced-motion: reduce)').matches; }
+function animateViewEntrance(view) {
+  (view._entranceAnimations || []).forEach(function (animation) { animation.cancel(); });
+  var animations = view._entranceAnimations = [];
+  if (!allowMotion()) return;
+  var bounds = view.getBoundingClientRect(), items = [];
+  Array.from(view.children).forEach(function (child) {
+    if (child.id === 'scriptList') {
+      var listBounds = child.getBoundingClientRect();
+      child.querySelectorAll('.script-item').forEach(function (row) {
+        var rect = row.getBoundingClientRect();
+        if (rect.bottom > listBounds.top && rect.top < listBounds.bottom) items.push(row);
+      });
+    } else items.push(child);
+  });
+  items.filter(function (item) {
+    var rect = item.getBoundingClientRect();
+    return rect.width && rect.height && rect.bottom > bounds.top && rect.top < bounds.bottom;
+  }).forEach(function (item, index) {
+    var animation = item.animate([{ opacity: 0, transform: 'translateY(6px)' }, { opacity: 1, transform: 'translateY(0)' }], {
+      duration: 160, delay: Math.min(index * 12, 108), easing: 'cubic-bezier(.2,.8,.2,1)', fill: 'backwards'
+    });
+    animations.push(animation);
+    animation.onfinish = function () { animations.splice(animations.indexOf(animation), 1); };
+  });
+}

@@ -32,8 +32,6 @@
       tab.addEventListener("click", function () {
         var previous=document.querySelector('.tab.active');
         if (previous===tab) { if (tab.dataset.view==='expressions') refreshSelection(); return; }
-        var tabs=Array.from(document.querySelectorAll('.tab'));
-        document.documentElement.style.setProperty('--view-offset', tabs.indexOf(tab)>tabs.indexOf(previous) ? '8px' : '-8px');
         document.querySelectorAll(".tab").forEach(function (item) { item.classList.remove("active"); });
         document.querySelectorAll(".view").forEach(function (item) { item.classList.remove("active"); });
         document.querySelectorAll('.tab').forEach(function (item) { item.setAttribute('aria-selected', String(item === tab)); item.tabIndex = item === tab ? 0 : -1; });
@@ -42,6 +40,7 @@
         // 指示器滑动到新的激活项
         positionTabIndicator(true);
         if (tab.dataset.view === 'expressions') refreshSelection();
+        animateViewEntrance($(tab.dataset.view + 'View'));
       });
     });
 

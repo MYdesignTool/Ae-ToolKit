@@ -183,14 +183,6 @@ h2 {
   overflow: hidden;
   min-height: 0;
   gap: 14px;
-  /* 切换 Tab 时新视图的轻量进入动画；display 由 none 变 flex 会自动重新触发 */
-  animation: viewIn var(--motion-slow) var(--ease-ui);
-}
-
-/* 视图进入：上浮 + 淡入 */
-@keyframes viewIn {
-  from { opacity: 0; transform: translateY(6px); }
-  to   { opacity: 1; transform: translateY(0); }
 }
 
 /* ===== 区块标题与按钮行 ===== */
@@ -741,16 +733,16 @@ textarea {
   min-height: 0;
   overflow-y: auto;
   display: grid;
-  gap: 8px;
+  gap: 6px;
   align-content: start;
 }
 .script-item {
   display: grid;
-  grid-template-columns: 144px minmax(0, 1fr) 28px;
+  grid-template-columns: 120px minmax(0, 1fr) 28px;
   align-items: center;
-  gap: 12px;
-  height: 64px;
-  padding: 12px;
+  gap: 10px;
+  height: 52px;
+  padding: 10px;
   border: 1px solid var(--line);
   border-radius: 10px;
   background: var(--panel);
@@ -778,6 +770,9 @@ textarea {
 .script-fav.favored { color: #f0c84f; }
 .script-fav:hover { color: #f0c84f; background: rgba(240, 200, 79, 0.08); }
 .script-fav:active { transform: scale(0.92); }
+.script-fav-glyph { display: inline-block; line-height: 1; transform-origin: 50% 55%; }
+.fav-burst { position: fixed; width: 0; height: 0; pointer-events: none; z-index: 100; }
+.fav-particle { position: absolute; width: 3px; height: 3px; border-radius: 50%; background: #f0c84f; pointer-events: none; }
 
 .search-row {
   display: flex;
@@ -820,8 +815,8 @@ textarea {
 /* Every banner occupies the same clipped frame, regardless of the source dimensions. */
 .script-icon {
   display: block;
-  width: 144px;
-  height: 36px;
+  width: 120px;
+  height: 30px;
   border-radius: 8px;
   overflow: hidden;
   background: var(--panel-soft);
@@ -891,8 +886,8 @@ button:focus-visible, .script-item:focus-visible { outline: 2px solid var(--acce
   .app { padding: 12px; gap: 10px; }
   .topbar h1 { font-size: 18px; }
   .settings-input { width: 125px; }
-  .script-item { grid-template-columns: 104px minmax(0, 1fr) 28px; gap: 10px; height: 56px; padding: 10px; }
-  .script-icon { width: 104px; height: 26px; }
+  .script-item { grid-template-columns: 96px minmax(0, 1fr) 28px; gap: 8px; height: 48px; padding: 8px; }
+  .script-icon { width: 96px; height: 24px; }
   .script-name { font-size: 12px; }
   .expression-manage { gap: 0; }
   .expression-manage button { padding: 0 6px; }
