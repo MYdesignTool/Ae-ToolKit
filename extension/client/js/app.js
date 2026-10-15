@@ -27,20 +27,31 @@
     }
   }
 
+  var cancelViewExit = null;
   function bindEvents() {
     document.querySelectorAll(".tab").forEach(function (tab) {
       tab.addEventListener("click", function () {
         var previous=document.querySelector('.tab.active');
         if (previous===tab) { if (tab.dataset.view==='expressions') refreshSelection(); return; }
-        document.querySelectorAll(".tab").forEach(function (item) { item.classList.remove("active"); });
-        document.querySelectorAll(".view").forEach(function (item) { item.classList.remove("active"); });
-        document.querySelectorAll('.tab').forEach(function (item) { item.setAttribute('aria-selected', String(item === tab)); item.tabIndex = item === tab ? 0 : -1; });
-        tab.classList.add("active");
-        $(tab.dataset.view + "View").classList.add("active");
-        // 指示器滑动到新的激活项
+        var outgoing = document.querySelector('.view.active'), incoming = $(tab.dataset.view + 'View');
+        var tabs = Array.from(document.querySelectorAll('.tab'));
+        var direction = tabs.indexOf(tab) > tabs.indexOf(previous) ? 1 : -1;
+        var interrupted = !!cancelViewExit;
+        if (cancelViewExit) { cancelViewExit(); cancelViewExit = null; }
+        tabs.forEach(function (item) {
+          item.classList.toggle('active', item === tab);
+          item.setAttribute('aria-selected', String(item === tab)); item.tabIndex = item === tab ? 0 : -1;
+        });
         positionTabIndicator(true);
-        if (tab.dataset.view === 'expressions') refreshSelection();
-        animateViewEntrance($(tab.dataset.view + 'View'));
+        function showIncoming() {
+          cancelViewExit = null;
+          document.querySelectorAll('.view').forEach(function (item) { item.classList.toggle('active', item === incoming); });
+          if (tab.dataset.view === 'expressions') refreshSelection();
+          animateViewEntrance(incoming);
+        }
+        // A new click during exit takes precedence immediately; never queue page switches.
+        if (!interrupted && outgoing && outgoing !== incoming) cancelViewExit = animateViewExit(outgoing, direction, showIncoming);
+        else showIncoming();
       });
     });
 

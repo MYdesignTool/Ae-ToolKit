@@ -15,9 +15,9 @@ async function main(){
  // Eagerly resolve every row's image so the result is not limited to the first viewport.
  await page.locator('.script-icon-img').evaluateAll(images=>images.forEach(image=>image.loading='eager'));
  await page.waitForFunction(()=>[...document.querySelectorAll('.script-icon-img')].every(image=>image.complete&&image.naturalWidth>0));
- const loaded=await page.evaluate(()=>[...document.querySelectorAll('.script-icon-img')].filter(image=>!image.dataset.fallback&&!image.src.endsWith('/placeholder.png')).length);assert.equal(loaded,matching.length);assert.equal(await page.locator('.script-folder').count(),0);assert.deepEqual(errors,[]);
+ const loaded=await page.evaluate(()=>[...document.querySelectorAll('.script-icon-img')].filter(image=>!image.parentElement.classList.contains('placeholder')).length);assert.equal(loaded,matching.length);assert.equal(await page.locator('.script-folder').count(),0);assert.deepEqual(errors,[]);
  const output=process.env.ARTIFACT_DIR||path.join(root,'.artifacts');fs.mkdirSync(output,{recursive:true});
- const sizes=[{width:626,height:900,frameWidth:120,frameHeight:30,rowHeight:52,name:'scripts-local-images'},{width:360,height:520,frameWidth:96,frameHeight:24,rowHeight:48,name:'narrow-scripts-local-images'}];
+ const sizes=[{width:626,height:900,frameWidth:120,frameHeight:30,rowHeight:48,name:'scripts-local-images'},{width:360,height:520,frameWidth:96,frameHeight:24,rowHeight:44,name:'narrow-scripts-local-images'}];
  const naturalSizes=await page.locator('.script-icon-img').evaluateAll(images=>new Set(images.map(image=>image.naturalWidth+'x'+image.naturalHeight)).size);
  for(const size of sizes){
   await page.setViewportSize({width:size.width,height:size.height});

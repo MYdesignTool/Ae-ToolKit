@@ -1,6 +1,6 @@
 # AE Local Toolkit
 
-离线 After Effects 工具箱，最低支持 AE 2023（23.x）和 CEP 11，兼容新版 CEP 12。开发版本 0.3.2。
+离线 After Effects 工具箱，最低支持 AE 2023（23.x）和 CEP 11，兼容新版 CEP 12。版本 0.3.1。
 
 ## 批量表达式
 

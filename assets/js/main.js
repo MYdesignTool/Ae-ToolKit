@@ -6,7 +6,7 @@
   // 标记 JS 可用，启用滚动揭示动画（无 JS 时内容正常显示）
   document.documentElement.classList.add("js");
 
-  // 主题切换：默认亮色，灯泡按钮切换并持久化到 localStorage
+  // Keep the saved light/dark preference; the head script applies it before first paint.
   (function () {
     var root = document.documentElement;
     var btn = document.getElementById("theme-toggle");
@@ -57,7 +57,7 @@
 
   // 滚动揭示：进入视口时淡入上浮（错落出现）
   var revealEls = document.querySelectorAll(
-    ".section-title, .section-subtitle, .feature-card, .code-panel, .project-tree, .step, .footer-top, .footer-bottom"
+    ".section-title, .section-subtitle, .feature-card, .release-card, .code-panel, .step, .footer-top, .footer-bottom"
   );
   revealEls.forEach(function (el) { el.classList.add("reveal"); });
 
@@ -68,7 +68,7 @@
       return c.classList && c.classList.contains("reveal");
     });
     var idx = sibs.indexOf(el);
-    if (idx > 0) el.style.transitionDelay = (idx * 0.1).toFixed(2) + "s";
+    if (idx > 0) el.style.transitionDelay = Math.min(idx * 45, 90) + "ms";
   });
 
   if ("IntersectionObserver" in window) {
@@ -88,43 +88,45 @@
     revealEls.forEach(function (el) { el.classList.add("in"); });
   }
 
-  // 液态玻璃：鼠标跟随高光（仅精确指针设备），覆盖所有玻璃元素（含导航栏）
-  if (!motion.matches && window.matchMedia("(pointer:fine)").matches) {
-    document.querySelectorAll(".glass, .site-header").forEach(function (card) {
-      card.addEventListener("mousemove", function (e) {
-        var r = card.getBoundingClientRect();
-        var x = ((e.clientX - r.left) / r.width) * 100;
-        var y = ((e.clientY - r.top) / r.height) * 100;
-        card.style.setProperty("--mx", x + "%");
-        card.style.setProperty("--my", y + "%");
+  // One highlight update per frame, with no background timer or touch tracking.
+  if (window.matchMedia('(pointer:fine)').matches) {
+    document.querySelectorAll('.glass, .site-header').forEach(function (card) {
+      var frame = 0, pointer;
+      card.addEventListener('pointermove', function (event) {
+        if (motion.matches) return;
+        pointer = event;
+        if (frame) return;
+        frame = requestAnimationFrame(function () {
+          frame = 0;
+          var rect = card.getBoundingClientRect();
+          card.style.setProperty('--mx', (pointer.clientX - rect.left) / rect.width * 100 + '%');
+          card.style.setProperty('--my', (pointer.clientY - rect.top) / rect.height * 100 + '%');
+        });
       });
-      card.addEventListener("mouseleave", function () {
-        card.style.setProperty("--mx", "50%");
-        card.style.setProperty("--my", "0%");
+      card.addEventListener('pointerleave', function () {
+        cancelAnimationFrame(frame); frame = 0;
+        card.style.removeProperty('--mx'); card.style.removeProperty('--my');
       });
     });
   }
 
-  // 自动获取 GitHub 最新 Release 版本号，避免每次手动更新发布页
-  // 兜底值：API 不可用时仍显示合理版本；成功则覆盖为线上最新版
-  (function () {
-    var REPO = "MYdesignTool/Ae-ToolKit";
-    var FALLBACK = "查看最新版本";
-    var badge = document.getElementById("app-version");
-    var download = document.querySelector('a.btn-primary[href*="releases/latest"]');
-
-    if (badge) {
-      badge.textContent = FALLBACK;
-      fetch("https://api.github.com/repos/" + REPO + "/releases/latest", {
-        headers: { Accept: "application/vnd.github+json" }
-      })
-        .then(function (res) { if (!res.ok) throw new Error("HTTP " + res.status); return res.json(); })
-        .then(function (data) {
-          if (!data || !data.tag_name) return;
-          badge.textContent = data.tag_name;
-          if (download) download.href = "https://github.com/" + REPO + "/releases/tag/" + data.tag_name;
-        })
-        .catch(function () { /* 保持兜底值，不影响页面 */ });
-    }
-  })();
+  // Preserve the bundled version offline and never downgrade it to an older release.
+  var badge = document.getElementById('app-version');
+  var download = document.querySelector('[data-download]');
+  var bundled = badge.textContent.replace(/^v/, '').split('.').map(Number);
+  var controller = new AbortController(), timeout = setTimeout(function () { controller.abort(); }, 5000);
+  fetch('https://api.github.com/repos/MYdesignTool/Ae-ToolKit/releases/latest', { signal: controller.signal, headers: { Accept: 'application/vnd.github+json' } })
+    .then(function (response) { if (!response.ok) throw new Error('Release unavailable'); return response.json(); })
+    .then(function (data) {
+      var match = /^v?(\d+)\.(\d+)\.(\d+)$/.exec(data.tag_name || '');
+      if (!match) return;
+      var version = match.slice(1).map(Number), order = 0;
+      for (var i = 0; i < 3; i++) { if (version[i] !== bundled[i]) { order = version[i] - bundled[i]; break; } }
+      if (order < 0) return;
+      badge.textContent = data.tag_name;
+      download.href = 'https://github.com/MYdesignTool/Ae-ToolKit/releases/tag/' + encodeURIComponent(data.tag_name);
+      download.querySelector('[data-download-label]').textContent = '下载 ' + match.slice(1).join('.');
+    })
+    .catch(function () { /* Static download and version stay available offline. */ })
+    .finally(function () { clearTimeout(timeout); });
 })();

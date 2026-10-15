@@ -74,12 +74,14 @@
 
   function renderChangelog() {
    if (!state.changelog) {
+     els.versionLabel.disabled = true;
      els.versionLabel.textContent = "未找到更新日志";
      els.versionLabel.title = "更新日志文件未找到";
      els.versionLabel.style.cursor = "default";
      els.versionLabel.onclick = null;
      return;
    }
+   els.versionLabel.disabled = false;
    els.versionLabel.textContent = state.changelog.version;
    els.versionLabel.style.cursor = "pointer";
    els.versionLabel.title = "更新日志";
@@ -92,21 +94,38 @@
    var body = document.getElementById("changelogBody");
    if (!modal || !body) return;
    var entries = (state.changelog && state.changelog.entries) || [];
-   body.innerHTML = entries.map(function (entry) {
-     return '<div class="changelog-item"><strong>v' + escapeHtml(entry.version) + '</strong> <span class="muted">' + escapeHtml(entry.date) + '</span><ul>' +
-       (entry.changes || []).map(function (c) { return "<li>" + escapeHtml(c) + "</li>"; }).join("") + "</ul></div>";
-   }).join("") || '<p class="muted">暂无更新日志</p>';
+   var latest = entries[0];
+   var intro = latest ? '<div class="changelog-intro"><img src="images/changelog-team.webp" alt="" draggable="false" /><div class="changelog-intro-copy"><span>AE工具箱</span><h3>v' + escapeHtml(latest.version) + '</h3><time datetime="' + escapeHtml(latest.date) + '">' + escapeHtml(latest.date) + '</time></div></div>' : '';
+   body.innerHTML = intro + (entries.map(function (entry, index) {
+     var heading = index ? '<div class="changelog-version"><strong>v' + escapeHtml(entry.version) + '</strong><time datetime="' + escapeHtml(entry.date) + '">' + escapeHtml(entry.date) + '</time></div>' : '';
+     return '<div class="changelog-item' + (index ? '' : ' changelog-current') + '">' + heading + '<ul>' +
+       (entry.changes || []).map(function (change) { return '<li>' + escapeHtml(change) + '</li>'; }).join('') + '</ul></div>';
+   }).join('') || '<p class="muted">暂无更新日志</p>');
+   modal._previousFocus = document.activeElement;
    modal.style.display = "flex";
+   body.scrollTop = 0;
    var closeBtn = document.getElementById("closeChangelogBtn");
-   if (closeBtn) closeBtn.onclick = hideChangelog;
+   if (closeBtn) { closeBtn.onclick = hideChangelog; closeBtn.focus(); }
   var repoBtn = document.getElementById("openRepoBtn");
   if (repoBtn) repoBtn.onclick = function () { openExternal(RELEASE_URL); };
    modal.onclick = function (e) { if (e.target === this) hideChangelog(); };
+   modal.onkeydown = function (event) {
+     if (event.key === 'Escape') { event.preventDefault(); hideChangelog(); }
+     if (event.key === 'Tab') {
+       var targets = Array.from(modal.querySelectorAll('button, [tabindex="0"]'));
+       var first = targets[0], last = targets[targets.length - 1];
+       if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last.focus(); }
+       else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus(); }
+     }
+   };
  }
 
  function hideChangelog() {
    var modal = document.getElementById("changelogModal");
-   if (modal) modal.style.display = "none";
+   if (modal) {
+     modal.style.display = 'none'; modal.onkeydown = null;
+     if (modal._previousFocus) modal._previousFocus.focus();
+   }
  }
 
   function pingHost() {
@@ -140,28 +159,57 @@ AELT.ui = {
 };
 
 function allowMotion() { return !window.matchMedia('(prefers-reduced-motion: reduce)').matches; }
-function animateViewEntrance(view) {
-  (view._entranceAnimations || []).forEach(function (animation) { animation.cancel(); });
-  var animations = view._entranceAnimations = [];
-  if (!allowMotion()) return;
+function getViewMotionItems(view) {
   var bounds = view.getBoundingClientRect(), items = [];
   Array.from(view.children).forEach(function (child) {
-    if (child.id === 'scriptList') {
+    if (child.id === 'scriptList' || child.id === 'ruleGrid') {
       var listBounds = child.getBoundingClientRect();
-      child.querySelectorAll('.script-item').forEach(function (row) {
+      child.querySelectorAll('.script-item, .rule-item').forEach(function (row) {
         var rect = row.getBoundingClientRect();
         if (rect.bottom > listBounds.top && rect.top < listBounds.bottom) items.push(row);
       });
     } else items.push(child);
   });
-  items.filter(function (item) {
+  return items.filter(function (item) {
     var rect = item.getBoundingClientRect();
     return rect.width && rect.height && rect.bottom > bounds.top && rect.top < bounds.bottom;
-  }).forEach(function (item, index) {
-    var animation = item.animate([{ opacity: 0, transform: 'translateY(6px)' }, { opacity: 1, transform: 'translateY(0)' }], {
-      duration: 160, delay: Math.min(index * 12, 108), easing: 'cubic-bezier(.2,.8,.2,1)', fill: 'backwards'
+  });
+}
+function animateViewEntrance(view) {
+  (view._entranceAnimations || []).forEach(function (animation) { animation.cancel(); });
+  var animations = view._entranceAnimations = [];
+  if (!allowMotion() || view.classList.contains('is-exiting')) return;
+  getViewMotionItems(view).forEach(function (item, index) {
+    var animation = item.animate([{ opacity: 0, transform: 'translateY(14px)' }, { opacity: 1, transform: 'translateY(0)' }], {
+      duration: 200, delay: Math.min(index * 18, 144), easing: 'cubic-bezier(.22,.68,.22,1)', fill: 'backwards'
     });
     animations.push(animation);
     animation.onfinish = function () { animations.splice(animations.indexOf(animation), 1); };
   });
+}
+function animateViewExit(view, direction, complete) {
+  if (!allowMotion()) { complete(); return null; }
+  // Keep an interrupted entrance's current pose instead of flashing its final state.
+  var poses = getViewMotionItems(view).map(function (item) {
+    var style = getComputedStyle(item);
+    return { item: item, opacity: style.opacity, transform: style.transform };
+  });
+  (view._entranceAnimations || []).forEach(function (animation) { animation.cancel(); });
+  view._entranceAnimations = [];
+  if (!poses.length) { complete(); return null; }
+  var animations = view._exitAnimations = [], remaining = poses.length;
+  view.classList.add('is-exiting'); view.setAttribute('aria-hidden', 'true');
+  function cancel() {
+    animations.forEach(function (animation) { animation.cancel(); });
+    view._exitAnimations = []; view.classList.remove('is-exiting'); view.removeAttribute('aria-hidden');
+  }
+  poses.forEach(function (pose, index) {
+    var animation = pose.item.animate([
+      { opacity: pose.opacity, transform: pose.transform },
+      { opacity: 0, transform: 'translateX(' + (-direction * 12) + 'px)' }
+    ], { duration: 110, delay: Math.min(Math.floor(index / 3) * 14, 42), easing: 'cubic-bezier(.4,0,1,1)', fill: 'both' });
+    animations.push(animation);
+    animation.onfinish = function () { if (--remaining === 0) { cancel(); complete(); } };
+  });
+  return cancel;
 }

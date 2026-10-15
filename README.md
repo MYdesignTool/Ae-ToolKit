@@ -1,6 +1,6 @@
 # AE Local Toolkit
 
-面向 After Effects 2023 及更新版本的离线 CEP 工具箱：工程整理、脚本启动、批量表达式。当前开发版本 **0.3.2**。
+面向 After Effects 2023 及更新版本的离线 CEP 工具箱：工程整理、脚本启动、批量表达式。当前版本 **0.3.1**。
 
 - [扩展使用说明](extension/README.md)
 - [安装说明](extension/docs/install.md)

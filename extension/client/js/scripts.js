@@ -1,4 +1,11 @@
 /* Keep row DOM stable on selection so double-clicks and keyboard focus survive. */
+// One random banner per script for this panel session; filtering never reshuffles it.
+var scriptPlaceholderChoices = ['images/placeholder-landscape.webp', 'images/placeholder-ribbon.webp'];
+var scriptPlaceholderCache = new Map();
+function getScriptPlaceholder(fsName) {
+  if (!scriptPlaceholderCache.has(fsName)) scriptPlaceholderCache.set(fsName, scriptPlaceholderChoices[Math.floor(Math.random() * scriptPlaceholderChoices.length)]);
+  return scriptPlaceholderCache.get(fsName);
+}
 function getScriptFavorites() { return AELT.settings.get('scriptFavorites', []); }
 function selectScriptFolder() {
   if (state.scriptBusy) return;
@@ -31,7 +38,7 @@ function renderScripts() {
   if (!filtered.some(function (script) { return script.fsName === state.selectedScriptFsName; })) state.selectedScriptFsName = null;
   els.scriptList.innerHTML = filtered.map(function (script) {
     var selected = script.fsName === state.selectedScriptFsName, favorite = favorites.indexOf(script.fsName) >= 0;
-    return '<div title="' + escapeHtml(script.relativePath) + '" class="script-item' + (selected ? ' active' : '') + '" tabindex="0" role="button" aria-pressed="' + selected + '" data-fsname="' + escapeHtml(script.fsName) + '"><span class="script-icon' + (script.iconPath ? '' : ' placeholder') + '"><img class="script-icon-img" loading="lazy" src="' + escapeHtml(script.iconPath || 'images/placeholder.png') + '" alt="" /></span><span class="script-name">' + escapeHtml(script.name) + '</span><button class="script-fav' + (favorite ? ' favored' : '') + '" aria-label="' + (favorite ? '取消收藏 ' : '收藏 ') + escapeHtml(script.name) + '" aria-pressed="' + favorite + '"><span class="script-fav-glyph" aria-hidden="true">' + (favorite ? '★' : '☆') + '</span></button></div>';
+    return '<div title="' + escapeHtml(script.relativePath) + '" class="script-item' + (selected ? ' active' : '') + '" tabindex="0" role="button" aria-pressed="' + selected + '" data-fsname="' + escapeHtml(script.fsName) + '"><span class="script-icon' + (script.iconPath ? '' : ' placeholder') + '"><img class="script-icon-img" draggable="false" loading="lazy" src="' + escapeHtml(script.iconPath || getScriptPlaceholder(script.fsName)) + '" alt="" /></span><span class="script-name">' + escapeHtml(script.name) + '</span><button class="script-fav' + (favorite ? ' favored' : '') + '" aria-label="' + (favorite ? '取消收藏 ' : '收藏 ') + escapeHtml(script.name) + '" aria-pressed="' + favorite + '"><svg class="script-fav-glyph" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M12 3.5l2.63 5.33 5.88.85-4.25 4.14 1 5.86L12 16.91l-5.26 2.77 1-5.86L3.49 9.68l5.88-.85L12 3.5z"/></svg></button></div>';
   }).join('') || '<div class="empty-state">' + (!state.scriptFolder ? '还没有脚本文件夹。在设置中选择目录开始。' : state.scripts.length ? '没有匹配的脚本，试试其他关键词。' : '目录中没有 .jsx 或 .jsxbin 脚本。') + '</div>';
   syncScriptSelection();
 }
@@ -44,31 +51,35 @@ function syncScriptSelection() {
 }
 function animateFavorite(button, enabled) {
   var glyph = button.querySelector('.script-fav-glyph');
+  // Sample the in-flight pose before cancelling so repeated clicks never snap back.
+  var from = getComputedStyle(glyph).transform;
   if (glyph._pulse) glyph._pulse.cancel();
   if (button._burst) button._burst.remove();
   if (!allowMotion()) return;
   var frames = enabled ? [
-    { transform: 'scale(1) rotate(0)' },
-    { transform: 'scale(1.4) rotate(-12deg)', filter: 'drop-shadow(0 0 4px rgba(240,200,79,.55))', offset: .3 },
-    { transform: 'scale(.88) rotate(6deg)', offset: .65 },
-    { transform: 'scale(1) rotate(0)' }
-  ] : [{ transform: 'scale(1)' }, { transform: 'scale(.8)' }, { transform: 'scale(1)' }];
-  glyph._pulse = glyph.animate(frames, { duration: enabled ? 360 : 180, easing: 'cubic-bezier(.2,.8,.2,1)' });
-  glyph._pulse.onfinish = function () { glyph._pulse = null; };
+    { transform: from, easing: 'cubic-bezier(.16,1,.3,1)' },
+    { transform: 'scale(1.18)', offset: .38, easing: 'cubic-bezier(.4,0,.2,1)' },
+    { transform: 'scale(.985)', offset: .8, easing: 'cubic-bezier(.4,0,.2,1)' },
+    { transform: 'scale(1)' }
+  ] : [{ transform: from }, { transform: 'scale(1)' }];
+  var pulse = glyph.animate(frames, { duration: enabled ? 260 : 140, easing: enabled ? 'linear' : 'ease-out' });
+  glyph._pulse = pulse;
+  pulse.onfinish = function () { if (glyph._pulse === pulse) glyph._pulse = null; };
   if (!enabled) return;
-  var rect = button.getBoundingClientRect(), burst = document.createElement('span');
+  var burst = document.createElement('span');
   burst.className = 'fav-burst'; burst.setAttribute('aria-hidden', 'true');
-  burst.style.left = rect.left + rect.width / 2 + 'px'; burst.style.top = rect.top + rect.height / 2 + 'px';
-  button._burst = burst; document.body.appendChild(burst);
+  button._burst = burst; button.appendChild(burst);
   for (var i = 0; i < 7; i++) {
-    var angle = i * Math.PI * 2 / 7 - Math.PI / 2, distance = i % 2 ? 18 : 23;
+    var angle = i * Math.PI * 2 / 7 - Math.PI / 2, distance = i % 2 ? 15 : 20;
+    var x = Math.cos(angle) * distance, y = Math.sin(angle) * distance;
     var dot = document.createElement('span'); dot.className = 'fav-particle'; burst.appendChild(dot);
     dot.animate([
-      { opacity: .95, transform: 'translate(-50%, -50%) scale(1)' },
-      { opacity: 0, transform: 'translate(-50%, -50%) translate(' + Math.cos(angle) * distance + 'px,' + Math.sin(angle) * distance + 'px) scale(.2)' }
-    ], { duration: 320, easing: 'cubic-bezier(.12,.6,.3,1)', fill: 'both' });
+      { opacity: 0, transform: 'translate(-50%, -50%) translate(' + x * .25 + 'px,' + y * .25 + 'px) scale(.7)' },
+      { opacity: .85, offset: .2 },
+      { opacity: 0, transform: 'translate(-50%, -50%) translate(' + x + 'px,' + y + 'px) scale(.2)' }
+    ], { duration: 240, delay: 35, easing: 'cubic-bezier(.2,.7,.3,1)', fill: 'both' });
   }
-  setTimeout(function () { burst.remove(); if (button._burst === burst) button._burst = null; }, 360);
+  setTimeout(function () { burst.remove(); if (button._burst === burst) button._burst = null; }, 300);
 }
 function launchScript() {
   if (state.scriptBusy || !state.selectedScriptFsName) return;
@@ -81,7 +92,48 @@ function launchScript() {
     showToast(result.ok ? '脚本已运行' : result.messages.join(' '), result.ok ? 'success' : 'error');
   });
 }
+// Only a real drag consumes the click; ordinary clicks and keyboard activation stay native.
+function bindScriptDragScroll(list) {
+  var gesture = null, suppressClick = false;
+  function finish() {
+    if (!gesture) return;
+    var pointerId = gesture.id;
+    gesture = null; list.classList.remove('is-dragging');
+    if (list.hasPointerCapture(pointerId)) list.releasePointerCapture(pointerId);
+  }
+  list.addEventListener('pointerdown', function (event) {
+    if (event.pointerType !== 'mouse' || event.button !== 0 || !event.isPrimary) return;
+    finish(); suppressClick = false;
+    var bounds = list.getBoundingClientRect();
+    // Leave the native scrollbar available for its usual thumb and track interaction.
+    if (event.clientX >= bounds.left + list.clientLeft + list.clientWidth) return;
+    gesture = { id: event.pointerId, y: event.clientY, scroll: list.scrollTop, dragging: false };
+  });
+  window.addEventListener('pointermove', function (event) {
+    if (!gesture || event.pointerId !== gesture.id) return;
+    if (!(event.buttons & 1)) { finish(); return; }
+    var distance = event.clientY - gesture.y;
+    if (!gesture.dragging && Math.abs(distance) < 6) return;
+    if (!gesture.dragging) {
+      gesture.dragging = true; suppressClick = true;
+      list.setPointerCapture(gesture.id); list.classList.add('is-dragging');
+    }
+    event.preventDefault(); list.scrollTop = gesture.scroll - distance;
+  }, { passive: false });
+  ['pointerup', 'pointercancel'].forEach(function (type) {
+    window.addEventListener(type, function (event) { if (gesture && event.pointerId === gesture.id) finish(); });
+  });
+  list.addEventListener('lostpointercapture', finish);
+  window.addEventListener('blur', finish);
+  list.addEventListener('dragstart', function (event) { event.preventDefault(); });
+  ['click', 'dblclick'].forEach(function (type) {
+    list.addEventListener(type, function (event) {
+      if (suppressClick && event.detail > 0) { event.preventDefault(); event.stopImmediatePropagation(); }
+    }, true);
+  });
+}
 function bindScriptEvents() {
+  bindScriptDragScroll(els.scriptList);
   els.scriptFolderBtn.addEventListener('click', selectScriptFolder);
   els.refreshScriptsBtn.addEventListener('click', scanScripts);
   els.scriptSearch.addEventListener('input', renderScripts);
@@ -99,7 +151,6 @@ function bindScriptEvents() {
       AELT.settings.set('scriptFavorites', favorites);
       button.classList.toggle('favored', enabled); button.setAttribute('aria-pressed', String(enabled));
       button.setAttribute('aria-label', (enabled ? '取消收藏 ' : '收藏 ') + row.querySelector('.script-name').textContent);
-      button.querySelector('.script-fav-glyph').textContent = enabled ? '★' : '☆';
       animateFavorite(button, enabled);
       if (state.favFilterOn && !enabled) renderScripts();
       return;
@@ -118,7 +169,7 @@ function bindScriptEvents() {
     }
   });
   els.scriptList.addEventListener('error', function (event) {
-    if (event.target.tagName === 'IMG' && !event.target.dataset.fallback) { event.target.dataset.fallback='true'; event.target.parentElement.classList.add('placeholder'); event.target.src='images/placeholder.png'; }
+    if (event.target.tagName === 'IMG' && !event.target.dataset.fallback) { event.target.dataset.fallback='true'; event.target.parentElement.classList.add('placeholder'); event.target.src=getScriptPlaceholder(event.target.closest('.script-item').dataset.fsname); }
   }, true);
 }
 function restoreScriptFolder() {

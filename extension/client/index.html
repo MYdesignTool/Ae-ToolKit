@@ -9,11 +9,8 @@
   <body>
     <main class="app">
       <header class="topbar">
-        <div>
-          <h1>AE工具箱</h1>
-          <p>本地化 AE 效率工具</p>
-        </div>
-        <span class="version" id="versionLabel">0.3.2</span>
+        <h1 class="brand"><img class="brand-art" src="images/header-brand.webp" alt="AE工具箱" draggable="false" width="216" height="48" /></h1>
+        <button type="button" class="version" id="versionLabel" aria-label="查看更新日志" aria-haspopup="dialog" aria-controls="changelogModal">0.3.1</button>
       </header>
 
       <nav class="tabs" aria-label="功能导航" role="tablist">
@@ -219,15 +216,15 @@
     </main>
 
     <div class="modal-overlay" id="changelogModal" style="display:none">
-     <div class="modal-content">
+     <div class="modal-content" role="dialog" aria-modal="true" aria-labelledby="changelogTitle">
        <div class="modal-header">
-         <h2>更新日志</h2>
+         <h2 id="changelogTitle">更新日志</h2>
          <div class="modal-actions">
            <button class="ghost mini" id="openRepoBtn" title="在浏览器中打开发布页">前往发布页</button>
            <button class="ghost mini" id="closeChangelogBtn">关闭</button>
          </div>
        </div>
-       <div class="modal-body" id="changelogBody"></div>
+       <div class="modal-body" id="changelogBody" tabindex="0" aria-label="版本更新记录"></div>
      </div>
    </div>
 

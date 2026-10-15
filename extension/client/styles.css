@@ -29,6 +29,8 @@
 
 /* ===== 页面基础样式 ===== */
 body {
+  -webkit-user-select: none;
+  user-select: none;
   margin: 0;
   background: var(--bg);
   color: var(--text);
@@ -37,6 +39,12 @@ body {
   letter-spacing: 0;
   overflow: hidden;
   height: 100%;
+}
+
+/* Native text selection remains available in editable fields. */
+input, textarea {
+  -webkit-user-select: text;
+  user-select: text;
 }
 
 /* ===== 自定义滚动条（暗色主题，统一替代默认白色滚动条） ===== */
@@ -76,10 +84,13 @@ textarea {
 /* ===== 顶部标题栏 ===== */
 .topbar {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   justify-content: space-between;
   gap: 12px;
 }
+
+.brand { flex: 0 1 216px; min-width: 0; height: 48px; }
+.brand-art { display: block; width: 100%; height: 100%; object-fit: cover; -webkit-user-drag: none; }
 
 /* ===== 标题通用样式 ===== */
 h1,
@@ -98,7 +109,6 @@ h2 {
   font-weight: 650;
 }
 
-.topbar p,
 .muted {
   color: var(--muted);
   margin-top: 4px;
@@ -106,6 +116,7 @@ h2 {
 
 /* ===== 版本号标签（右上角胶囊按钮） ===== */
 .version {
+  height: 28px; min-width: 0; background: transparent; font-size: 12px;
   color: var(--muted);
   border: 1px solid var(--line);
   border-radius: 999px;
@@ -184,6 +195,8 @@ h2 {
   min-height: 0;
   gap: 14px;
 }
+
+.view.is-exiting { pointer-events: none; }
 
 /* ===== 区块标题与按钮行 ===== */
 .section-head,
@@ -583,7 +596,19 @@ textarea {
 .input-modal { max-width: 360px; }
 .input-modal .modal-body { padding: 16px; }
 .input-modal #inputModalField { width: 100%; box-sizing: border-box; }
-.modal-body .changelog-item { border: 0; background: transparent; padding: 8px 0; }
+.modal-body .changelog-item { border: 0; background: transparent; padding: 14px 0; }
+#changelogModal .modal-header { flex-shrink: 0; }
+#changelogModal .modal-body { min-height: 0; max-height: min(560px, calc(80vh - 72px)); }
+.changelog-intro { position: relative; height: 128px; overflow: hidden; border: 1px solid #403137; border-radius: 10px; background: #202020; }
+.changelog-intro img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: right top; -webkit-user-drag: none; }
+.changelog-intro-copy { position: relative; padding: 20px; width: 55%; }
+.changelog-intro-copy > span { color: #ddc8ca; font-size: 12px; }
+.changelog-intro h3 { margin: 8px 0 6px; font-size: 25px; font-weight: 650; line-height: 1; }
+.changelog-intro time { color: #b6a1a6; font-size: 11px; }
+.changelog-version { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+.changelog-version time { color: var(--muted); font-size: 11px; }
+#changelogBody li { padding: 3px 0; line-height: 1.65; }
+#changelogBody .changelog-current ul { margin-top: 0; color: #d3d3d3; }
 .modal-body .changelog-item + .changelog-item { border-top: 1px solid #353535; }
 .modal-body ul { margin: 6px 0 0 0; padding-left: 20px; color: #9d9d9d; }
 
@@ -729,6 +754,7 @@ textarea {
 
 /* ===== 脚本启动器 ===== */
 .script-list {
+  touch-action: pan-y;
   flex: 1;
   min-height: 0;
   overflow-y: auto;
@@ -741,8 +767,8 @@ textarea {
   grid-template-columns: 120px minmax(0, 1fr) 28px;
   align-items: center;
   gap: 10px;
-  height: 52px;
-  padding: 10px;
+  height: 48px;
+  padding: 8px 10px;
   border: 1px solid var(--line);
   border-radius: 10px;
   background: var(--panel);
@@ -753,10 +779,11 @@ textarea {
     background-color var(--motion-fast) var(--ease-ui),
     border-color var(--motion-fast) var(--ease-ui);
 }
+.script-list.is-dragging, .script-list.is-dragging * { cursor: grabbing; }
 .script-item:hover { border-color: #4a4a4a; background: var(--panel-soft); }
-.script-item:active { background: #2b3038; }
 .script-item.active { border-color: var(--accent-strong); background: rgba(79, 140, 255, 0.12); }
 .script-fav {
+  position: relative;
   min-width: 28px;
   width: 28px;
   height: 28px;
@@ -765,14 +792,21 @@ textarea {
   border-radius: 6px;
   background: transparent;
   color: var(--muted);
-  font-size: 19px;
+  display: grid;
+  place-items: center;
 }
 .script-fav.favored { color: #f0c84f; }
 .script-fav:hover { color: #f0c84f; background: rgba(240, 200, 79, 0.08); }
-.script-fav:active { transform: scale(0.92); }
-.script-fav-glyph { display: inline-block; line-height: 1; transform-origin: 50% 55%; }
-.fav-burst { position: fixed; width: 0; height: 0; pointer-events: none; z-index: 100; }
-.fav-particle { position: absolute; width: 3px; height: 3px; border-radius: 50%; background: #f0c84f; pointer-events: none; }
+.script-fav:active { transform: none; }
+.script-fav-glyph {
+  display: block; width: 18px; height: 18px; overflow: visible;
+  fill: currentColor; fill-opacity: 0; stroke: currentColor; stroke-width: 1.65;
+  stroke-linejoin: round; transform-origin: center; pointer-events: none;
+  transition: fill-opacity 110ms ease-out;
+}
+.script-fav.favored .script-fav-glyph { fill-opacity: 1; }
+.fav-burst { position: absolute; left: 50%; top: 50%; width: 0; height: 0; pointer-events: none; }
+.fav-particle { opacity: 0; position: absolute; width: 3px; height: 3px; border-radius: 50%; background: #f0c84f; pointer-events: none; }
 
 .search-row {
   display: flex;
@@ -822,6 +856,7 @@ textarea {
   background: var(--panel-soft);
 }
 .script-icon-img {
+  -webkit-user-drag: none;
   display: block;
   width: 100%;
   height: 100%;
@@ -839,7 +874,6 @@ textarea {
 }
 /* Compact controls retain the existing dropdown/editor and banner list. */
 [hidden] { display: none !important; }
-.topbar p { font-size: 12px; }
 button { white-space: nowrap; }
 button:disabled { opacity: .4; cursor: default; transform: none; }
 button:focus-visible, .script-item:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
@@ -883,10 +917,12 @@ button:focus-visible, .script-item:focus-visible { outline: 2px solid var(--acce
 .toast-container { top: auto; bottom: 38px; }
 .toast { white-space: normal; max-width: 100%; font-size: 12px; }
 @media (max-width: 400px) {
+  .changelog-intro { height: 112px; }
+  .changelog-intro-copy { padding: 16px; }
+  .changelog-intro h3 { font-size: 23px; }
   .app { padding: 12px; gap: 10px; }
-  .topbar h1 { font-size: 18px; }
   .settings-input { width: 125px; }
-  .script-item { grid-template-columns: 96px minmax(0, 1fr) 28px; gap: 8px; height: 48px; padding: 8px; }
+  .script-item { grid-template-columns: 96px minmax(0, 1fr) 28px; gap: 8px; height: 44px; padding: 6px 8px; }
   .script-icon { width: 96px; height: 24px; }
   .script-name { font-size: 12px; }
   .expression-manage { gap: 0; }
