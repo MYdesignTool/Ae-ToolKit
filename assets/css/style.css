@@ -295,7 +295,7 @@ html[data-theme=light] { --title-glint:#527ee5; }
 .install-heading .section-title { text-align:left; }
 .install-mascot { flex:none; width:112px; height:112px; margin-bottom:-5px; pointer-events:none; }
 .install-mascot img { width:100%; height:100%; object-fit:contain; transform:scaleX(-1); -webkit-mask-image:linear-gradient(#000 72%,transparent 99%); mask-image:linear-gradient(#000 72%,transparent 99%); }
-.back-to-top { position:fixed; right:max(22px,env(safe-area-inset-right)); bottom:max(18px,env(safe-area-inset-bottom)); width:92px; display:flex; flex-direction:column; align-items:center; gap:1px; padding:4px; border-radius:20px; color:var(--muted); font-size:10px; line-height:1.5; z-index:80; }
+.back-to-top { visibility:hidden; position:fixed; right:max(22px,env(safe-area-inset-right)); bottom:max(18px,env(safe-area-inset-bottom)); width:92px; display:flex; flex-direction:column; align-items:center; gap:1px; padding:4px; border-radius:20px; color:var(--muted); font-size:10px; line-height:1.5; z-index:80; }
 .js .back-to-top { visibility:hidden; opacity:0; pointer-events:none; transform:translateY(9px); transition:opacity .18s,transform .24s var(--ease),visibility .18s; }
 .js .back-to-top.is-visible { visibility:visible; opacity:1; pointer-events:auto; transform:none; }
 .back-to-top > span { -webkit-backdrop-filter:blur(12px); backdrop-filter:blur(12px); }
