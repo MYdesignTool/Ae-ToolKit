@@ -64,7 +64,7 @@ async function main(){
  assert.deepEqual(await p.evaluate(()=>__gpu.errors),[]);
  for(const width of [390,768,1440]){await p.setViewportSize({width,height:width===1440?1000:844});await p.waitForTimeout(100);assert.ok(await p.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),'viewport fits '+width);await p.screenshot({path:path.join(out,'viewport-'+width+'.png')});}
  assert.ok(await p.locator('.site-header[data-refracted=true]').count());
- await p.locator('#features').scrollIntoViewIfNeeded();await p.waitForFunction(()=>[...document.querySelectorAll('.feature-card img')].every(i=>i.complete&&i.naturalWidth));await p.evaluate(()=>new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r))));await p.screenshot({path:path.join(out,'glass-features.png')});
+ await p.locator('#features').scrollIntoViewIfNeeded();await p.evaluate(()=>new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r))));await p.screenshot({path:path.join(out,'glass-features.png')});
  const staticPage=await context.newPage();staticPage.on('pageerror',e=>errors.push(e.message));
  await staticPage.addInitScript(()=>{const get=HTMLCanvasElement.prototype.getContext;HTMLCanvasElement.prototype.getContext=function(t,...a){return t==='webgl'?null:get.call(this,t,...a);};});await staticPage.goto(base);await staticPage.waitForFunction(()=>document.querySelector('#particle-logo').dataset.renderer==='fallback');assert.equal(await staticPage.locator('.particle-fallback').evaluate(e=>e.complete&&e.naturalWidth>0),true);await staticPage.close();
  const touch=await browser.newContext({viewport:{width:390,height:844},hasTouch:true,isMobile:true});await touch.route('https://api.github.com/**',r=>r.fulfill({status:503,body:''}));

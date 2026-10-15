@@ -7,9 +7,9 @@
   <meta name="description" content="Ae-ToolKit 是一款完全离线运行的 After Effects CEP 扩展面板，集成项目整理器、表达式管理器、脚本启动器三大核心功能。支持 AE 2023+，开源 · 本地优先，开源免费。">
   <meta name="theme-color" content="#f1f5fb">
   <script>try{if(localStorage.getItem('theme')==='dark')document.documentElement.dataset.theme='dark';}catch(e){}</script>
-  <link rel="icon" type="image/svg+xml" href="assets/img/logo.svg?v=glass3">
-  <link rel="stylesheet" href="assets/css/style.css?v=glass3">
-  <link rel="stylesheet" href="assets/css/theme-light.css?v=glass3">
+  <link rel="icon" type="image/svg+xml" href="assets/img/logo.svg?v=glass4">
+  <link rel="stylesheet" href="assets/css/style.css?v=glass4">
+  <link rel="stylesheet" href="assets/css/theme-light.css?v=glass4">
 </head>
 <body>
 
@@ -24,7 +24,7 @@
   <header class="site-header" id="top">
     <nav class="nav container">
       <a href="#top" class="brand">
-        <img src="assets/img/logo.svg?v=glass3" alt="Ae-ToolKit" class="logo-icon">
+        <img src="assets/img/logo.svg?v=glass4" alt="Ae-ToolKit" class="logo-icon">
         Ae-ToolKit
       </a>
       <ul class="nav-links" id="nav-links">
@@ -59,7 +59,7 @@
         <div class="stage-orbit" aria-hidden="true"></div>
         <button class="particle-logo" id="particle-logo" type="button" aria-label="交互式 AE工具箱 Logo：移动指针散开粒子，点击或按回车产生涟漪">
           <canvas id="logo-particles" aria-hidden="true"></canvas>
-          <img class="particle-fallback" src="assets/img/logo.svg?v=glass3" alt="" width="256" height="224">
+          <img class="particle-fallback" src="assets/img/logo.svg?v=glass4" alt="" width="256" height="224">
         </button>
         <div class="particle-caption"><strong>AE TOOLKIT</strong></div>
       </div>
@@ -72,11 +72,16 @@
       <h2 class="section-title">
         <span class="eyebrow">日常工作，轻装上阵</span>三件常做的事，一处就够。
       </h2>
-      <p class="section-subtitle">整理、表达式、脚本集。把重复操作收好，让创作自然往前。<br><small>界面为功能示意，脚本与预设由你管理。</small></p>
+      <p class="section-subtitle">整理、表达式、脚本集。把重复操作收好，让创作自然往前。</p>
       <div class="feature-grid">
 
         <article class="feature-card glass">
-          <div class="feature-img-wrap"><button class="preview-button" type="button" aria-label="放大面板预览"><img src="assets/img/feature-organizer-light.png" data-light-src="assets/img/feature-organizer-light.png" data-dark-src="assets/img/feature-organizer.png" data-label="工程整理" alt="工程整理面板预览" width="520" height="880" loading="lazy"></button></div>
+          <div class="feature-visual visual-organizer" role="img" aria-label="图像、视频和音频素材按类型自动归入文件夹">
+            <div class="visual-heading"><span>项目素材</span><small>自动归位</small></div>
+            <div class="loose-files" aria-hidden="true"><span>JPG</span><span>MOV</span><span>WAV</span></div>
+            <div class="flow-guide" aria-hidden="true"><span></span><i>↓</i><span></span></div>
+            <div class="folder-stack"><div class="folder-row"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7a2 2 0 0 1 2-2h5l2 3h7a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z"/></svg><span>图像</span><small>12 项</small><i>✓</i></div><div class="folder-row"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7a2 2 0 0 1 2-2h5l2 3h7a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z"/></svg><span>视频</span><small>8 项</small><i>✓</i></div><div class="folder-row"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7a2 2 0 0 1 2-2h5l2 3h7a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z"/></svg><span>音频</span><small>4 项</small><i>✓</i></div></div>
+          </div>
           <h3>工程整理</h3>
           <p>按自己的规则，把素材放回熟悉的位置。保存多套整理方案，下一个工程直接复用。</p>
           <ul class="feature-list">
@@ -87,7 +92,12 @@
         </article>
 
         <article class="feature-card glass">
-          <div class="feature-img-wrap"><button class="preview-button" type="button" aria-label="放大面板预览"><img src="assets/img/feature-expression-light.png" data-light-src="assets/img/feature-expression-light.png" data-dark-src="assets/img/feature-expression.png" data-label="批量表达式" alt="批量表达式面板预览" width="520" height="880" loading="lazy"></button></div>
+          <div class="feature-visual visual-expression" role="img" aria-label="一段表达式同步应用到位置、旋转和缩放三个属性">
+            <div class="visual-heading"><span>一段表达式</span><small>同步应用</small></div>
+            <div class="expression-sample"><code>wiggle(<b>5</b>, <b>20</b>)</code><svg viewBox="0 0 260 56" aria-hidden="true"><path class="wave-baseline" d="M0 28H260"/><path class="wave-line" d="M0 28C12 28 14 8 27 8S42 48 55 48 70 8 83 8 98 48 111 48 126 8 139 8 154 48 167 48 182 8 195 8 210 48 223 48 238 28 260 28"/></svg></div>
+            <div class="property-fan" aria-hidden="true"><span>位置<i>✓</i></span><span>旋转<i>✓</i></span><span>缩放<i>✓</i></span></div>
+            <p class="visual-caption">选好属性，一次应用</p>
+          </div>
           <h3>批量表达式</h3>
           <p>选好属性，挑选或编写表达式，一次应用到多处。覆盖前确认，常用代码随手保存。</p>
           <ul class="feature-list">
@@ -98,7 +108,11 @@
         </article>
 
         <article class="feature-card glass">
-          <div class="feature-img-wrap"><button class="preview-button" type="button" aria-label="放大面板预览"><img src="assets/img/feature-script-light.png" data-light-src="assets/img/feature-script-light.png" data-dark-src="assets/img/feature-script.png" data-label="脚本集" alt="脚本集面板预览" width="520" height="880" loading="lazy"></button></div>
+          <div class="feature-visual visual-scripts" role="img" aria-label="本地脚本按名称展示，常用脚本可收藏并快速启动">
+            <div class="visual-heading"><span>常用脚本</span><small>随手可用</small></div>
+            <div class="mini-scripts"><div class="mini-script"><span class="mini-art art-landscape" aria-hidden="true"></span><span>关键帧缓动</span><i class="mini-star">★</i></div><div class="mini-script"><span class="mini-art art-ribbon" aria-hidden="true"></span><span>图层批量重命名</span><i class="mini-star">★</i></div><div class="mini-script"><span class="mini-art art-path" aria-hidden="true"></span><span>锚点对齐</span><i class="mini-star">☆</i></div></div>
+            <p class="visual-caption">本地目录 · 搜索 · 收藏</p>
+          </div>
           <h3>本地脚本集</h3>
           <p>把常用脚本留在自己的目录。搜索、收藏、双击运行，图片会从脚本集的 image 文件夹自动匹配。</p>
           <ul class="feature-list">
@@ -158,14 +172,15 @@
   <!-- ===== Install ===== -->
   <section id="install" class="install section">
     <div class="container">
-      <h2 class="section-title">
+      <div class="install-heading">
+        <h2 class="section-title">
         <span class="eyebrow">准备好，就开始</span>几步，接入你的 AE。
       </h2>
+        <div class="install-mascot" aria-hidden="true"><img src="assets/img/team-guide.webp" alt="" width="384" height="384" loading="lazy"></div>
+      </div>
       <p class="section-subtitle">支持 After Effects 2023 及更新版本。Windows 推荐安装器，macOS 可使用手动安装。</p>
 
       <!-- 先开启 AE 的脚本写入权限 -->
-      <div class="install-guide">
-        <div class="guide-mascot" aria-hidden="true"><img src="assets/img/team-guide.webp" alt="" width="384" height="384" loading="lazy"></div>
         <div class="install-note glass" role="note">
         <div class="install-note__body">
           <strong>安装前必读（两种方式均需要）</strong>：本工具会在本地写入文件（整理素材、保存方案与自定义表达式），需开启 AE 脚本写权限。打开 After Effects 2023+：
@@ -176,8 +191,6 @@
           <br>
           重启 After Effects 使设置生效。工具的核心功能离线运行；此选项用于允许本地文件写入。
         </div>
-      </div>
-
       </div>
 
       <!-- 方式一：一键安装器 -->
@@ -266,13 +279,12 @@ defaults write com.adobe.CSXS.11 PlayerDebugMode -bool true</code></pre>
     <div class="container">
       <div class="footer-top">
         <div class="footer-brand">
-          <img src="assets/img/logo.svg?v=glass3" alt="" class="logo-sm">
+          <img src="assets/img/logo.svg?v=glass4" alt="" class="logo-sm">
           <strong>Ae-ToolKit</strong>
         </div>
         <p class="footer-desc">
           为日常创作，做一点顺手的工具。<br>开源 · 离线 · 本地优先
         </p>
-        <a class="back-to-top" href="#hero" aria-label="返回页面顶部"><img src="assets/img/team-rocket.webp" alt="" width="288" height="288" loading="lazy"><span>返回顶部 <span aria-hidden="true">↑</span></span></a>
       </div>
       <div class="footer-bottom">
         <div class="footer-links">
@@ -285,9 +297,9 @@ defaults write com.adobe.CSXS.11 PlayerDebugMode -bool true</code></pre>
     </div>
   </footer>
 
-  <dialog class="image-preview" id="image-preview" aria-label="面板预览"><form method="dialog"><button>关闭预览</button></form><img alt="" /></dialog>
-  <script src="assets/js/main.js?v=glass3"></script>
-  <script src="assets/js/visuals.js?v=glass3"></script>
+  <a class="back-to-top" id="back-to-top" href="#hero" aria-label="返回页面顶部"><img src="assets/img/team-rocket.webp" alt="" width="288" height="288" loading="lazy"><span>返回顶部 <span aria-hidden="true">↑</span></span></a>
+  <script src="assets/js/main.js?v=glass4"></script>
+  <script src="assets/js/visuals.js?v=glass4"></script>
   <script src="assets/js/code-showcase.js?v=031"></script>
 </body>
 </html>

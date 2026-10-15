@@ -6,13 +6,6 @@
   // 标记 JS 可用，启用滚动揭示动画（无 JS 时内容正常显示）
   document.documentElement.classList.add("js");
 
-  function syncPreviews(theme) {
-    document.querySelectorAll('img[data-light-src]').forEach(function (image) {
-      image.src = theme === 'light' ? image.dataset.lightSrc : image.dataset.darkSrc;
-      image.alt = image.dataset.label + (theme === 'light' ? '浅色功能示意' : '面板预览');
-    });
-  }
-
   // Keep the saved light/dark preference; the head script applies it before first paint.
   (function () {
     var root = document.documentElement;
@@ -20,7 +13,6 @@
     var saved = null;
     try { saved = localStorage.getItem("theme"); } catch (e) {}
     root.setAttribute('data-theme', saved === 'dark' ? 'dark' : 'light');
-    syncPreviews(root.getAttribute('data-theme'));
     if (btn) btn.setAttribute('aria-pressed', String(saved === 'dark'));
     var desiredTheme = root.getAttribute('data-theme'), themeTransition;
     if (btn) {
@@ -28,7 +20,7 @@
         var next = desiredTheme === "light" ? "dark" : "light";
         desiredTheme = next;
         if (themeTransition) themeTransition.skipTransition();
-        function applyTheme() { root.setAttribute('data-theme', desiredTheme); syncPreviews(desiredTheme); }
+        function applyTheme() { root.setAttribute('data-theme', desiredTheme); }
         if (document.startViewTransition && !matchMedia('(prefers-reduced-motion: reduce)').matches) {
           var rect = btn.getBoundingClientRect();
           root.style.setProperty('--theme-x', rect.left + rect.width/2 + 'px');
@@ -50,12 +42,6 @@
   menuButton.addEventListener('click', function () { var open=navLinks.classList.toggle('open'); menuButton.setAttribute('aria-expanded', String(open)); });
   document.addEventListener('keydown', function (event) { if (event.key==='Escape') closeMenu(); });
 
-  var preview = document.getElementById('image-preview');
-  document.querySelectorAll('.preview-button').forEach(function (button) {
-    button.addEventListener('click', function () { var image=button.querySelector('img'); var target=preview.querySelector('img'); target.src=image.src; target.alt=image.alt; preview.showModal(); });
-  });
-  preview.addEventListener('click', function (event) { if (event.target===preview) preview.close(); });
-
   // 年份
   var yearEl = document.getElementById("year");
   if (yearEl) yearEl.textContent = new Date().getFullYear();
@@ -74,6 +60,23 @@
       if (this.classList.contains("back-to-top")) document.getElementById("hero-title").focus({ preventScroll:true });
     });
   });
+
+  // Update only on threshold changes; hidden controls cannot receive keyboard focus.
+  var rocket = document.getElementById('back-to-top'), rocketFrame = 0, rocketVisible;
+  function syncRocket() {
+    rocketFrame = 0;
+    var show = scrollY > Math.max(420, innerHeight * .6);
+    if (show === rocketVisible) return;
+    rocketVisible = show;
+    rocket.classList.toggle('is-visible', show);
+    rocket.setAttribute('aria-hidden', String(!show));
+    rocket.tabIndex = show ? 0 : -1;
+    rocket.inert = !show;
+  }
+  function queueRocket() { if (!rocketFrame) rocketFrame = requestAnimationFrame(syncRocket); }
+  addEventListener('scroll', queueRocket, { passive:true });
+  addEventListener('resize', queueRocket);
+  syncRocket();
 
   // 滚动揭示：进入视口时淡入上浮（错落出现）
   var revealEls = document.querySelectorAll(

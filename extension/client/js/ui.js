@@ -95,7 +95,7 @@
    if (!modal || !body) return;
    var entries = (state.changelog && state.changelog.entries) || [];
    var latest = entries[0];
-   var intro = latest ? '<div class="changelog-intro"><img src="images/changelog-team.webp" alt="" draggable="false" /><div class="changelog-intro-copy"><span>AE工具箱</span><h3>v' + escapeHtml(latest.version) + '</h3><time datetime="' + escapeHtml(latest.date) + '">' + escapeHtml(latest.date) + '</time></div></div>' : '';
+   var intro = latest ? '<div class="changelog-intro"><img src="images/changelog-team.webp?v=peek" alt="" draggable="false" /><div class="changelog-intro-copy"><span>AE工具箱</span><h3>v' + escapeHtml(latest.version) + '</h3><time datetime="' + escapeHtml(latest.date) + '">' + escapeHtml(latest.date) + '</time></div></div>' : '';
    body.innerHTML = intro + (entries.map(function (entry, index) {
      var heading = index ? '<div class="changelog-version"><strong>v' + escapeHtml(entry.version) + '</strong><time datetime="' + escapeHtml(entry.date) + '">' + escapeHtml(entry.date) + '</time></div>' : '';
      return '<div class="changelog-item' + (index ? '' : ' changelog-current') + '">' + heading + '<ul>' +
@@ -145,9 +145,6 @@
       }
     });
   }
-
-
-
 
 AELT.ui = {
   syncDebugTabVisibility: syncDebugTabVisibility,

@@ -2,6 +2,7 @@
 const fs=require('node:fs'),path=require('node:path'),assert=require('node:assert/strict');const {pathToFileURL}=require('node:url'),{chromium}=require('playwright');
 const {root}=require('./helpers.cjs'),{bridge,data}=require('./motion.cjs');
 async function main(){
+ assert.ok(fs.readFileSync(path.join(root,'extension/client/images/changelog-team.webp')).equals(fs.readFileSync(path.join(root,'assets/img/team-peek.webp'))),'extension and page share the same mascot');
  assert.equal(data.changelog.version,'0.3.1');assert.equal(data.changelog.entries[0].version,'0.3.1');assert.equal(data.changelog.entries[0].changes.length,6);assert.ok(!data.changelog.entries.some(e=>e.version==='0.3.0'));assert.equal(data.changelog.entries[1].version,'0.2.6');
  const browser=await chromium.launch({channel:'msedge',headless:true});
  try{

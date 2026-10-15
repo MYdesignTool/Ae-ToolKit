@@ -15,6 +15,6 @@
 
 执行 `node --test tests/*.test.cjs`。安装器构建前显式安装 NSIS，再执行 `extension/installer/build-installer.cmd`；脚本不会下载或安装软件。版本源是 `extension/data/changelog.json`，构建校验其与 manifest 一致。
 
-CEP 内核由宿主 AE 携带，不能通过修改清单单独升级。发布页图片使用界面示例数据，不代表 AE 宿主实测结果。
+CEP 内核由宿主 AE 携带，不能通过修改清单单独升级。发布页以原生元素呈现功能示意，不代表 AE 宿主实测结果。
 
 [GPLv3](extension/License.md)

@@ -7,6 +7,7 @@
 
   const button = document.getElementById('particle-logo');
   const canvas = document.getElementById('logo-particles');
+  const scene = button.closest('.hero-layout');
   const vertex = `
     precision highp float;
     attribute vec3 a_target, a_start, a_color;
@@ -141,12 +142,13 @@
     }
     count = points.length / 11; geometry = new Float32Array(points); initialize();
   }
-  button.addEventListener('pointermove', event => {
+  scene.addEventListener('pointermove', event => {
     if (event.pointerType === 'touch' || motion.matches) return;
     const r = button.getBoundingClientRect(); targetPointer = [event.clientX-r.left-width/2,event.clientY-r.top-height/2,1];
   });
-  button.addEventListener('pointerleave', () => { targetPointer[2] = 0; });
-  button.addEventListener('click', event => {
+  scene.addEventListener('pointerleave', () => { targetPointer[2] = 0; });
+  scene.addEventListener('click', event => {
+    if (event.target.closest('a,button') && !event.target.closest('#particle-logo')) return;
     if (motion.matches || !program) return;
     const r = button.getBoundingClientRect(), i = rippleIndex++ % 4 * 4;
     ripples.set([event.detail ? event.clientX-r.left-width/2 : 0,event.detail ? event.clientY-r.top-height/2 : 0,time,1], i); wake();

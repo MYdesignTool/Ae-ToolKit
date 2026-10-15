@@ -30,7 +30,6 @@ Create one exquisite minimal panoramic banner illustration for a small script-li
 Use case: logo-brand. Create a finished compact horizontal header artwork for a charcoal desktop creative application. Wide 3:1 canvas, uniform solid opaque charcoal background RGB(23,23,23), absolutely no transparency. Only foreground: a beautiful small sculptural folded ribbon emblem in cobalt blue and periwinkle at the left, followed by the exact text "AE工具箱" in clean bold white modern sans-serif. White letters are solid, flat, smooth and crisp like professionally typeset text. NO distressed texture, NO outlines, NO grunge, NO scratches, NO broken strokes, NO erosion, NO missing pieces in the letters. All typography must read AE工具箱 accurately. Keep generous spacing between emblem and letters. Emblem simple enough to work at small scale, satin blue folds, no extra loops behind text. This is one usable premium image logo, not a screenshot or mockup. Put the whole compact lockup in the central 60% of the image height with generous empty charcoal margins above/below and modest margins on left/right; centered vertically and horizontally. Intended final small display is 216 by 48 pixels: use bold thick letter strokes with good spacing. Do not add any subtitle, slogan, watermark, Adobe logo, box, border or extra words.
 ```
 
-
 ## 更新日志团队插画
 
 `extension/client/images/changelog-team.webp`：1200×400，由用户提供的人设图作为身份参考，使用内置 imagegen 生成。保留白发、猫耳、红瞳、侧编发与红蓝服装特征；在日志顶部右侧展示，版本、日期和正文保持真实文字。
@@ -41,12 +40,12 @@ Use case: stylized-concept. Asset type: a compact illustrated update-log header 
 
 ## 发布页透明人设（2026-10-15）
 
-使用内置 imagegen 编辑，沿用原团队人设；最终透明素材转为 WebP，保留 alpha。扩展内部插画未改变。未采用的挥手、抱玩具火箭等草稿留在生成记录中，不进入项目。
+使用内置 imagegen 编辑，沿用原团队人设；最终透明素材转为 WebP，保留 alpha。扒边图也复用于扩展的更新日志头部。未采用的挥手、抱玩具火箭等草稿留在生成记录中，不进入项目。
 
 | 文件 | 用途 | 大小 |
 | --- | --- | --- |
 | assets/img/team-peek.webp | 双手扒着更新横幅下沿 | 1200×400 |
-| assets/img/team-guide.webp | 从安装提示侧边探头并指向说明 | 384×384 |
+| assets/img/team-guide.webp | 安装区标题旁的引导角色 | 384×384 |
 | assets/img/team-rocket.webp | 小人抱大火箭的返回顶部按钮 | 288×288 |
 
 原始输出位于 Codex generated_images，采用的 PNG 分别为 exec-5a32e301-dba0-47a9-a65b-a27fbb98da0f.png、exec-d3b6ecf1-1e97-4294-bfe9-8198d1d493b7.png、exec-37721bf6-151f-4219-af7e-98d888a09b8f.png。火箭在 CSS 中旋转 -11° 使其竖直，悬停只向上移动。
