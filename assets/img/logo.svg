@@ -1,13 +1,11 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Ae-ToolKit">
-  <defs>
-    <linearGradient id="aeBg" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#1a1a4b"/>
-      <stop offset="1" stop-color="#00005B"/>
-    </linearGradient>
-  </defs>
-  <rect x="2" y="2" width="60" height="60" rx="14" fill="url(#aeBg)"/>
-  <text x="32" y="44" text-anchor="middle"
-        font-family="Arial, Helvetica, sans-serif"
-        font-size="38" font-weight="700"
-        fill="#9A9AFF" style="font-style:normal">Ae</text>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 224" role="img" aria-label="AE工具箱">
+<defs>
+ <linearGradient id="left" x1=".1" y1="1" x2=".7" y2="0"><stop stop-color="#1842f2"/><stop offset=".48" stop-color="#467df9"/><stop offset="1" stop-color="#9cbbff"/></linearGradient>
+ <linearGradient id="right" x1=".3" y1="0" x2=".8" y2="1"><stop stop-color="#9dbaff"/><stop offset=".3" stop-color="#5988fd"/><stop offset=".7" stop-color="#2147ee"/><stop offset="1" stop-color="#789cff"/></linearGradient>
+ <linearGradient id="fold" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#1737cb"/><stop offset=".5" stop-color="#305ff2"/><stop offset="1" stop-color="#a5baff"/></linearGradient>
+</defs>
+<path d="M28 184 105 24Q113 6 129 6H145Q159 6 167 24L110 180Q98 211 75 216H48Q17 216 28 184Z" fill="url(#left)"/>
+<path d="M129 6Q150 6 160 27L229 182Q243 214 212 216H189Q172 216 161 195L107 91 120 43Q126 23 129 6Z" fill="url(#right)"/>
+<path d="M75 165Q88 134 108 135 126 133 139 153L165 198Q176 216 194 216H153Q133 216 123 197L107 170Q95 150 75 165Z" fill="url(#fold)"/>
+<path d="M106 24Q114 7 131 7H145" fill="none" stroke="#d6e4ff" stroke-opacity=".6" stroke-width="1.4"/>
 </svg>

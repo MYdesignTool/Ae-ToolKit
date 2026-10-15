@@ -18,7 +18,7 @@ async function main(){
  }
  await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));const base='http://127.0.0.1:'+server.address().port;
  const context=await browser.newContext({viewport:{width:1440,height:1000},reducedMotion:'reduce'}),page=await context.newPage(),errors=[];page.on('pageerror',e=>errors.push(String(e)));
- await page.route('https://api.github.com/**',r=>r.fulfill({json:{tag_name:'v0.2.6'}}));await page.goto(base);await page.waitForFunction(()=>document.querySelector('.hero-preview img').complete);
+ await page.route('https://api.github.com/**',r=>r.fulfill({json:{tag_name:'v0.2.6'}}));await page.goto(base);await page.waitForFunction(()=>document.querySelector('#particle-logo').dataset.renderer);
  assert.equal(await page.locator('#app-version').textContent(),'v0.3.1','an older GitHub release cannot downgrade the bundled version');
  async function fit(){const overflow=await page.evaluate(()=>({width:innerWidth,scroll:document.documentElement.scrollWidth,nodes:[...document.querySelectorAll('body *')].map(el=>({tag:el.tagName,id:el.id,cls:el.className,right:el.getBoundingClientRect().right})).filter(el=>el.right>innerWidth+1).slice(0,12)}));assert.ok(overflow.scroll<=overflow.width,JSON.stringify(overflow));}
  for(const theme of ['light','dark']){
@@ -39,4 +39,5 @@ async function main(){
  assert.deepEqual(errors,[]);console.log('Site passed: current panel previews, both themes, remembered theme, desktop/mobile layout, image dialogs, copy failure, menu/anchors, offline version and normal/reduced motion.');await context.close();
  }finally{await browser.close();server.close();}
 }
-main().catch(e=>{console.error(e);server.close();process.exitCode=1;});
+if(require.main===module)main().catch(e=>{console.error(e);server.close();process.exitCode=1;});
+module.exports={server};

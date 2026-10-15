@@ -14,10 +14,21 @@
     try { saved = localStorage.getItem("theme"); } catch (e) {}
     root.setAttribute('data-theme', saved === 'dark' ? 'dark' : 'light');
     if (btn) btn.setAttribute('aria-pressed', String(saved === 'dark'));
+    var desiredTheme = root.getAttribute('data-theme'), themeTransition;
     if (btn) {
       btn.addEventListener("click", function () {
-        var next = root.getAttribute("data-theme") === "light" ? "dark" : "light";
-        root.setAttribute("data-theme", next);
+        var next = desiredTheme === "light" ? "dark" : "light";
+        desiredTheme = next;
+        if (themeTransition) themeTransition.skipTransition();
+        function applyTheme() { root.setAttribute('data-theme', desiredTheme); }
+        if (document.startViewTransition && !matchMedia('(prefers-reduced-motion: reduce)').matches) {
+          var rect = btn.getBoundingClientRect();
+          root.style.setProperty('--theme-x', rect.left + rect.width/2 + 'px');
+          root.style.setProperty('--theme-y', rect.top + rect.height/2 + 'px');
+          themeTransition = document.startViewTransition(applyTheme);
+          themeTransition.ready.catch(function () { /* Rapid toggles can skip the previous snapshot. */ });
+          themeTransition.finished.catch(function () {});
+        } else applyTheme();
         btn.setAttribute('aria-pressed', String(next === 'dark'));
         try { localStorage.setItem("theme", next); } catch (e) {}
       });
@@ -101,11 +112,16 @@
           var rect = card.getBoundingClientRect();
           card.style.setProperty('--mx', (pointer.clientX - rect.left) / rect.width * 100 + '%');
           card.style.setProperty('--my', (pointer.clientY - rect.top) / rect.height * 100 + '%');
+          if (card.classList.contains('feature-card')) {
+            card.style.setProperty('--tilt-x', (0.5 - (pointer.clientY - rect.top) / rect.height) * 3 + 'deg');
+            card.style.setProperty('--tilt-y', ((pointer.clientX - rect.left) / rect.width - 0.5) * 4 + 'deg');
+          }
         });
       });
       card.addEventListener('pointerleave', function () {
         cancelAnimationFrame(frame); frame = 0;
         card.style.removeProperty('--mx'); card.style.removeProperty('--my');
+        card.style.removeProperty('--tilt-x'); card.style.removeProperty('--tilt-y');
       });
     });
   }

@@ -7,9 +7,9 @@
   <meta name="description" content="Ae-ToolKit 是一款完全离线运行的 After Effects CEP 扩展面板，集成项目整理器、表达式管理器、脚本启动器三大核心功能。支持 AE 2023+，开源 · 本地优先，开源免费。">
   <meta name="theme-color" content="#f1f5fb">
   <script>try{if(localStorage.getItem('theme')==='dark')document.documentElement.dataset.theme='dark';}catch(e){}</script>
-  <link rel="icon" type="image/svg+xml" href="assets/img/logo.svg?v=3">
-  <link rel="stylesheet" href="assets/css/style.css?v=031">
-  <link rel="stylesheet" href="assets/css/theme-light.css?v=031">
+  <link rel="icon" type="image/svg+xml" href="assets/img/logo.svg?v=glass2">
+  <link rel="stylesheet" href="assets/css/style.css?v=glass2">
+  <link rel="stylesheet" href="assets/css/theme-light.css?v=glass2">
 </head>
 <body>
 
@@ -17,15 +17,14 @@
   <div class="page-bg" aria-hidden="true">
     <span class="pg-blob pg-blob-1"></span>
     <span class="pg-blob pg-blob-2"></span>
-
-
+    <span class="pg-caustic"></span>
   </div>
 
   <!-- ===== Header ===== -->
   <header class="site-header" id="top">
     <nav class="nav container">
       <a href="#top" class="brand">
-        <img src="assets/img/logo.svg?v=3" alt="Ae-ToolKit" class="logo-icon">
+        <img src="assets/img/logo.svg?v=glass2" alt="Ae-ToolKit" class="logo-icon">
         Ae-ToolKit
       </a>
       <ul class="nav-links" id="nav-links">
@@ -56,13 +55,13 @@
         </div>
         <p class="hero-note">开源免费<span>·</span>本地运行<span>·</span>设置随文件夹保存</p>
       </div>
-      <div class="hero-stage">
+      <div class="hero-stage particle-stage">
         <div class="stage-orbit" aria-hidden="true"></div>
-        <div class="hero-window glass">
-          <div class="window-bar"><span class="window-dots" aria-hidden="true"><i></i><i></i><i></i></span><span>AE Local Toolkit</span><span>0.3.1</span></div>
-          <button class="preview-button hero-preview" type="button" aria-label="放大脚本集面板预览"><img src="assets/img/feature-script.png" alt="AE工具箱 0.3.1 脚本集面板" width="626" height="870" fetchpriority="high"></button>
-        </div>
-        <div class="stage-caption glass"><span class="caption-icon" aria-hidden="true">↗</span><div><strong>熟悉的工具，随手可用</strong><span>脚本与预设，都在你的掌握中</span></div></div>
+        <button class="particle-logo" id="particle-logo" type="button" aria-label="交互式 AE工具箱 Logo：移动指针散开粒子，点击或按回车产生涟漪">
+          <canvas id="logo-particles" aria-hidden="true"></canvas>
+          <img class="particle-fallback" src="assets/img/logo.svg?v=glass2" alt="" width="256" height="224">
+        </button>
+        <div class="particle-caption"><strong>AE TOOLKIT</strong><span>靠近散开 · 点击泛起涟漪</span></div>
       </div>
     </div>
   </section>
@@ -263,7 +262,7 @@ defaults write com.adobe.CSXS.11 PlayerDebugMode -bool true</code></pre>
     <div class="container">
       <div class="footer-top">
         <div class="footer-brand">
-          <img src="assets/img/logo.svg?v=3" alt="" class="logo-sm">
+          <img src="assets/img/logo.svg?v=glass2" alt="" class="logo-sm">
           <strong>Ae-ToolKit</strong>
         </div>
         <p class="footer-desc">
@@ -282,7 +281,8 @@ defaults write com.adobe.CSXS.11 PlayerDebugMode -bool true</code></pre>
   </footer>
 
   <dialog class="image-preview" id="image-preview" aria-label="面板预览"><form method="dialog"><button>关闭预览</button></form><img alt="" /></dialog>
-  <script src="assets/js/main.js?v=031"></script>
+  <script src="assets/js/main.js?v=glass2"></script>
+  <script src="assets/js/visuals.js?v=glass2"></script>
   <script src="assets/js/code-showcase.js?v=031"></script>
 </body>
 </html>

@@ -3,7 +3,7 @@ html[data-theme="light"] {
   color-scheme:light;
   --bg:#f1f5fb; --bg-elevated:#f9fbff; --fg:#1d2b40; --muted:#61718a;
   --accent:#456cbb; --accent-light:#416ac1; --accent-strong:#4c7ce1;
-  --glass-bg:rgba(255,255,255,.48); --glass-border:rgba(255,255,255,.83);
+  --glass-bg:rgba(255,255,255,.31); --glass-border:rgba(255,255,255,.83);
   --glass-edge:rgba(255,255,255,.96); --glass-highlight:rgba(255,255,255,.5);
   --shadow:0 12px 40px rgba(50,78,120,.07); --shadow-hover:0 18px 50px rgba(50,78,120,.12);
   --soft:rgba(75,111,176,.065); --code-bg:rgba(224,233,247,.40); --preview-mat:rgba(183,204,237,.21);
