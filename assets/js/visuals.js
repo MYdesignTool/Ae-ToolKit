@@ -29,19 +29,20 @@
       p.yz = mat2(cos(pitch),-sin(pitch),sin(pitch),cos(pitch)) * p.yz;
       vec2 away = p.xy - u_pointer.xy;
       float distance = length(away);
-      float influence = pow(max(0., 1. - distance / 105.), 2.) * u_pointer.z;
-      p.xy += away / max(distance, 1.) * influence * 62.;
+      float influence = pow(max(0., 1. - distance / 70.), 2.) * u_pointer.z;
+      p.xy += away * influence * 1.05;
+      p.z += influence * sin(u_time*1.2+a_seed*6.) * 4.;
       float light = 0.;
       for (int i=0; i<4; i++) {
         float age = u_time - u_ripples[i].z;
         if (u_ripples[i].w > 0. && age >= 0. && age < 2.3) {
           vec2 radial = p.xy - u_ripples[i].xy;
           float radius = length(radial);
-          float band = radius - age * 310.;
-          float envelope = exp(-pow(band / 30., 2.)) * exp(-age * 1.05) * u_ripples[i].w;
-          p.xy += radial / max(radius, 1.) * sin(band * .105) * envelope * 29.;
-          p.z += cos(band * .105) * envelope * 48.;
-          light += envelope * .26;
+          float band = radius - age * 280.;
+          float envelope = exp(-pow(band / 38., 2.)) * exp(-age * 1.05) * u_ripples[i].w;
+          p.xy += radial / max(radius, 1.) * sin(band * .075) * envelope * 16.;
+          p.z += cos(band * .075) * envelope * 26.;
+          light += envelope * .13;
         }
       }
       p.xy *= 1. + p.z / (scale * 3.8);
@@ -127,16 +128,16 @@
     }
   }
   async function loadLogo() {
-    const image = new Image(); image.src = 'assets/img/logo.svg?v=glass2'; await image.decode();
+    const image = new Image(); image.src = 'assets/img/logo.svg?v=glass3'; await image.decode();
     const mask = document.createElement('canvas'); mask.width = 256; mask.height = 224;
     const ctx = mask.getContext('2d', { willReadFrequently:true }); ctx.drawImage(image, 0, 0, 256, 224);
     const pixels = ctx.getImageData(0,0,256,224).data, points = [];
-    for (let y=2; y<222; y+=2) for (let x=2; x<254; x+=2) {
-      const at = (y*256+x)*4; if (pixels[at+3] < 110) continue;
+    for (let y=1.25; y<223; y+=1.25) for (let x=1.25; x<255; x+=1.25) {
+      const at = (Math.floor(y)*256+Math.floor(x))*4; if (pixels[at+3] < 110) continue;
       const seed = Math.random(), nx = (x + Math.random()*.6 - 128) / 256, ny = (y + Math.random()*.6 - 112) / 224;
       const z = (pixels[at+2] - pixels[at]) / 255 * .06 + Math.sin(nx * 5) * .025;
       const angle = seed * Math.PI * 2, radius = .58 + Math.random() * .7;
-      points.push(nx,ny,z,Math.cos(angle)*radius,Math.sin(angle)*radius,(Math.random()-.5)*.6,pixels[at]/255,pixels[at+1]/255,pixels[at+2]/255,1.65+Math.random()*1.35,seed);
+      points.push(nx,ny,z,Math.cos(angle)*radius,Math.sin(angle)*radius,(Math.random()-.5)*.6,pixels[at]/255,pixels[at+1]/255,pixels[at+2]/255,1.0+Math.random()*.85,seed);
     }
     count = points.length / 11; geometry = new Float32Array(points); initialize();
   }
@@ -159,44 +160,43 @@
   new MutationObserver(() => { dark = root.dataset.theme === 'dark' ? 1 : 0; wake(); }).observe(root, { attributes:true, attributeFilter:['data-theme'] });
   loadLogo().catch(() => { button.dataset.renderer = 'fallback'; });
 
-  // A local chromatic lens belongs to this headline; no global cursor replacement.
-  const title = document.querySelector('.hero-title');
+  // Pointer light stays within the letter strokes, following the site's blue-violet palette.
+  const title = document.querySelector('.hero-title'), lines = [...title.querySelectorAll('.title-line')];
+  for (const line of lines) { const shine=document.createElement('span'); shine.className='title-shine'; shine.setAttribute('aria-hidden','true'); shine.textContent=line.textContent; line.appendChild(shine); }
   const finePointer = matchMedia('(hover: hover) and (pointer: fine)');
-  const lens = document.createElement('div');
-  lens.className = 'title-lens'; lens.setAttribute('aria-hidden', 'true'); document.body.appendChild(lens);
-  let lensFrame = 0, lensLast = 0, lensActive = false, lensAlpha = 0;
-  let lensX = 0, lensY = 0, aimX = 0, aimY = 0;
-  function paintLens(now) {
-    lensFrame = 0;
-    const dt = Math.min((now - (lensLast || now)) / 1000, .05); lensLast = now;
+  let lightFrame = 0, lightLast = 0, lightActive = false, lightAlpha = 0;
+  let lightX = 0, lightY = 0, aimX = 0, aimY = 0;
+  function paintLight(now) {
+    lightFrame = 0;
+    const dt = Math.min((now - (lightLast || now)) / 1000, .05); lightLast = now;
     const follow = 1 - Math.exp(-dt * 24), fade = 1 - Math.exp(-dt * 18);
-    lensX += (aimX - lensX) * follow; lensY += (aimY - lensY) * follow;
-    lensAlpha += ((lensActive ? 1 : 0) - lensAlpha) * fade;
-    lens.style.opacity = lensAlpha < .003 ? '0' : lensAlpha.toFixed(3);
-    lens.style.transform = 'translate3d(' + (lensX-42).toFixed(2) + 'px,' + (lensY-42).toFixed(2) + 'px,0) scale(' + (.65 + lensAlpha*.35).toFixed(3) + ')';
-    if (Math.abs((lensActive?1:0)-lensAlpha) > .003 || Math.hypot(aimX-lensX,aimY-lensY) > .1) lensFrame = requestAnimationFrame(paintLens);
+    lightX += (aimX - lightX) * follow; lightY += (aimY - lightY) * follow;
+    lightAlpha += ((lightActive ? 1 : 0) - lightAlpha) * fade;
+    title.style.setProperty('--title-light', lightAlpha < .003 ? '0' : (lightAlpha*.85).toFixed(3));
+    for (const line of lines) { const r=line.getBoundingClientRect(); line.style.setProperty('--title-x',(lightX-r.left).toFixed(2)+'px'); line.style.setProperty('--title-y',(lightY-r.top).toFixed(2)+'px'); }
+    if (Math.abs((lightActive?1:0)-lightAlpha) > .003 || Math.hypot(aimX-lightX,aimY-lightY) > .1) lightFrame = requestAnimationFrame(paintLight);
   }
-  function wakeLens() { if (!lensFrame) { lensLast = performance.now(); lensFrame = requestAnimationFrame(paintLens); } }
-  function hideLens(immediate) {
-    lensActive = false;
-    if (immediate) { cancelAnimationFrame(lensFrame); lensFrame = 0; lensAlpha = 0; lens.style.opacity = '0'; }
-    else wakeLens();
+  function wakeLight() { if (!lightFrame) { lightLast = performance.now(); lightFrame = requestAnimationFrame(paintLight); } }
+  function hideLight(immediate) {
+    lightActive = false;
+    if (immediate) { cancelAnimationFrame(lightFrame); lightFrame = 0; lightAlpha = 0; title.style.setProperty('--title-light','0'); }
+    else wakeLight();
   }
   title.parentElement.addEventListener('pointermove', event => {
     if (!finePointer.matches || motion.matches || event.pointerType === 'touch') return;
     const rect = title.getBoundingClientRect();
     const near = event.clientX >= rect.left-12 && event.clientX <= rect.right+12 && event.clientY >= rect.top-12 && event.clientY <= rect.bottom+12;
-    if (!near) { if (lensActive) hideLens(false); return; }
+    if (!near) { if (lightActive) hideLight(false); return; }
     aimX = event.clientX; aimY = event.clientY;
-    if (lensAlpha < .003) { lensX = aimX; lensY = aimY; }
-    lensActive = true; wakeLens();
+    if (lightAlpha < .003) { lightX = aimX; lightY = aimY; }
+    lightActive = true; wakeLight();
   });
-  title.parentElement.addEventListener('pointerleave', () => hideLens(false));
-  window.addEventListener('scroll', () => hideLens(true), { passive:true });
-  window.addEventListener('blur', () => hideLens(true));
-  document.addEventListener('visibilitychange', () => { if (document.hidden) hideLens(true); });
-  motion.addEventListener('change', () => hideLens(true));
-  finePointer.addEventListener('change', () => hideLens(true));
+  title.parentElement.addEventListener('pointerleave', () => hideLight(false));
+  window.addEventListener('scroll', () => hideLight(true), { passive:true });
+  window.addEventListener('blur', () => hideLight(true));
+  document.addEventListener('visibilitychange', () => { if (document.hidden) hideLight(true); });
+  motion.addEventListener('change', () => hideLight(true));
+  finePointer.addEventListener('change', () => hideLight(true));
 
   // Rounded-rectangle surface normals displace only the bevel, keeping the glass center calm.
   if (!CSS.supports('backdrop-filter', 'url("#glass-optics")')) return;

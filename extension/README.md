@@ -32,7 +32,7 @@
 
 设置、脚本收藏、自定义表达式和全部自定义整理方案，统一保存在扩展文件夹内的 data/user-data.json。内置默认规则保持单独分发，更新时不会覆盖个人数据。
 
-换电脑：保存完成并关闭 AE 后，复制整个 AeLocalToolkit 文件夹到新电脑可写的用户级 CEP 目录，再打开面板即可，不需要先导出再导入。user-data.json 是完整数据，旁边的 .bak 是上一次成功保存前的完整快照。安装器更新前还会备份整个 data 到 backups/before-版本-时间/。
+换电脑：保存完成并关闭 AE 后，复制整个 AeLocalToolkit 文件夹到新电脑的系统级 CEP 目录（Windows：C:\Program Files (x86)\Common Files\Adobe\CEP\extensions；macOS：/Library/Application Support/Adobe/CEP/extensions），并确保 data 子目录对当前用户可写，再打开面板即可。Windows 安装器会自动设置 data 权限，无需给程序文件开放修改权限。user-data.json 是完整数据，旁边的 .bak 是上一次成功保存前的完整快照。安装器更新前还会备份整个 data 到 backups/before-版本-时间/。
 
 脚本目录和收藏如果位于扩展文件夹内，会存为相对路径，移动文件夹后自动对应新位置。例如将脚本放进 AeLocalToolkit/scripts，并在设置里选择它；其 image 子目录也一并复制。扩展外的脚本、图片和 AE 工程不会被配置文件复制，换电脑时需另行携带，并按实际位置重新选择脚本目录。
 

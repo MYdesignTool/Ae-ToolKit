@@ -2,7 +2,7 @@
 // Usage: node tests/installer.cjs [path-to-makensis.exe]
 const fs=require('node:fs'),path=require('node:path'),cp=require('node:child_process'),assert=require('node:assert/strict'),crypto=require('node:crypto');const {root}=require('./helpers.cjs');
 const compiler=process.argv[2]||'C:/Program Files (x86)/NSIS/makensis.exe';
-const sandbox=path.join(root,'.artifacts','upgrade-'+crypto.randomUUID()),installed=path.join(sandbox,'installed','AeLocalToolkit'),legacy=path.join(sandbox,'legacy32','AeLocalToolkit');
+const sandbox=path.join(root,'.artifacts','upgrade-'+crypto.randomUUID()),installed=path.join(sandbox,'installed','AeLocalToolkit'),legacy=path.join(sandbox,'legacy-user','AeLocalToolkit');
 const put=(file,bytes)=>{fs.mkdirSync(path.dirname(file),{recursive:true});fs.writeFileSync(file,bytes);};
 const run=(exe,args)=>{const result=cp.spawnSync(exe,args,{timeout:45000,encoding:'utf8',windowsHide:true});if(result.error)throw result.error;assert.equal(result.status,0,result.stdout+'\n'+result.stderr);};
 const text=file=>fs.readFileSync(file,'utf8');
@@ -17,6 +17,8 @@ run(setup,['/S']);
 assert.equal(text(path.join(installed,'data/settings.json')),oldSettings);assert.equal(text(path.join(installed,'data/organizer-schemes/custom.json')),oldScheme);assert.equal(text(path.join(legacy,'data/settings.json')),oldSettings);
 assert.equal(fs.existsSync(path.join(legacy,'CSXS/manifest.xml')),false);assert.ok(fs.readdirSync(path.join(legacy,'CSXS')).some(name=>name.startsWith('manifest.xml.before-')),'old copy disabled reversibly');
 assert.ok(fs.existsSync(path.join(installed,'CSXS/manifest.xml')));
+const aclScript = "$sid=[Security.Principal.WindowsIdentity]::GetCurrent().User.Value; $rights=[Security.AccessControl.FileSystemRights]::Modify; [bool]([IO.Directory]::GetAccessControl('"+path.join(installed,'data').replace(/'/g,"''")+"').Access | Where-Object { $_.IdentityReference.Translate([Security.Principal.SecurityIdentifier]).Value -eq $sid -and ($_.FileSystemRights -band $rights) -eq $rights -and -not $_.IsInherited })";
+const acl=cp.execFileSync('powershell.exe',['-NoProfile','-NonInteractive','-Command',aclScript],{encoding:'utf8',windowsHide:true});assert.equal(acl.trim(),'True','the installing user can modify portable data without elevation');
 const userData=JSON.stringify({format:'ae-local-toolkit',version:1,settings:{quietMode:true,userExpressions:[{id:'user-personal',name:'Personal',code:'time % 1'}]},schemes:[{id:'scheme-personal',name:'Personal',rules:[]}]});
 put(path.join(installed,'data/user-data.json'),userData);put(path.join(installed,'data/user-data.json.bak'),'previous-data');put(path.join(installed,'data/extra-local.txt'),'keep-local');put(path.join(installed,'my-scripts/Tool.jsx'),'personal-script');put(path.join(installed,'client/js/app.js'),'old-program');
 put(path.join(legacy,'CSXS/manifest.xml'),manifest);put(path.join(legacy,'data/settings.json'),'{"compFolder":"obsolete"}');

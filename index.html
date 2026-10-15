@@ -7,9 +7,9 @@
   <meta name="description" content="Ae-ToolKit 是一款完全离线运行的 After Effects CEP 扩展面板，集成项目整理器、表达式管理器、脚本启动器三大核心功能。支持 AE 2023+，开源 · 本地优先，开源免费。">
   <meta name="theme-color" content="#f1f5fb">
   <script>try{if(localStorage.getItem('theme')==='dark')document.documentElement.dataset.theme='dark';}catch(e){}</script>
-  <link rel="icon" type="image/svg+xml" href="assets/img/logo.svg?v=glass2">
-  <link rel="stylesheet" href="assets/css/style.css?v=glass2">
-  <link rel="stylesheet" href="assets/css/theme-light.css?v=glass2">
+  <link rel="icon" type="image/svg+xml" href="assets/img/logo.svg?v=glass3">
+  <link rel="stylesheet" href="assets/css/style.css?v=glass3">
+  <link rel="stylesheet" href="assets/css/theme-light.css?v=glass3">
 </head>
 <body>
 
@@ -24,7 +24,7 @@
   <header class="site-header" id="top">
     <nav class="nav container">
       <a href="#top" class="brand">
-        <img src="assets/img/logo.svg?v=glass2" alt="Ae-ToolKit" class="logo-icon">
+        <img src="assets/img/logo.svg?v=glass3" alt="Ae-ToolKit" class="logo-icon">
         Ae-ToolKit
       </a>
       <ul class="nav-links" id="nav-links">
@@ -47,7 +47,7 @@
     <div class="hero-layout container">
       <div class="hero-content">
         <div class="hero-badge"><span class="status-dot"></span><span id="app-version">v0.3.1</span><span class="badge-divider"></span>After Effects 2023+</div>
-        <h1 class="hero-title">把时间，<br><span class="gradient-text">留给创作。</span></h1>
+        <h1 class="hero-title" id="hero-title" tabindex="-1"><span class="title-line">把时间，</span><br><span class="title-line gradient-text">留给创作。</span></h1>
         <p class="hero-desc">整理工程、复用表达式、启动常用脚本。<br>你熟悉的工作流，集中在一个离线面板。</p>
         <div class="hero-actions">
           <a href="https://github.com/MYdesignTool/Ae-ToolKit/releases/tag/v0.3.1" class="btn btn-primary" data-download target="_blank" rel="noopener"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M12 3v12m-5-5l5 5 5-5M5 16v4h14v-4"/></svg><span data-download-label>下载 0.3.1</span></a>
@@ -59,9 +59,9 @@
         <div class="stage-orbit" aria-hidden="true"></div>
         <button class="particle-logo" id="particle-logo" type="button" aria-label="交互式 AE工具箱 Logo：移动指针散开粒子，点击或按回车产生涟漪">
           <canvas id="logo-particles" aria-hidden="true"></canvas>
-          <img class="particle-fallback" src="assets/img/logo.svg?v=glass2" alt="" width="256" height="224">
+          <img class="particle-fallback" src="assets/img/logo.svg?v=glass3" alt="" width="256" height="224">
         </button>
-        <div class="particle-caption"><strong>AE TOOLKIT</strong><span>靠近散开 · 点击泛起涟漪</span></div>
+        <div class="particle-caption"><strong>AE TOOLKIT</strong></div>
       </div>
     </div>
   </section>
@@ -72,11 +72,11 @@
       <h2 class="section-title">
         <span class="eyebrow">日常工作，轻装上阵</span>三件常做的事，一处就够。
       </h2>
-      <p class="section-subtitle">整理、表达式、脚本集。把重复操作收好，让创作自然往前。<br><small>界面使用示例数据，实际脚本与预设由你管理。</small></p>
+      <p class="section-subtitle">整理、表达式、脚本集。把重复操作收好，让创作自然往前。<br><small>界面为功能示意，脚本与预设由你管理。</small></p>
       <div class="feature-grid">
 
         <article class="feature-card glass">
-          <div class="feature-img-wrap"><button class="preview-button" type="button" aria-label="放大面板预览"><img src="assets/img/feature-organizer.png" alt="工程整理面板预览" width="520" height="880" loading="lazy"></button></div>
+          <div class="feature-img-wrap"><button class="preview-button" type="button" aria-label="放大面板预览"><img src="assets/img/feature-organizer-light.png" data-light-src="assets/img/feature-organizer-light.png" data-dark-src="assets/img/feature-organizer.png" data-label="工程整理" alt="工程整理面板预览" width="520" height="880" loading="lazy"></button></div>
           <h3>工程整理</h3>
           <p>按自己的规则，把素材放回熟悉的位置。保存多套整理方案，下一个工程直接复用。</p>
           <ul class="feature-list">
@@ -87,7 +87,7 @@
         </article>
 
         <article class="feature-card glass">
-          <div class="feature-img-wrap"><button class="preview-button" type="button" aria-label="放大面板预览"><img src="assets/img/feature-expression.png" alt="批量表达式面板预览" width="520" height="880" loading="lazy"></button></div>
+          <div class="feature-img-wrap"><button class="preview-button" type="button" aria-label="放大面板预览"><img src="assets/img/feature-expression-light.png" data-light-src="assets/img/feature-expression-light.png" data-dark-src="assets/img/feature-expression.png" data-label="批量表达式" alt="批量表达式面板预览" width="520" height="880" loading="lazy"></button></div>
           <h3>批量表达式</h3>
           <p>选好属性，挑选或编写表达式，一次应用到多处。覆盖前确认，常用代码随手保存。</p>
           <ul class="feature-list">
@@ -98,7 +98,7 @@
         </article>
 
         <article class="feature-card glass">
-          <div class="feature-img-wrap"><button class="preview-button" type="button" aria-label="放大面板预览"><img src="assets/img/feature-script.png" alt="脚本集面板预览" width="520" height="880" loading="lazy"></button></div>
+          <div class="feature-img-wrap"><button class="preview-button" type="button" aria-label="放大面板预览"><img src="assets/img/feature-script-light.png" data-light-src="assets/img/feature-script-light.png" data-dark-src="assets/img/feature-script.png" data-label="脚本集" alt="脚本集面板预览" width="520" height="880" loading="lazy"></button></div>
           <h3>本地脚本集</h3>
           <p>把常用脚本留在自己的目录。搜索、收藏、双击运行，图片会从脚本集的 image 文件夹自动匹配。</p>
           <ul class="feature-list">
@@ -117,7 +117,7 @@
       <h2 class="section-title"><span class="eyebrow">持续打磨的小细节</span>0.3.1，更新了什么。</h2>
       <p class="section-subtitle">更顺手的操作，也更方便带走的工作环境。</p>
       <article class="release-card glass">
-        <div class="release-banner"><img src="assets/img/team-update.webp" alt="团队猫耳角色向你挥手" width="1200" height="400" loading="lazy"><div class="release-banner-copy"><span>AE工具箱</span><h3>v0.3.1</h3><time datetime="2026-10-15">2026.10.15</time></div></div>
+        <div class="release-banner"><img src="assets/img/team-peek.webp" alt="团队猫耳角色双手扒着更新卡片" width="1200" height="400" loading="lazy"><div class="release-banner-copy"><span>AE工具箱</span><h3>v0.3.1</h3><time datetime="2026-10-15">2026.10.15</time></div></div>
         <div class="release-notes"><div><span class="feature-index">01</span><h3>工作环境，一起带走</h3><p>设置、收藏、表达式和整理预设统一保存。拷走扩展文件夹，就带走熟悉的工作环境。</p></div><div><span class="feature-index">02</span><h3>操作反馈，恰到好处</h3><p>紧凑脚本列表、拖动滚动、方向切页与轻量收藏动画，让每一次操作更自然。</p></div><div><span class="feature-index">03</span><h3>直接更新，保留积累</h3><p>新版安装器先备份，再更新程序。无需先卸载，个人设置和预设会保留。</p></div></div>
         <a class="release-link" href="https://github.com/MYdesignTool/Ae-ToolKit/releases/tag/v0.3.1" target="_blank" rel="noopener">查看完整更新与下载<span aria-hidden="true">↗</span></a>
       </article>
@@ -164,8 +164,9 @@
       <p class="section-subtitle">支持 After Effects 2023 及更新版本。Windows 推荐安装器，macOS 可使用手动安装。</p>
 
       <!-- 先开启 AE 的脚本写入权限 -->
-      <div class="install-note glass" role="note">
-        <span class="install-note__icon" aria-hidden="true">↗</span>
+      <div class="install-guide">
+        <div class="guide-mascot" aria-hidden="true"><img src="assets/img/team-guide.webp" alt="" width="384" height="384" loading="lazy"></div>
+        <div class="install-note glass" role="note">
         <div class="install-note__body">
           <strong>安装前必读（两种方式均需要）</strong>：本工具会在本地写入文件（整理素材、保存方案与自定义表达式），需开启 AE 脚本写权限。打开 After Effects 2023+：
           <br>
@@ -175,6 +176,8 @@
           <br>
           重启 After Effects 使设置生效。工具的核心功能离线运行；此选项用于允许本地文件写入。
         </div>
+      </div>
+
       </div>
 
       <!-- 方式一：一键安装器 -->
@@ -193,7 +196,7 @@
           <span class="step-line" aria-hidden="true"></span>
           <div class="step-body">
             <h4>运行安装向导</h4>
-            <p>更新前关闭 AE，直接运行新版安装器，无需卸载。向导先备份数据，再更新程序，设置与预设保留在扩展文件夹中。安装到当前用户的 CEP 目录；迁移并停用旧系统级副本需要管理员授权。未签名开发包需在组件页选择开发模式。</p>
+            <p>更新前关闭 AE，直接运行新版安装器，无需卸载。向导先备份数据，再更新程序，设置与预设保留在扩展文件夹中。安装到系统级 CEP 目录，需要管理员授权；旧用户级数据会迁移并备份。未签名开发包需在组件页选择开发模式。</p>
           </div>
         </div>
         <div class="step glass">
@@ -223,12 +226,13 @@
           <span class="step-line" aria-hidden="true"></span>
           <div class="step-body">
             <h4>复制到扩展目录</h4>
-            <p>将 <code>AeLocalToolkit/</code> 文件夹整体复制到 CEP 扩展目录。推荐以下可写的用户级目录，让设置随文件夹保存。避免同时保留多个同 ID 的扩展副本：</p>
-            <pre><code># Windows 用户级
-%APPDATA%\Adobe\CEP\extensions\
+            <p>将 <code>AeLocalToolkit/</code> 文件夹整体复制到 CEP 扩展目录。统一使用以下系统级目录，复制时需要管理员权限。避免同时保留多个同 ID 的扩展副本：</p>
+            <pre><code># Windows 系统级
+C:\Program Files (x86)\Common Files\Adobe\CEP\extensions\
 
-# macOS 用户级
-~/Library/Application Support/Adobe/CEP/extensions/</code></pre>
+# macOS 系统级
+/Library/Application Support/Adobe/CEP/extensions/</code></pre>
+            <p>手动复制后，给扩展内 <code>data</code> 文件夹设置当前用户的修改权限，供设置与预设保存。Windows 安装器会自动处理此权限。</p>
           </div>
         </div>
         <div class="step glass">
@@ -262,12 +266,13 @@ defaults write com.adobe.CSXS.11 PlayerDebugMode -bool true</code></pre>
     <div class="container">
       <div class="footer-top">
         <div class="footer-brand">
-          <img src="assets/img/logo.svg?v=glass2" alt="" class="logo-sm">
+          <img src="assets/img/logo.svg?v=glass3" alt="" class="logo-sm">
           <strong>Ae-ToolKit</strong>
         </div>
         <p class="footer-desc">
           为日常创作，做一点顺手的工具。<br>开源 · 离线 · 本地优先
         </p>
+        <a class="back-to-top" href="#hero" aria-label="返回页面顶部"><img src="assets/img/team-rocket.webp" alt="" width="288" height="288" loading="lazy"><span>返回顶部 <span aria-hidden="true">↑</span></span></a>
       </div>
       <div class="footer-bottom">
         <div class="footer-links">
@@ -281,8 +286,8 @@ defaults write com.adobe.CSXS.11 PlayerDebugMode -bool true</code></pre>
   </footer>
 
   <dialog class="image-preview" id="image-preview" aria-label="面板预览"><form method="dialog"><button>关闭预览</button></form><img alt="" /></dialog>
-  <script src="assets/js/main.js?v=glass2"></script>
-  <script src="assets/js/visuals.js?v=glass2"></script>
+  <script src="assets/js/main.js?v=glass3"></script>
+  <script src="assets/js/visuals.js?v=glass3"></script>
   <script src="assets/js/code-showcase.js?v=031"></script>
 </body>
 </html>

@@ -1,4 +1,4 @@
-// Verify GPU input, pause/recovery, local title lens and static/touch fallbacks in the real browser.
+// Verify GPU input, pause/recovery, local letter light and static/touch fallbacks in the real browser.
 const fs=require('node:fs'),path=require('node:path'),assert=require('node:assert/strict');
 const {chromium}=require('playwright'),{server}=require('./site.cjs'),{root}=require('./helpers.cjs');
 const out=path.join(root,'.artifacts/interactive-glass');fs.mkdirSync(out,{recursive:true});
@@ -22,19 +22,20 @@ async function main(){
  const p=await context.newPage();p.on('pageerror',e=>errors.push(e.message));await p.addInitScript(instrument);
  try{
  await p.goto(base);await p.waitForFunction(()=>document.querySelector('#particle-logo').dataset.renderer==='webgl');
- assert.ok(Number(await p.locator('#particle-logo').getAttribute('data-particles'))>5000);
+ assert.ok(Number(await p.locator('#particle-logo').getAttribute('data-particles'))>15000);
  const marks=await p.locator('.brand img,.logo-sm,.particle-fallback').evaluateAll(els=>els.map(e=>new URL(e.src).pathname));
  assert.equal(marks.length,3);assert.ok(marks.every(s=>s==='/assets/img/logo.svg'),'navigation, footer and particles use one brand mark');
  assert.ok((await p.locator('link[rel=icon]').getAttribute('href')).startsWith('assets/img/logo.svg'));
 
  await p.waitForFunction(()=>__gpu.values.u_intro===1);await p.screenshot({path:path.join(out,'hero-light.png')});
  const title=await p.locator('.hero-title').boundingBox();
- await p.mouse.move(title.x+105,title.y+50);await p.waitForFunction(()=>Number(document.querySelector('.title-lens').style.opacity)>.95);
- assert.equal(await p.locator('.title-lens').evaluate(e=>getComputedStyle(e).mixBlendMode),'difference');
+ await p.mouse.move(title.x+105,title.y+50);await p.waitForFunction(()=>Number(document.querySelector('.hero-title').style.getPropertyValue('--title-light'))>.8);
+ assert.equal(await p.locator('.title-lens').count(),0);
+ assert.equal(await p.locator('.title-shine').first().evaluate(e=>getComputedStyle(e).backgroundClip),'text');
  await p.screenshot({path:path.join(out,'title-light.png')});
  await p.mouse.move(title.x+205,title.y+130);await p.waitForTimeout(180);
- const lens=await p.locator('.title-lens').boundingBox();assert.ok(Math.abs(lens.x+lens.width/2-title.x-205)<2,'lens catches the pointer without accumulating lag');
- await p.mouse.move(2,2);await p.waitForFunction(()=>document.querySelector('.title-lens').style.opacity==='0');
+ const lightX=await p.locator('.title-line').first().evaluate(e=>parseFloat(e.style.getPropertyValue('--title-x')));assert.ok(Math.abs(lightX-205)<3,'letter highlight catches the pointer without accumulating lag');
+ await p.mouse.move(2,2);await p.waitForFunction(()=>document.querySelector('.hero-title').style.getPropertyValue('--title-light')==='0');
  const logo=await p.locator('#particle-logo').boundingBox(),x=logo.x+logo.width*.42,y=logo.y+logo.height*.5;
  await p.mouse.move(x,y);await p.waitForFunction(()=>__gpu.values.u_pointer[2]>.95);
  await p.screenshot({path:path.join(out,'hover.png')});
@@ -54,7 +55,7 @@ async function main(){
  await p.locator('#install').scrollIntoViewIfNeeded();await p.waitForTimeout(150);let n=await p.evaluate(()=>__gpu.frames);await p.waitForTimeout(250);assert.equal(await p.evaluate(()=>__gpu.frames),n,'offscreen logo stops drawing');
  await p.evaluate(()=>scrollTo(0,0));await p.waitForFunction(n=>__gpu.frames>n,n);
  await p.emulateMedia({reducedMotion:'reduce'});await p.waitForTimeout(150);n=await p.evaluate(()=>__gpu.frames);await p.waitForTimeout(250);assert.equal(await p.evaluate(()=>__gpu.frames),n,'reduced motion has a static logo');
- await p.mouse.move(title.x+105,title.y+50);assert.equal(await p.locator('.title-lens').evaluate(e=>getComputedStyle(e).display),'none');
+ await p.mouse.move(title.x+105,title.y+50);assert.equal(await p.locator('.title-shine').first().evaluate(e=>getComputedStyle(e).display),'none');
  const before=await p.evaluate(()=>__gpu.values['u_ripples[0]']);await p.locator('#particle-logo').click();await p.waitForTimeout(40);assert.deepEqual(await p.evaluate(()=>__gpu.values['u_ripples[0]']),before,'reduced motion does not introduce ripples');
  // Losing GPU context restores the SVG; restoring context rebuilds GPU state.
  await p.evaluate(()=>{window.__lost=__logoGL.getExtension('WEBGL_lose_context');__lost.loseContext();});await p.waitForFunction(()=>document.querySelector('#particle-logo').dataset.renderer==='fallback');
@@ -69,10 +70,10 @@ async function main(){
  const touch=await browser.newContext({viewport:{width:390,height:844},hasTouch:true,isMobile:true});await touch.route('https://api.github.com/**',r=>r.fulfill({status:503,body:''}));
  const mobile=await touch.newPage();mobile.on('pageerror',e=>errors.push(e.message));await mobile.addInitScript(instrument);await mobile.goto(base);await mobile.locator('#particle-logo').scrollIntoViewIfNeeded();await mobile.waitForFunction(()=>window.__gpu&&__gpu.values.u_intro===1);
  const touchLogo=await mobile.locator('#particle-logo').boundingBox();assert.equal(await mobile.locator('#particle-logo').evaluate(e=>getComputedStyle(e).touchAction),'pan-y');
- await mobile.touchscreen.tap(touchLogo.x+touchLogo.width/2,touchLogo.y+touchLogo.height/2);await mobile.waitForFunction(()=>__gpu.values['u_ripples[0]'][3]===1);assert.equal(await mobile.locator('.title-lens').evaluate(e=>getComputedStyle(e).display),'none');
+ await mobile.touchscreen.tap(touchLogo.x+touchLogo.width/2,touchLogo.y+touchLogo.height/2);await mobile.waitForFunction(()=>__gpu.values['u_ripples[0]'][3]===1);assert.equal(await mobile.locator('.title-shine').first().evaluate(e=>getComputedStyle(e).display),'none');
  const cdp=await touch.newCDPSession(mobile),start=await mobile.evaluate(()=>scrollY),tx=touchLogo.x+touchLogo.width/2,ty=Math.min(720,touchLogo.y+touchLogo.height*.8);
  await cdp.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[{x:tx,y:ty}]});for(let i=1;i<=5;i++){await cdp.send('Input.dispatchTouchEvent',{type:'touchMove',touchPoints:[{x:tx,y:ty-i*30}]});await mobile.waitForTimeout(20);}await cdp.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});await mobile.waitForTimeout(150);assert.ok(await mobile.evaluate(()=>scrollY)>start,'dragging the logo can scroll the mobile page');await touch.close();
- assert.deepEqual(errors,[]);console.log('Visuals passed: GPU formation, pointer repulsion, bounded and keyboard ripples, theme transitions, title lens, offscreen/reduced-motion pause, context recovery, WebGL fallback, responsive glass and native touch scrolling.');
+ assert.deepEqual(errors,[]);console.log('Visuals passed: GPU formation, pointer repulsion, bounded and keyboard ripples, theme transitions, letter light, offscreen/reduced-motion pause, context recovery, WebGL fallback, responsive glass and native touch scrolling.');
  }finally{await context.close();await browser.close();server.close();}
 }
 main().catch(e=>{console.error(e);server.close();process.exitCode=1;});

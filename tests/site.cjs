@@ -6,14 +6,18 @@ const server=http.createServer((req,res)=>{const pathname=new URL(req.url,'http:
 async function main(){
  const browser=await chromium.launch({channel:'msedge',headless:true});
  try{
- if(process.argv.includes('--update-previews')){
+ if(process.argv.includes('--update-previews')||process.argv.includes('--update-light-previews')){
   const fixture=JSON.parse(JSON.stringify(data)),names=['关键帧缓动','图层批量重命名','锚点对齐','路径描边动画','合成尺寸调整','文本分行','颜色随机化','运动拖尾','自动排列图层','表达式工具','时间偏移','图层镜像','素材定位','循环动画'];
   fixture.scan={ok:true,messages:[],scripts:[]};fixture.settings.scriptFolder="C:/Example/Scripts";fixture.scan.scripts=names.map((name,i)=>({name,relativePath:'Tool-'+i+'.jsx',fsName:'C:/Example/Scripts/Tool-'+i+'.jsx',iconPath:''}));fixture.settings.scriptFavorites=[fixture.scan.scripts[0].fsName,fixture.scan.scripts[3].fsName];
   const panel=await browser.newPage({viewport:{width:626,height:870},reducedMotion:'reduce'});await panel.addInitScript(bridge,fixture);await panel.addInitScript(()=>{let n=0;Math.random=()=>++n%2?.2:.8;window.AELT_getSelectedPropertySummary=()=>({ok:true,total:3,supported:3,existing:0,names:['标题 / 位置','图形 / 旋转','图形 / 缩放'],comp:'演示合成',selectionKey:'demo'});});
   await panel.goto(pathToFileURL(path.join(root,'extension/client/index.html')).href);await panel.waitForFunction(()=>AELT.state.ready&&AELT.state.scripts.length);
+  if(process.argv.includes('--update-light-previews')){
+   await panel.addStyleTag({path:path.join(root,'tests/panel-preview-light.css')});
+   await panel.evaluate(src=>{const b=document.querySelector('.brand'),i=document.createElement('img');i.src=src;i.width=38;i.height=38;b.replaceChildren(i,document.createTextNode('AE工具箱'));},pathToFileURL(path.join(root,'assets/img/logo.svg')).href);
+  }
   for(const [tab,name] of [['organizer','feature-organizer'],['expressions','feature-expression'],['scripts','feature-script']]){
    await panel.locator('[data-view='+tab+']').click();if(tab==='expressions')await panel.locator('.expression-select').selectOption('wiggle-basic');
-   await panel.waitForFunction(()=>[...document.images].filter(i=>i.getBoundingClientRect().top<innerHeight&&i.getBoundingClientRect().bottom>0).every(i=>i.complete&&i.naturalWidth>0));await panel.mouse.move(2,2);await panel.screenshot({path:path.join(root,'assets/img',name+'.png')});
+   await panel.waitForFunction(()=>[...document.images].filter(i=>i.getBoundingClientRect().top<innerHeight&&i.getBoundingClientRect().bottom>0).every(i=>i.complete&&i.naturalWidth>0));await panel.mouse.move(2,2);await panel.screenshot({path:path.join(root,'assets/img',name+(process.argv.includes('--update-light-previews')?'-light':'')+'.png')});
   }await panel.close();
  }
  await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));const base='http://127.0.0.1:'+server.address().port;
@@ -23,7 +27,10 @@ async function main(){
  async function fit(){const overflow=await page.evaluate(()=>({width:innerWidth,scroll:document.documentElement.scrollWidth,nodes:[...document.querySelectorAll('body *')].map(el=>({tag:el.tagName,id:el.id,cls:el.className,right:el.getBoundingClientRect().right})).filter(el=>el.right>innerWidth+1).slice(0,12)}));assert.ok(overflow.scroll<=overflow.width,JSON.stringify(overflow));}
  for(const theme of ['light','dark']){
   if(await page.locator('html').getAttribute('data-theme')!==theme)await page.locator('#theme-toggle').click();await page.evaluate(()=>scrollTo(0,0));await fit();await page.mouse.move(1,1);await page.screenshot({path:path.join(out,'hero-'+theme+'.png')});await page.screenshot({path:path.join(out,'page-'+theme+'.png'),fullPage:true});
-  await page.locator('#features').scrollIntoViewIfNeeded();await page.waitForFunction(()=>[...document.querySelectorAll('.feature-card img')].every(i=>i.complete&&i.naturalWidth>0));await page.evaluate(()=>new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r))));await page.screenshot({path:path.join(out,'features-'+theme+'.png')});await page.locator('.feature-card .preview-button').first().click();assert.equal(await page.locator('#image-preview').isVisible(),true);await page.keyboard.press('Escape');
+  await page.locator('#features').scrollIntoViewIfNeeded();await page.waitForFunction(()=>[...document.querySelectorAll('.feature-card img')].every(i=>i.complete&&i.naturalWidth>0));await page.evaluate(()=>new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r))));await page.screenshot({path:path.join(out,'features-'+theme+'.png')});await page.locator('.feature-card .preview-button').first().click();assert.equal(await page.locator('#image-preview').isVisible(),true);assert.equal(await page.locator('#image-preview img').evaluate(e=>e.src),await page.locator('.feature-card img').first().evaluate(e=>e.src));await page.keyboard.press('Escape');
+  assert.ok(await page.locator('.feature-card img').evaluateAll((imgs,theme)=>imgs.every(i=>i.src.includes(theme==='light'?'-light.png':'.png')&&(theme==='light'||!i.src.includes('-light.png'))),theme),'preview follows the site theme');
+  await page.locator('.back-to-top').scrollIntoViewIfNeeded();await page.locator('.back-to-top').focus();await page.keyboard.press('Enter');await page.waitForFunction(()=>scrollY===0);assert.equal(await page.evaluate(()=>document.activeElement.id),'hero-title');
+  for(const [name,selector] of [['updates','#updates'],['install','.install-guide'],['footer','.site-footer']]){await page.locator(selector).scrollIntoViewIfNeeded();await page.waitForFunction(()=>[...document.images].filter(i=>{const r=i.getBoundingClientRect();return r.bottom>0&&r.top<innerHeight;}).every(i=>i.complete&&i.naturalWidth>0));await page.evaluate(()=>new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r))));await page.screenshot({path:path.join(out,name+'-'+theme+'.png')});}
  }
  await page.reload();assert.equal(await page.locator('html').getAttribute('data-theme'),'dark','theme persists');
  await page.locator('.code-tab[data-key=launcher]').click();assert.ok((await page.locator('#code-view').textContent()).includes('scanScripts'));
@@ -33,6 +40,7 @@ async function main(){
   await page.locator('#mobile-toggle').click();assert.equal(await page.locator('#mobile-toggle').getAttribute('aria-expanded'),'true');await page.keyboard.press('Escape');assert.equal(await page.locator('#mobile-toggle').getAttribute('aria-expanded'),'false');
   await page.locator('#mobile-toggle').click();await page.locator('.nav-links a[href="#updates"]').click();assert.equal(await page.locator('#mobile-toggle').getAttribute('aria-expanded'),'false');
   for(const id of ['features','updates','code','install']){await page.locator('#'+id).scrollIntoViewIfNeeded();await fit();}
+  await page.locator('.back-to-top').click();await page.waitForFunction(()=>scrollY===0);await fit();
  }
  await page.setViewportSize({width:1440,height:1000});await page.emulateMedia({reducedMotion:'no-preference'});await page.locator('#hero').scrollIntoViewIfNeeded();await page.screenshot({path:path.join(out,'hero-normal-motion.png')});
  assert.ok(await page.evaluate(()=>[...document.querySelectorAll('a[href]')].every(a=>!/^javascript:/i.test(a.getAttribute('href')))));

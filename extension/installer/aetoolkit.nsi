@@ -7,16 +7,18 @@
 ; Test builds only touch the caller's sandbox and never write registry keys.
 !ifdef TEST_ROOT
   !define DEFAULT_DIR "${TEST_ROOT}\installed\${EXT_ID}"
+  !define LEGACYUSER_DIR "${TEST_ROOT}\legacy-user\${EXT_ID}"
   !define LEGACY32_DIR "${TEST_ROOT}\legacy32\${EXT_ID}"
   !define LEGACY64_DIR "${TEST_ROOT}\legacy64\${EXT_ID}"
   OutFile "${TEST_ROOT}\setup.exe"
   RequestExecutionLevel user
 !else
-  !define DEFAULT_DIR "$APPDATA\Adobe\CEP\extensions\${EXT_ID}"
+  !define DEFAULT_DIR "$COMMONFILES32\Adobe\CEP\extensions\${EXT_ID}"
+  !define LEGACYUSER_DIR "$APPDATA\Adobe\CEP\extensions\${EXT_ID}"
   !define LEGACY32_DIR "$COMMONFILES32\Adobe\CEP\extensions\${EXT_ID}"
   !define LEGACY64_DIR "$COMMONFILES64\Adobe\CEP\extensions\${EXT_ID}"
   OutFile "dist\aetoolkit-installer.exe"
-  ; Elevation is needed to disable earlier system-wide copies, not to save settings.
+  ; Install program files system-wide; only data/ is writable without elevation.
   RequestExecutionLevel admin
 !endif
 Name "${APPNAME} ${VERSION}"
@@ -40,7 +42,7 @@ Var UpgradeStamp
 Var MigrationStage
 Var PreviousData
 !define MUI_ABORTWARNING
-!define MUI_WELCOMEPAGE_TEXT "安装或更新 ${APPNAME}（AE 2023 及更新版本）。$\r$\n$\r$\n更新前请关闭 After Effects，无需卸载旧版。程序安装到当前用户的 CEP 目录，设置和预设随扩展文件夹保存。$\r$\n$\r$\n更新会先备份数据，再覆盖程序文件。未签名开发包需要在组件页选择开发模式。"
+!define MUI_WELCOMEPAGE_TEXT "安装或更新 ${APPNAME}（AE 2023 及更新版本）。$\r$\n$\r$\n更新前请关闭 After Effects，无需卸载旧版。程序安装到系统级 CEP 目录，需要管理员授权。设置和预设随扩展文件夹保存，旧用户级数据自动迁移。$\r$\n$\r$\n更新会先备份数据，再覆盖程序文件。未签名开发包需要在组件页选择开发模式。"
 !insertmacro MUI_PAGE_WELCOME
 !insertmacro MUI_PAGE_LICENSE "..\License.md"
 !insertmacro MUI_PAGE_COMPONENTS
@@ -135,8 +137,28 @@ Function DisableLegacy
 done:
 FunctionEnd
 
+Function PrepareStorage
+  ; Grant only the portable data directory; executable code stays protected.
+  ClearErrors
+  CreateDirectory "$INSTDIR\data"
+  IfErrors failed
+  ; Use the elevated account's full DOMAIN\user name, retaining normal-token write access.
+  System::Call 'secur32::GetUserNameExW(i 2, w .r0, *i ${NSIS_MAX_STRLEN}) i .r1'
+  StrCmp $1 0 failed
+  ExecWait '"$SYSDIR\icacls.exe" "$INSTDIR\data" /grant "$0:(OI)(CI)M" /Q' $1
+  IfErrors failed
+  StrCmp $1 0 done
+failed:
+  MessageBox MB_ICONSTOP "data 目录的写入权限设置失败，已停止更新。请以管理员身份重新运行安装器。旧数据与备份仍然保留。" /SD IDOK
+  SetErrorLevel 1
+  Abort
+done:
+FunctionEnd
+
 Section "扩展本体（安装 / 保留数据更新）" SecMain
   SectionIn RO
+  StrCpy $LegacyPath "${LEGACYUSER_DIR}"
+  Call PreserveLegacyData
   StrCpy $LegacyPath "${LEGACY32_DIR}"
   Call PreserveLegacyData
   StrCpy $LegacyPath "${LEGACY64_DIR}"
@@ -153,6 +175,7 @@ Section "扩展本体（安装 / 保留数据更新）" SecMain
   SetErrorLevel 1
   Abort
 extract:
+  Call PrepareStorage
   ClearErrors
   SetOverwrite on
   SetOutPath "$INSTDIR"
@@ -180,6 +203,8 @@ extracted:
   SetErrorLevel 1
   Abort
 uninstallerReady:
+  StrCpy $LegacyPath "${LEGACYUSER_DIR}"
+  Call DisableLegacy
   StrCpy $LegacyPath "${LEGACY32_DIR}"
   Call DisableLegacy
   StrCpy $LegacyPath "${LEGACY64_DIR}"
@@ -187,13 +212,13 @@ uninstallerReady:
   StrCpy $LegacyPath $RegisteredLegacy
   Call DisableLegacy
   !ifndef TEST_ROOT
-    DeleteRegKey HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\${APPNAME}"
+    DeleteRegKey HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\${APPNAME}"
     DeleteRegKey HKLM "Software\${APPNAME}"
-    WriteRegStr HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\${APPNAME}" "DisplayName" "${APPNAME}"
-    WriteRegStr HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\${APPNAME}" "UninstallString" '$\"$INSTDIR\uninstall.exe$\"'
-    WriteRegStr HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\${APPNAME}" "DisplayVersion" "${VERSION}"
-    WriteRegStr HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\${APPNAME}" "Publisher" "${APPNAME}"
-    WriteRegStr HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\${APPNAME}" "InstallLocation" "$INSTDIR"
+    WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\${APPNAME}" "DisplayName" "${APPNAME}"
+    WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\${APPNAME}" "UninstallString" '$\"$INSTDIR\uninstall.exe$\"'
+    WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\${APPNAME}" "DisplayVersion" "${VERSION}"
+    WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\${APPNAME}" "Publisher" "${APPNAME}"
+    WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\${APPNAME}" "InstallLocation" "$INSTDIR"
   !endif
   DetailPrint "已安装 / 更新到: $INSTDIR；用户数据随扩展保存。"
 SectionEnd
@@ -217,6 +242,7 @@ Section "Uninstall"
   Delete "$INSTDIR\uninstall.exe"
   RMDir "$INSTDIR"
   !ifndef TEST_ROOT
+    DeleteRegKey HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\${APPNAME}"
     DeleteRegKey HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\${APPNAME}"
   !endif
   Goto done

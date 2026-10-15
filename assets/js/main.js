@@ -6,6 +6,13 @@
   // 标记 JS 可用，启用滚动揭示动画（无 JS 时内容正常显示）
   document.documentElement.classList.add("js");
 
+  function syncPreviews(theme) {
+    document.querySelectorAll('img[data-light-src]').forEach(function (image) {
+      image.src = theme === 'light' ? image.dataset.lightSrc : image.dataset.darkSrc;
+      image.alt = image.dataset.label + (theme === 'light' ? '浅色功能示意' : '面板预览');
+    });
+  }
+
   // Keep the saved light/dark preference; the head script applies it before first paint.
   (function () {
     var root = document.documentElement;
@@ -13,6 +20,7 @@
     var saved = null;
     try { saved = localStorage.getItem("theme"); } catch (e) {}
     root.setAttribute('data-theme', saved === 'dark' ? 'dark' : 'light');
+    syncPreviews(root.getAttribute('data-theme'));
     if (btn) btn.setAttribute('aria-pressed', String(saved === 'dark'));
     var desiredTheme = root.getAttribute('data-theme'), themeTransition;
     if (btn) {
@@ -20,7 +28,7 @@
         var next = desiredTheme === "light" ? "dark" : "light";
         desiredTheme = next;
         if (themeTransition) themeTransition.skipTransition();
-        function applyTheme() { root.setAttribute('data-theme', desiredTheme); }
+        function applyTheme() { root.setAttribute('data-theme', desiredTheme); syncPreviews(desiredTheme); }
         if (document.startViewTransition && !matchMedia('(prefers-reduced-motion: reduce)').matches) {
           var rect = btn.getBoundingClientRect();
           root.style.setProperty('--theme-x', rect.left + rect.width/2 + 'px');
@@ -63,6 +71,7 @@
       // 关闭移动端菜单
       closeMenu();
       el.scrollIntoView({ behavior: motion.matches ? "auto" : "smooth", block: "start" });
+      if (this.classList.contains("back-to-top")) document.getElementById("hero-title").focus({ preventScroll:true });
     });
   });
 
