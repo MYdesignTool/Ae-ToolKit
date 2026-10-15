@@ -133,7 +133,9 @@
     const mask = document.createElement('canvas'); mask.width = 256; mask.height = 224;
     const ctx = mask.getContext('2d', { willReadFrequently:true }); ctx.drawImage(image, 0, 0, 256, 224);
     const pixels = ctx.getImageData(0,0,256,224).data, points = [];
-    for (let y=1.25; y<223; y+=1.25) for (let x=1.25; x<255; x+=1.25) {
+    // Sampling in two dimensions: divide spacing by sqrt(2) for twice the particles.
+    const spacing = 1.25 / Math.SQRT2;
+    for (let y=spacing; y<223; y+=spacing) for (let x=spacing; x<255; x+=spacing) {
       const at = (Math.floor(y)*256+Math.floor(x))*4; if (pixels[at+3] < 110) continue;
       const seed = Math.random(), nx = (x + Math.random()*.6 - 128) / 256, ny = (y + Math.random()*.6 - 112) / 224;
       const z = (pixels[at+2] - pixels[at]) / 255 * .06 + Math.sin(nx * 5) * .025;
