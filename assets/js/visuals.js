@@ -30,21 +30,25 @@
       p.yz = mat2(cos(pitch),-sin(pitch),sin(pitch),cos(pitch)) * p.yz;
       vec2 away = p.xy - u_pointer.xy;
       float distance = length(away);
-      float influence = pow(max(0., 1. - distance / 70.), 2.) * u_pointer.z;
-      p.xy += away * influence * 1.05;
-      p.z += influence * sin(u_time*1.2+a_seed*6.) * 4.;
+      float influence = pow(max(0., 1. - distance / 40.), 2.) * u_pointer.z;
+      p.xy += away * influence * .65;
+      p.z += influence * sin(u_time*1.2+a_seed*6.) * 2.;
       float light = 0.;
       for (int i=0; i<4; i++) {
         float age = u_time - u_ripples[i].z;
-        bool trail = u_ripples[i].w < .5;
-        if (u_ripples[i].w > 0. && age >= 0. && age < (trail ? .65 : 2.3)) {
+        // The sign selects a short drag wake or a gentler, wider click ripple.
+        bool trail = u_ripples[i].w < 0.;
+        float strength = abs(u_ripples[i].w);
+        if (strength > 0. && age >= 0. && age < (trail ? .36 : 1.8)) {
           vec2 radial = p.xy - u_ripples[i].xy;
           float radius = length(radial);
-          float band = radius - age * (trail ? 150. : 280.);
-          float envelope = exp(-pow(band / (trail ? 24. : 38.), 2.)) * exp(-age * (trail ? 8. : 1.05)) * u_ripples[i].w;
-          p.xy += radial / max(radius, 1.) * sin(band * .075) * envelope * 16.;
-          p.z += cos(band * .075) * envelope * 26.;
-          light += envelope * .13;
+          float band = radius - age * (trail ? 155. : 215.);
+          float envelope = exp(-pow(band / (trail ? 20. : 28.), 2.)) * exp(-age * (trail ? 2.8 : 1.7)) * strength;
+          if (trail) envelope *= 1. - smoothstep(.18, .36, age);
+          float phase = band * (trail ? .11 : .075);
+          p.xy += radial / max(radius, 1.) * sin(phase) * envelope * (trail ? 24. : 12.);
+          p.z += cos(phase) * envelope * (trail ? 16. : 14.);
+          light += envelope * (trail ? .10 : .08);
         }
       }
       p.xy *= 1. + p.z / (scale * 3.8);
@@ -154,27 +158,27 @@
   scene.addEventListener('pointerdown', event => {
     strokeDragged = false;
     if (event.pointerType !== 'mouse' || event.button !== 0 || motion.matches || isControl(event)) return;
-    event.preventDefault();
+    event.preventDefault(); targetPointer[2] = .35;
     stroke = { x:event.clientX, y:event.clientY, at:event.timeStamp };
   });
   scene.addEventListener('pointermove', event => {
     if (event.pointerType === 'touch' || motion.matches) return;
-    const r = button.getBoundingClientRect(); targetPointer = [event.clientX-r.left-width/2,event.clientY-r.top-height/2,1];
+    const r = button.getBoundingClientRect(); targetPointer = [event.clientX-r.left-width/2,event.clientY-r.top-height/2,stroke && (event.buttons & 1) ? .35 : 1];
     if (!(event.buttons & 1)) stroke = null;
     if (!stroke || isControl(event)) return;
-    if (Math.hypot(event.clientX-stroke.x,event.clientY-stroke.y) < 10 || event.timeStamp-stroke.at < 60) return;
-    addRipple(targetPointer[0],targetPointer[1],.42);
+    if (Math.hypot(event.clientX-stroke.x,event.clientY-stroke.y) < 12 || event.timeStamp-stroke.at < 95) return;
+    addRipple(targetPointer[0],targetPointer[1],-.875);
     stroke = { x:event.clientX, y:event.clientY, at:event.timeStamp }; strokeDragged = true;
   });
   scene.addEventListener('pointerleave', () => { targetPointer[2] = 0; stroke = null; });
-  window.addEventListener('pointerup', () => { stroke = null; });
-  window.addEventListener('pointercancel', () => { stroke = null; });
+  window.addEventListener('pointerup', () => { stroke = null; if (targetPointer[2]) targetPointer[2] = 1; });
+  window.addEventListener('pointercancel', () => { stroke = null; targetPointer[2] = 0; });
   window.addEventListener('blur', () => { stroke = null; targetPointer[2] = 0; });
   scene.addEventListener('click', event => {
     if (isControl(event) || motion.matches || !program) return;
     if (event.detail && strokeDragged) { strokeDragged = false; return; }
     const r = button.getBoundingClientRect();
-    addRipple(event.detail ? event.clientX-r.left-width/2 : 0,event.detail ? event.clientY-r.top-height/2 : 0,1);
+    addRipple(event.detail ? event.clientX-r.left-width/2 : 0,event.detail ? event.clientY-r.top-height/2 : 0,.625);
   });
   canvas.addEventListener('webglcontextlost', event => { event.preventDefault(); stop(); program = null; button.dataset.renderer = 'fallback'; });
   canvas.addEventListener('webglcontextrestored', initialize);

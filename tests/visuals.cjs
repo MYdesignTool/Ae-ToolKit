@@ -40,18 +40,18 @@ async function main(){
  await p.mouse.move(x,y);await p.waitForFunction(()=>__gpu.values.u_pointer[2]>.95);
  await p.screenshot({path:path.join(out,'hover.png')});
  await p.mouse.click(x,y);await p.mouse.move(2,2);await p.waitForTimeout(120);
- assert.equal(await p.evaluate(()=>__gpu.values['u_ripples[0]'][3]),1);
+ assert.equal(await p.evaluate(()=>__gpu.values['u_ripples[0]'][3]),.625);
  await p.screenshot({path:path.join(out,'ripple.png')});
  for(let i=0;i<9;i++)await p.mouse.click(x,y);
  assert.equal(await p.evaluate(()=>__gpu.values['u_ripples[0]'].length),16,'ripple slots are bounded');
  await p.mouse.move(2,2);await p.waitForFunction(()=>__gpu.values.u_pointer[2]<.003);
  await p.locator('#particle-logo').focus();await p.keyboard.press('Enter');await p.waitForTimeout(40);
- assert.ok(await p.evaluate(()=>{const r=__gpu.values['u_ripples[0]'];return [0,4,8,12].some(i=>r[i]===0&&r[i+1]===0&&r[i+3]===1);}), 'keyboard ripple starts at the center');
+ assert.ok(await p.evaluate(()=>{const r=__gpu.values['u_ripples[0]'];return [0,4,8,12].some(i=>r[i]===0&&r[i+1]===0&&r[i+3]===.625);}), 'keyboard ripple starts at the center');
  // A held left button leaves small waves, and releasing it does not add a large click ripple.
  await p.mouse.move(x,y);await p.mouse.down();
- for(let i=1;i<=6;i++){await p.waitForTimeout(75);await p.mouse.move(x+i*12,y+Math.sin(i)*14);}
+ for(let i=1;i<=6;i++){await p.waitForTimeout(110);await p.mouse.move(x+i*14,y+Math.sin(i)*14);}
  await p.waitForTimeout(50);
- const trail=await p.evaluate(()=>__gpu.values['u_ripples[0]']);assert.equal(trail.length,16);assert.ok([0,4,8,12].every(i=>Math.abs(trail[i+3]-.42)<.001),'drag uses bounded gentle wake slots');
+ const trail=await p.evaluate(()=>__gpu.values['u_ripples[0]']);assert.equal(trail.length,16);assert.ok([0,4,8,12].every(i=>trail[i+3]<0),'drag uses bounded wake slots distinct from click ripples');
  await p.screenshot({path:path.join(out,'drag-water.png')});
  await p.mouse.up();await p.waitForTimeout(80);assert.deepEqual(await p.evaluate(()=>__gpu.values['u_ripples[0]']),trail,'release does not trigger a full click ripple');
  await p.mouse.move(x+110,y+40);await p.waitForTimeout(80);assert.deepEqual(await p.evaluate(()=>__gpu.values['u_ripples[0]']),trail,'hover after release stops emitting wake');
@@ -111,7 +111,7 @@ async function main(){
  const touch=await browser.newContext({viewport:{width:390,height:844},hasTouch:true,isMobile:true});await touch.route('https://api.github.com/**',r=>r.fulfill({status:503,body:''}));
  const mobile=await touch.newPage();mobile.on('pageerror',e=>errors.push(e.message));await mobile.addInitScript(instrument);await mobile.goto(base);await mobile.locator('#particle-logo').scrollIntoViewIfNeeded();await mobile.waitForFunction(()=>window.__gpu&&__gpu.values.u_intro===1);
  const touchLogo=await mobile.locator('#particle-logo').boundingBox();assert.equal(await mobile.locator('#particle-logo').evaluate(e=>getComputedStyle(e).touchAction),'pan-y');
- await mobile.touchscreen.tap(touchLogo.x+touchLogo.width/2,touchLogo.y+touchLogo.height/2);await mobile.waitForFunction(()=>__gpu.values['u_ripples[0]'][3]===1);assert.equal(await mobile.locator('.title-shine').first().evaluate(e=>getComputedStyle(e).display),'none');
+ await mobile.touchscreen.tap(touchLogo.x+touchLogo.width/2,touchLogo.y+touchLogo.height/2);await mobile.waitForFunction(()=>__gpu.values['u_ripples[0]'][3]===.625);assert.equal(await mobile.locator('.title-shine').first().evaluate(e=>getComputedStyle(e).display),'none');
  const cdp=await touch.newCDPSession(mobile),start=await mobile.evaluate(()=>scrollY),tx=touchLogo.x+touchLogo.width/2,ty=Math.min(720,touchLogo.y+touchLogo.height*.8);
  await cdp.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[{x:tx,y:ty}]});for(let i=1;i<=5;i++){await cdp.send('Input.dispatchTouchEvent',{type:'touchMove',touchPoints:[{x:tx,y:ty-i*30}]});await mobile.waitForTimeout(20);}await cdp.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});await mobile.waitForTimeout(150);assert.ok(await mobile.evaluate(()=>scrollY)>start,'dragging the logo can scroll the mobile page');await touch.close();
  assert.deepEqual(errors,[]);console.log('Visuals passed: GPU formation, pointer repulsion, bounded drag water trails, continuous soft reflections, three-card tilt, keyboard ripples, theme transitions, letter light, offscreen/reduced-motion pause, context recovery, WebGL fallback, responsive glass and native touch scrolling.');
