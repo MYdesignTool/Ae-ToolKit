@@ -1,206 +1,61 @@
-/**
- * AE Local Toolkit - 表达式管理模块
- * 提供 AE 表达式的批量应用、移除及选中属性的摘要统计功能
- * 通过 ExtendScript 操作 AE 内部属性对象
- */
-AELocalToolkit = AELocalToolkit || {};
+/* Operate on explicitly selected properties; every batch is one undo step. */
 AELocalToolkit.expressions = (function () {
-  function resultBase() {
-    return {
-      ok: true,
-      total: 0,
-      applied: 0,
-      removed: 0,
-      skipped: 0,
-      existing: 0,
-      errors: 0,
-      messages: []
-    };
+  function selection() {
+    var comp = app.project && app.project.activeItem;
+    if (!(comp instanceof CompItem)) throw new Error('请先打开合成，在时间线中选中需要处理的属性。');
+    var properties = [], names = [], keys = [], existing = 0, skipped = 0;
+    var selected = comp.selectedProperties;
+    for (var i = 0; i < selected.length; i++) {
+      var prop = selected[i];
+      if (prop.propertyType !== PropertyType.PROPERTY || !prop.canSetExpression) { skipped++; continue; }
+      var parent = prop, path = [];
+      while (parent.parentProperty) { path.unshift(parent.propertyIndex); parent = parent.parentProperty; }
+      var layer = prop.propertyGroup(prop.propertyDepth);
+      keys.push(layer.index + ':' + path.join('.'));
+      properties.push(prop);
+      if (prop.expression) existing++;
+      if (names.length < 8) names.push(layer.name + ' / ' + prop.name);
+    }
+    keys.sort();
+    return { properties: properties, total: selected.length, supported: properties.length, existing: existing, skipped: skipped, names: names, comp: comp.name, selectionKey: comp.id + ':' + keys.join('|') };
   }
-
-  function collectLayerProperties(group, props) {
+  function summary() {
     try {
-      for (var i = 1; i <= group.numProperties; i++) {
-        var child = group.property(i);
-        if (child.selected === true) {
-          props.push(child);
-        }
-        if (child.numProperties && child.numProperties > 0) {
-          collectLayerProperties(child, props);
-        }
-      }
-    } catch (e) {
-    }
+      var data = selection(); delete data.properties; data.ok = true; return data;
+    } catch (e) { return { ok: false, total: 0, supported: 0, existing: 0, skipped: 0, messages: [String(e)] }; }
   }
-
-  function getSelectedProperties() {
-    var comp = app.project ? app.project.activeItem : null;
-    if (!comp || !(comp instanceof CompItem)) {
-      return {
-        ok: false,
-        message: "Open a comp and select one or more properties.",
-        properties: []
-      };
-    }
-
-    var props = [];
+  function batch(expression, overwrite, remove, expectedSelection) {
+    var result = { ok: false, applied: 0, removed: 0, skipped: 0, errors: 0, messages: [] }, selected;
     try {
-      var directProps = comp.selectedProperties;
-      for (var i = 0; i < directProps.length; i++) {
-        props.push(directProps[i]);
-      }
-    } catch (e) {
-      props = [];
-    }
-
-    if (props.length === 0) {
-      var layers = comp.selectedLayers;
-      for (var j = 0; j < layers.length; j++) {
-        collectLayerProperties(layers[j], props);
-      }
-    }
-
-    return {
-      ok: true,
-      message: "",
-      properties: props
-    };
-  }
-
-  function canUseExpression(prop) {
-    try {
-      return prop && prop.canSetExpression === true;
-    } catch (e) {
-      return false;
-    }
-  }
-
-  function hasExpression(prop) {
-    try {
-      return prop.expressionEnabled === true || (prop.expression && prop.expression.length > 0);
-    } catch (e) {
-      return false;
-    }
-  }
-
-  function getSelectedPropertySummary() {
-    var selected = getSelectedProperties();
-    var summary = resultBase();
-
-    if (!selected.ok) {
-      summary.ok = false;
-      summary.messages.push(selected.message);
-      return summary;
-    }
-
-    summary.total = selected.properties.length;
-    for (var i = 0; i < selected.properties.length; i++) {
-      var prop = selected.properties[i];
-      if (!canUseExpression(prop)) {
-        summary.skipped++;
-      } else if (hasExpression(prop)) {
-        summary.existing++;
-      }
-    }
-
-    return summary;
-  }
-
-  function applyExpression(expression, overwriteExisting) {
-    var summary = resultBase();
-    var selected = getSelectedProperties();
-
-    if (!selected.ok) {
-      summary.ok = false;
-      summary.messages.push(selected.message);
-      return summary;
-    }
-
-    if (!expression || String(expression).replace(/\s/g, "").length === 0) {
-      summary.ok = false;
-      summary.messages.push("Expression is empty.");
-      return summary;
-    }
-
-    summary.total = selected.properties.length;
-    app.beginUndoGroup("AE Local Toolkit - Apply Expression");
+      selected = selection();
+      if (!selected.supported) throw new Error('没有可处理的属性。请在时间线中选中位置、旋转等具体属性。');
+      if (expectedSelection && selected.selectionKey !== expectedSelection) throw new Error('AE 中的属性选择已改变，请检查目标后重试。');
+      if (!remove && !String(expression).replace(/\s/g, '')) throw new Error('请先输入表达式。');
+    } catch (e) { result.messages.push(String(e)); return result; }
+    result.skipped = selected.skipped;
+    app.beginUndoGroup(remove ? 'AE工具箱 · 移除表达式' : 'AE工具箱 · 应用表达式');
     try {
       for (var i = 0; i < selected.properties.length; i++) {
-        var prop = selected.properties[i];
+        var prop = selected.properties[i], previous = prop.expression, enabled = prop.expressionEnabled;
+        if ((remove && !previous) || (!remove && previous && !overwrite)) { result.skipped++; continue; }
         try {
-          if (!canUseExpression(prop)) {
-            summary.skipped++;
-            continue;
-          }
-
-          if (hasExpression(prop) && !overwriteExisting) {
-            summary.existing++;
-            summary.skipped++;
-            continue;
-          }
-
-          prop.expression = expression;
-          prop.expressionEnabled = true;
-          summary.applied++;
+          prop.expression = remove ? '' : expression;
+          if (!remove) {
+            prop.expressionEnabled = true;
+            if (prop.expressionError) throw new Error(prop.expressionError);
+            result.applied++;
+          } else result.removed++;
         } catch (e) {
-          summary.errors++;
-          summary.messages.push("Apply failed: " + e.toString());
+          result.errors++;
+          if (result.messages.length < 20) result.messages.push(prop.name + '：' + String(e));
+          try { prop.expression = previous; if (previous) prop.expressionEnabled = enabled; }
+          catch (restoreError) { result.messages.push('恢复失败，请使用 AE 撤销：' + String(restoreError)); }
         }
       }
-    } catch (outerError) {
-      summary.ok = false;
-      summary.errors++;
-      summary.messages.push(outerError.toString());
-    } finally {
-      app.endUndoGroup();
-    }
-
-    return summary;
+      result.ok = result.errors === 0;
+    } catch (e) { result.errors++; result.messages.push(String(e)); }
+    finally { app.endUndoGroup(); }
+    return result;
   }
-
-  function removeExpressions() {
-    var summary = resultBase();
-    var selected = getSelectedProperties();
-
-    if (!selected.ok) {
-      summary.ok = false;
-      summary.messages.push(selected.message);
-      return summary;
-    }
-
-    summary.total = selected.properties.length;
-    app.beginUndoGroup("AE Local Toolkit - Remove Expressions");
-    try {
-      for (var i = 0; i < selected.properties.length; i++) {
-        var prop = selected.properties[i];
-        try {
-          if (!canUseExpression(prop) || !hasExpression(prop)) {
-            summary.skipped++;
-            continue;
-          }
-
-          prop.expressionEnabled = false;
-          prop.expression = "";
-          summary.removed++;
-        } catch (e) {
-          summary.errors++;
-          summary.messages.push("Remove failed: " + e.toString());
-        }
-      }
-    } catch (outerError) {
-      summary.ok = false;
-      summary.errors++;
-      summary.messages.push(outerError.toString());
-    } finally {
-      app.endUndoGroup();
-    }
-
-    return summary;
-  }
-
-  return {
-    getSelectedPropertySummary: getSelectedPropertySummary,
-    applyExpression: applyExpression,
-    removeExpressions: removeExpressions
-  };
+  return { getSelectedPropertySummary: summary, applyExpression: function (code, overwrite, expected) { return batch(code, overwrite, false, expected); }, removeExpressions: function (expected) { return batch('', false, true, expected); } };
 })();

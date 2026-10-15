@@ -1,572 +1,80 @@
-/**
- * AE Local Toolkit - 主机脚本入口
- * 作为 CEP 面板的后端，运行在 AE ExtendScript 环境中
- * 提供工程整理、表达式管理、脚本启动等功能 API
- */
+/* CEP entry. The panel supplies its own root once; no global directory scan. */
 var AELocalToolkit = AELocalToolkit || {};
+AELocalToolkit.moduleBase = null;
+AELocalToolkit.loadErrors = [];
 
-// 诊断日志：写入临时目录（Folder.temp 在本环境可靠；Folder.userData 可能不可用）
-function hostLog(msg) {
-  try {
-    var dir = Folder.temp;
-    if (!dir || !dir.exists) dir = new Folder("C:/");
-    var f = new File(dir.fullName + "/AELocalToolkit_debug.log");
-    f.open("a");
-    f.writeln((new Date()).toISOString() + " " + msg);
-    f.close();
-  } catch (e) {}
-}
-
-(function() {
-  AELocalToolkit.__loadErrors = [];
-  AELocalToolkit.__moduleBase = null;
-
-  // 本 CEP 环境下 $.fileName 返回 80（指向 AE 自身的 Support Files），无法据此
-  // 定位扩展内的模块，因此模块路径必须依赖客户端从自身 URL 推导后通过
-  // AELT_setModuleBase() 传入的扩展根目录。
-  // 在常见 CEP 扩展目录中扫描包含 host/modules/organizer.jsx 的扩展根目录，
-  // 作为客户端未提供路径（或客户端缓存未更新）时的兜底。不依赖不可靠的 $.fileName。
-  function findExtensionRoot() {
-    var bases = [
-      "C:/Program Files (x86)/Common Files/Adobe/CEP/extensions",
-      "C:/Program Files/Common Files/Adobe/CEP/extensions",
-      "/Library/Application Support/Adobe/CEP/extensions"
-    ];
-    try { bases.push(Folder.userData.fullName + "/Adobe/CEP/extensions"); } catch (e) {}
-    for (var b = 0; b < bases.length; b++) {
-      var extFolder = new Folder(bases[b]);
-      if (!extFolder.exists) continue;
-      var subs = extFolder.getFiles();
-      for (var i = 0; i < subs.length; i++) {
-        // 直接通过候选文件是否存在来判断，避免依赖 instanceof Folder：
-        // junction / 符号链接在 ExtendScript 下 instanceof Folder 判定可能不可靠。
-        var subPath;
-        try { subPath = subs[i].fsName; } catch (e) { continue; }
-        if (!subPath) continue;
-        var candidate = new File(subPath + "/host/modules/organizer.jsx");
-        if (candidate.exists) return subPath;
-      }
-    }
-    return null;
-  }
-
-  // 通过“读取文件内容 + 执行”加载模块。
-  // 本环境确认 $.eval 不存在；且 $.evalFile 在 directory junction 路径下会“假成功”
-  // （不抛错、也未定义模块全局变量）。因此改为：先读内容，再按可靠性依次尝试执行
-  // （临时真实路径 $.evalFile → 全局 eval → 直接 $.evalFile 原始文件）。
-  // 任何读取/解析失败都会被捕获并记录到 loadErrors（不再“假成功”）；并校验全局是否真正定义。
-  function evalModuleFile(f, name) {
-    try {
-      f.encoding = "UTF-8";
-      if (!f.open("r")) {
-        AELocalToolkit.__loadErrors.push(name + ": 无法打开 -> " + f.fsName);
-        return false;
-      }
-      var src = f.read();
-      f.close();
-      if (src === null || src === undefined || String(src).length === 0) {
-        AELocalToolkit.__loadErrors.push(name + ": 读取内容为空 -> " + f.fsName);
-        return false;
-      }
-      // 执行模块代码，按可靠性依次尝试，任一成功即返回（全局是否真定义由 tryLoadModule 校验）：
-      // 1) 临时真实路径 + $.evalFile：最可靠，绕过 junction 的静默失败，与旧版 v0.1.3 一致；
-      // 2) 全局 eval 内存执行：本环境此 API 缺失，但其它环境可能存在；
-      // 3) 直接 $.evalFile 原始文件：真实路径下必成功；junction 下即便静默失败也会被
-      //    moduleIsDefined 校验拦下，不会“假成功”。
-      var executed = false;
-      var lastErr = null;
-      if (typeof $.evalFile === "function") {
-        try {
-          var tmp = new File(Folder.temp.fullName + "/AELT_" + name);
-          tmp.encoding = "UTF-8";
-          if (tmp.open("w")) {
-            tmp.write(src);
-            tmp.close();
-            $.evalFile(tmp);
-            executed = true;
-          }
-        } catch (tmpErr) { lastErr = tmpErr; }
-      }
-      if (!executed && typeof eval === "function") {
-        try { eval(src); executed = true; } catch (evErr) { lastErr = evErr; }
-      }
-      if (!executed && typeof $.evalFile === "function") {
-        try { $.evalFile(f); executed = true; } catch (evfErr) { lastErr = evfErr; }
-      }
-      if (!executed) {
-        throw lastErr || new Error("eval 与 $.evalFile 均不可用");
-      }
-      hostLog("evalModuleFile OK: " + f.fsName);
-      return true;
-    } catch (e) {
-      try { f.close(); } catch (c) {}
-      AELocalToolkit.__loadErrors.push(name + ": eval失败 -> " + f.fsName + " / " + (e && e.toString ? e.toString() : e));
-      return false;
-    }
-  }
-
-  function moduleIsDefined(name) {
-    if (name === "organizer.jsx") return typeof AELocalToolkit.organizer === "object";
-    if (name === "expressions.jsx") return typeof AELocalToolkit.expressions === "object";
-    if (name === "launcher.jsx") return typeof AELocalToolkit.launcher === "object";
-    return true;
-  }
-
-  function tryLoadModule(name) {
-    var candidates = [];
-    if (AELocalToolkit.__moduleBase) {
-      // 直接拼接完整路径字符串，避免嵌套 Folder(parent, name) 构造器在含空格路径下解析异常
-      candidates.push(new File(AELocalToolkit.__moduleBase + "/host/modules/" + name));
-    }
-    var found = findExtensionRoot();
-    if (found) {
-      candidates.push(new File(found + "/host/modules/" + name));
-    }
-    // 兜底：直接尝试已知扩展根目录（防止 getFiles 枚举不出 junction/symlink 导致 findExtensionRoot 返回空）
-    var fallbackRoots = [
-      "C:/Program Files (x86)/Common Files/Adobe/CEP/extensions/AeLocalToolkit",
-      "C:/Program Files/Common Files/Adobe/CEP/extensions/AeLocalToolkit",
-      "/Library/Application Support/Adobe/CEP/extensions/AeLocalToolkit"
-    ];
-    try { fallbackRoots.push(Folder.userData.fullName + "/Adobe/CEP/extensions/AeLocalToolkit"); } catch (e) {}
-    for (var r = 0; r < fallbackRoots.length; r++) {
-      candidates.push(new File(fallbackRoots[r] + "/host/modules/" + name));
-    }
-    if ($.fileName && typeof $.fileName === "string") {
-      candidates.push(new File(new File($.fileName).parent.fsName + "/modules/" + name));
-    }
-    for (var i = 0; i < candidates.length; i++) {
-      var f = candidates[i];
-      if (f && f.exists) {
-        // 读取内容并 $.eval，并校验模块全局变量确实被定义，避免 $.evalFile 式的“假成功”。
-        if (evalModuleFile(f, name) && moduleIsDefined(name)) return;
-      } else if (f) {
-        AELocalToolkit.__loadErrors.push(name + ": 文件不存在 -> " + f.fsName);
-      }
-    }
-    AELocalToolkit.__loadErrors.push(name + ": 未能定位模块文件 (尝试路径=" + (AELocalToolkit.__moduleBase ? (AELocalToolkit.__moduleBase + "/host/modules/" + name) : "n/a") + ")");
-  }
-
-  function loadModules() {
-    // 所有功能模块均位于 host/modules/ 下，由本入口按需加载，index.jsx 仅负责引导。
-    tryLoadModule("organizer.jsx");
-    tryLoadModule("expressions.jsx");
-    tryLoadModule("launcher.jsx");
-  }
-
-
-  // 按需确保 organizer 模块已加载：整理入口会调用，避免客户端竞态导致模块未就绪。
-  AELocalToolkit.ensureOrganizerLoaded = function () {
-    if (typeof AELocalToolkit.organizer === "object") return true;
-    loadModules();
-    // 最后兜底：直接用客户端提供的扩展根目录读取+$.eval 模块（绕过候选列表）
-    if (typeof AELocalToolkit.organizer !== "object" && AELocalToolkit.__moduleBase) {
-      evalModuleFile(new File(AELocalToolkit.__moduleBase + "/host/modules/organizer.jsx"), "organizer.jsx");
-    }
-    hostLog("ensureOrganizerLoaded: organizer=" + (typeof AELocalToolkit.organizer) + " errors=" + AELocalToolkit.__loadErrors.join(" | "));
-    return typeof AELocalToolkit.organizer === "object";
-  };
-
-  // 客户端在面板启动早期调用：传入扩展根目录并加载模块。
-  AELocalToolkit.setModuleBase = function (path) {
-    try {
-      var raw = path;
-      try { raw = unescape(path); } catch (d) { raw = path; }
-      AELocalToolkit.__moduleBase = raw;
-    } catch (e) {}
-    loadModules();
-    hostLog("setModuleBase: path=" + AELocalToolkit.__moduleBase + " organizer=" + (typeof AELocalToolkit.organizer) + " errors=" + AELocalToolkit.__loadErrors.join(" | "));
-    return AELocalToolkit.returnResult({ ok: true, moduleBase: AELocalToolkit.__moduleBase, loadErrors: AELocalToolkit.__loadErrors });
-  };
-
-  // 面板打开即自动加载模块：优先用客户端传入的路径，否则扫描 CEP 扩展目录兜底。
-  // 不依赖客户端调用，避免客户端缓存导致模块永不加载。
-  loadModules();
-  hostLog("autoLoad: organizer=" + (typeof AELocalToolkit.organizer) + " errors=" + AELocalToolkit.__loadErrors.join(" | "));
-})();
-
-
-
-// ===== JSON 安全序列化工具 =====
-AELocalToolkit.safeStringify = function (value) {
-  function escapeString(str) {
-    return String(str)
-      .replace(/\\/g, "\\\\")
-      .replace(/"/g, '\\"')
-      .replace(/\r/g, "\\r")
-      .replace(/\n/g, "\\n")
-      .replace(/\t/g, "\\t");
-  }
-
-  function stringify(obj) {
-    var type = typeof obj;
-    if (obj === null) return "null";
-    if (type === "string") return '"' + escapeString(obj) + '"';
-    if (type === "number" || type === "boolean") return String(obj);
-    if (obj instanceof Array) {
-      var arr = [];
-      for (var i = 0; i < obj.length; i++) arr.push(stringify(obj[i]));
-      return "[" + arr.join(",") + "]";
-    }
-    var props = [];
-    for (var key in obj) {
-      if (obj.hasOwnProperty(key)) {
-        props.push('"' + escapeString(key) + '":' + stringify(obj[key]));
-      }
-    }
-    return "{" + props.join(",") + "}";
-  }
-
-  return stringify(value);
-};
-
-// ===== 返回结果封装 =====
 AELocalToolkit.returnResult = function (result) {
-  return AELocalToolkit.safeStringify(result);
+  return AELocalToolkit.json.stringify(result);
 };
-
-// ===== JSON 解析（含降级方案） =====
-AELocalToolkit.parseJson = function (text, fallback) {
-  try {
-    if (typeof JSON !== "undefined" && JSON.parse) {
-      return JSON.parse(text);
-    }
-  } catch (e) {
-  }
-
-  try {
-    return eval("(" + text + ")");
-  } catch (evalError) {
-    return fallback;
-  }
+AELocalToolkit.error = function (error) {
+  return AELocalToolkit.returnResult({ ok: false, messages: [String(error)] });
 };
-
-
-// ===== 本地文件存储模块（整理方案持久化） =====
-AELocalToolkit.fileStorage = (function () {
-  function getSchemeFolder() {
-    // 整理方案存到扩展目录 data/organizer-schemes（随扩展一起拷贝，换设备即带走）；
-    // 不再写入系统用户目录 Folder.userData，避免与扩展文件夹分离导致备份/迁移遗漏。
-    var base = AELocalToolkit.__moduleBase;
-    if (!base) base = findExtensionRoot();
-    if (!base) base = ".";
-    var folder = new Folder(base + "/data/organizer-schemes");
-    if (!folder.exists) folder.create();
-    return folder;
-  }
-
-  function safeFileName(id) {
-    return String(id || "scheme").replace(/[^a-zA-Z0-9_-]/g, "_");
-  }
-
-  function readText(file) {
-    file.encoding = "UTF-8";
-    if (!file.open("r")) return "";
-    var text = file.read();
-    file.close();
-    return text;
-  }
-
-  function writeText(file, text) {
-    file.encoding = "UTF-8";
-    if (!file.open("w")) return false;
-    file.write(text);
-    file.close();
-    return true;
-  }
-
-  function listSchemes() {
-    var result = {
-      ok: true,
-      schemes: [AELocalToolkit.organizer.defaultScheme],
-      schemeFolder: "",
-      messages: []
-    };
-
-    try {
-      var folder = getSchemeFolder();
-      result.schemeFolder = folder.fsName;
-      var files = folder.getFiles("*.json");
-      for (var i = 0; i < files.length; i++) {
-        try {
-          var scheme = AELocalToolkit.parseJson(readText(files[i]), null);
-          if (scheme && scheme.id && scheme.rules) {
-            scheme.builtin = false;
-            result.schemes.push(scheme);
-          }
-        } catch (fileError) {
-          result.messages.push("Read scheme failed: " + files[i].name + " / " + fileError.toString());
-        }
-      }
-    } catch (e) {
-      result.ok = false;
-      result.messages.push(e.toString());
-    }
-
-    return result;
-  }
-
-  function saveScheme(scheme) {
-    var result = {
-      ok: true,
-      scheme: scheme,
-      messages: []
-    };
-
-    try {
-      if (!scheme || !scheme.id || !scheme.rules) {
-        result.ok = false;
-        result.messages.push("Invalid scheme.");
-        return result;
-      }
-
-      scheme.builtin = false;
-      var file = new File(getSchemeFolder().fsName + "/" + safeFileName(scheme.id) + ".json");
-      if (!writeText(file, AELocalToolkit.safeStringify(scheme))) {
-        result.ok = false;
-        result.messages.push("Could not write scheme file.");
-      }
-    } catch (e) {
-      result.ok = false;
-      result.messages.push(e.toString());
-    }
-
-    return result;
-  }
-
-  function deleteScheme(id) {
-    var result = {
-      ok: true,
-      id: id,
-      messages: []
-    };
-
-    try {
-      if (id === "preset-default") {
-        result.ok = false;
-        result.messages.push("Default scheme cannot be deleted.");
-        return result;
-      }
-
-      var file = new File(getSchemeFolder().fsName + "/" + safeFileName(id) + ".json");
-      if (file.exists) {
-        file.remove();
-      }
-    } catch (e) {
-      result.ok = false;
-      result.messages.push(e.toString());
-    }
-
-    return result;
-  }
-
-  function getSettingsFile() {
-    var base = AELocalToolkit.__moduleBase;
-    if (!base) base = findExtensionRoot();
-    if (!base) return null;
-    return new File(base + "/data/settings.json");
-  }
-
-  function loadSettings() {
-    try {
-      var f = getSettingsFile();
-      if (f && f.exists) {
-        var text = readText(f);
-        return { ok: true, exists: true, settings: AELocalToolkit.parseJson(text, null) };
-      }
-      // settings.json 不存在：回退读取仓库内的默认模板 data/settings.default.json。
-      // 这样云端只需保留一份默认设置，本地改动（settings.json）被 .gitignore 忽略，
-      // 不会污染版本控制；且首次启动不会凭空生成 settings.json（除非用户真的改了设置）。
-      var base = AELocalToolkit.__moduleBase;
-      if (!base) base = findExtensionRoot();
-      if (base) {
-        var defFile = new File(base + "/data/settings.default.json");
-        if (defFile.exists) {
-          return { ok: true, exists: false, settings: AELocalToolkit.parseJson(readText(defFile), null) };
-        }
-      }
-      return { ok: true, exists: false, settings: null };
-    } catch (e) {
-      return { ok: false, exists: false, settings: null, error: (e && e.toString ? e.toString() : e) };
-    }
-  }
-
-  function saveSettings(jsonText) {
-    try {
-      var f = getSettingsFile();
-      if (!f) return { ok: false, error: "无法定位扩展目录，设置保存失败" };
-      // 客户端以 encodeURIComponent(JSON) 传输（% 等字符被安全编码，避免 %XX 歧义）；单引号已转 %27。
-      var text = jsonText;
-      try { text = decodeURIComponent(jsonText); } catch (d) { text = jsonText; }
-      // 写盘前重新缩进，保证 data/settings.json 人类可读（真实换行，而非字面反斜杠-n）。
-      try {
-        var obj = JSON.parse(text);
-        text = JSON.stringify(obj, null, 2);
-      } catch (pe) {
-        // 解析失败则原样写入，避免丢失数据
-      }
-      if (!writeText(f, text)) {
-        return { ok: false, error: "写入设置文件失败" };
-      }
-      return { ok: true };
-    } catch (e) {
-      return { ok: false, error: (e && e.toString ? e.toString() : e) };
-    }
-  }
-
-  return {
-    listSchemes: listSchemes,
-    saveScheme: saveScheme,
-    deleteScheme: deleteScheme,
-    loadSettings: loadSettings,
-    saveSettings: saveSettings
-  };
-})();
-
-// ===== 设置扩展根目录并加载 host 模块（面板启动早期由客户端调用） =====
 function AELT_setModuleBase(path) {
-  return AELocalToolkit.setModuleBase(path);
+  var root = new Folder(path);
+  AELocalToolkit.loadErrors = [];
+  try {
+    if (!new File(root.fullName + '/CSXS/manifest.xml').exists) throw new Error('扩展根目录无效');
+    if (AELocalToolkit.moduleBase === root.fullName && AELocalToolkit.ready) {
+      return AELocalToolkit.returnResult({ ok: true, moduleBase: root.fullName });
+    }
+    AELocalToolkit.moduleBase = root.fullName;
+    AELocalToolkit.ready = false;
+    var modules = ['lib/json.jsx', 'modules/storage.jsx', 'modules/organizer.jsx', 'modules/expressions.jsx', 'modules/launcher.jsx'];
+    var keys = ['json', 'storage', 'organizer', 'expressions', 'launcher'];
+    for (var i = 0; i < modules.length; i++) {
+      var file = new File(root.fullName + '/host/' + modules[i]);
+      if (!file.exists) throw new Error('缺少模块：' + modules[i]);
+      AELocalToolkit[keys[i]] = null;
+      $.evalFile(file);
+      if (!AELocalToolkit[keys[i]]) throw new Error("模块未执行：" + modules[i]);
+    }
+    AELocalToolkit.ready = true;
+    return AELocalToolkit.returnResult({ ok: true, moduleBase: root.fullName });
+  } catch (e) {
+    AELocalToolkit.loadErrors.push(String(e));
+    // The JSON module can itself be missing; this fixed response requires no serializer.
+    if (!AELocalToolkit.json) return '{"ok":false,"messages":["JSON 模块加载失败，请重新安装扩展。"]}';
+    return AELocalToolkit.error(e);
+  }
 }
-
-// ===== AE 连接检测 =====
 function AELT_ping() {
-  var hostParent = "";
-  try { hostParent = (new File($.fileName)).parent.fsName; } catch (e) { hostParent = "ERR:" + (e && e.toString ? e.toString() : e); }
-  return AELocalToolkit.returnResult({
-    ok: true,
-    appVersion: app.version,
-    hostFileName: $.fileName,
-    hostParent: hostParent,
-    moduleBase: AELocalToolkit.__moduleBase,
-    organizerType: typeof AELocalToolkit.organizer,
-    loadErrors: AELocalToolkit.__loadErrors || [],
-    message: "Host JSX loaded [v0.2.6]"
-  });
+  return AELocalToolkit.returnResult({ ok: AELocalToolkit.ready === true, appVersion: app.version, loadErrors: AELocalToolkit.loadErrors });
 }
-
-// ===== AE 工程整理入口（使用默认方案） =====
-function AELT_organizeProject() {
-  if (!AELocalToolkit.ensureOrganizerLoaded()) {
-    return AELocalToolkit.returnResult({ ok: false, messages: ["错误: organizer 模块未加载，请确认面板已正确初始化。"] });
-  }
+function AELT_bootstrap() {
   try {
-    return AELocalToolkit.returnResult(AELocalToolkit.organizer.organizeProject());
-  } catch (e) {
-    return AELocalToolkit.returnResult({ ok: false, messages: ["organizeProject 异常: " + (e && e.toString ? e.toString() : e)] });
-  }
+    var storage = AELocalToolkit.storage;
+    return AELocalToolkit.returnResult({ ok: true, rules: storage.readData('organizer-rules.json'), expressions: storage.readData('default-expressions.json').expressions, changelog: storage.readData('changelog.json') });
+  } catch (e) { return AELocalToolkit.error(e); }
 }
-
-// ===== AE 工程整理入口（使用指定方案） =====
-function AELT_organizeProjectWithScheme(schemeJson) {
-  if (!AELocalToolkit.ensureOrganizerLoaded()) {
-    return AELocalToolkit.returnResult({ ok: false, messages: ["错误: organizer 模块未加载，请确认面板已正确初始化。"] });
-  }
-  try {
-    var raw;
-    try { raw = unescape(schemeJson); } catch (d) { raw = schemeJson; }
-    var scheme = AELocalToolkit.parseJson(raw, null);
-    return AELocalToolkit.returnResult(AELocalToolkit.organizer.organizeProjectWithScheme(scheme));
-  } catch (e) {
-    return AELocalToolkit.returnResult({ ok: false, messages: ["organizeProjectWithScheme 异常: " + (e && e.toString ? e.toString() : e)] });
-  }
+function AELT_loadSettings() { return AELocalToolkit.storage.loadSettings(); }
+function AELT_saveSettings(settings) {
+  try { AELocalToolkit.storage.saveSettings(settings); return AELocalToolkit.returnResult({ ok: true }); }
+  catch (e) { return AELocalToolkit.error(e); }
 }
-
-// ===== 加载所有整理方案列表 =====
 function AELT_loadOrganizerSchemes() {
-  return AELocalToolkit.returnResult(AELocalToolkit.fileStorage.listSchemes());
+  try { return AELocalToolkit.returnResult({ ok: true, schemes: AELocalToolkit.storage.listSchemes() }); }
+  catch (e) { return AELocalToolkit.error(e); }
 }
-
-// ===== 保存整理方案 =====
-function AELT_saveOrganizerScheme(schemeJson) {
-  var raw;
-  try { raw = unescape(schemeJson); } catch (d) { raw = schemeJson; }
-  var scheme = AELocalToolkit.parseJson(raw, null);
-  return AELocalToolkit.returnResult(AELocalToolkit.fileStorage.saveScheme(scheme));
+function AELT_saveOrganizerScheme(scheme) {
+  try { AELocalToolkit.storage.saveScheme(scheme); return AELocalToolkit.returnResult({ ok: true }); }
+  catch (e) { return AELocalToolkit.error(e); }
 }
-
-// ===== 删除整理方案 =====
 function AELT_deleteOrganizerScheme(id) {
-  return AELocalToolkit.returnResult(AELocalToolkit.fileStorage.deleteScheme(id));
+  try { AELocalToolkit.storage.deleteScheme(id); return AELocalToolkit.returnResult({ ok: true }); }
+  catch (e) { return AELocalToolkit.error(e); }
 }
-
-// ===== 加载设置（扩展目录 data/settings.json，随扩展一起拷贝） =====
-function AELT_loadSettings() {
-  return AELocalToolkit.returnResult(AELocalToolkit.fileStorage.loadSettings());
+function AELT_organizeProjectWithScheme(scheme) {
+  try { return AELocalToolkit.returnResult(AELocalToolkit.organizer.organizeProjectWithScheme(scheme)); }
+  catch (e) { return AELocalToolkit.error(e); }
 }
-
-// ===== 保存设置（扩展目录 data/settings.json） =====
-function AELT_saveSettings(jsonText) {
-  return AELocalToolkit.returnResult(AELocalToolkit.fileStorage.saveSettings(jsonText));
-}
-
-// ===== 获取选中属性摘要 =====
-function AELT_getSelectedPropertySummary() {
-  if (!AELocalToolkit.expressions) return AELocalToolkit.returnResult({ ok: false, messages: ["expressions 模块未加载"] });
-  return AELocalToolkit.returnResult(AELocalToolkit.expressions.getSelectedPropertySummary());
-}
-
-// ===== 批量应用表达式 =====
-function AELT_applyExpression(expression, overwriteExisting) {
-  if (!AELocalToolkit.expressions) return AELocalToolkit.returnResult({ ok: false, messages: ["expressions 模块未加载"] });
-  return AELocalToolkit.returnResult(
-    AELocalToolkit.expressions.applyExpression(expression, overwriteExisting === true || overwriteExisting === "true")
-  );
-}
-
-// ===== 批量移除表达式 =====
-function AELT_removeExpressions() {
-  if (!AELocalToolkit.expressions) return AELocalToolkit.returnResult({ ok: false, messages: ["expressions 模块未加载"] });
-  return AELocalToolkit.returnResult(AELocalToolkit.expressions.removeExpressions());
-}
-
-// ===== 选择脚本文件夹对话框 =====
+function AELT_getSelectedPropertySummary() { return AELocalToolkit.returnResult(AELocalToolkit.expressions.getSelectedPropertySummary()); }
+function AELT_applyExpression(expression, overwriteExisting, expectedSelection) { return AELocalToolkit.returnResult(AELocalToolkit.expressions.applyExpression(expression, overwriteExisting, expectedSelection)); }
+function AELT_removeExpressions(expectedSelection) { return AELocalToolkit.returnResult(AELocalToolkit.expressions.removeExpressions(expectedSelection)); }
 function AELT_selectScriptFolder() {
-  var folder = Folder.selectDialog("\u9009\u62e9\u811a\u672c\u6587\u4ef6\u5939");
-  return AELocalToolkit.returnResult({
-    ok: true,
-    path: folder ? folder.fsName : ""
-  });
+  var folder = Folder.selectDialog('选择脚本文件夹');
+  return AELocalToolkit.returnResult({ ok: true, path: folder ? folder.fsName : '' });
 }
-
-// ===== 扫描指定文件夹中的脚本文件 =====
-function AELT_scanScripts(folderPath) {
-  try {
-    if (!AELocalToolkit.launcher) return AELocalToolkit.returnResult({ ok: false, messages: ["launcher \u6a21\u5757\u672a\u52a0\u8f7d"] });
-    return AELocalToolkit.returnResult(AELocalToolkit.launcher.scanScripts(folderPath));
-  } catch (e) {
-    return AELocalToolkit.returnResult({ ok: false, messages: [e.toString()] });
-  }
-}
-
-// ===== 运行指定脚本 =====
-function AELT_launchScript(filePath) {
-  try {
-    if (!AELocalToolkit.launcher) return AELocalToolkit.returnResult({ ok: false, messages: ["launcher \u6a21\u5757\u672a\u52a0\u8f7d"] });
-    return AELocalToolkit.returnResult(AELocalToolkit.launcher.launchScript(filePath));
-  } catch (e) {
-    return AELocalToolkit.returnResult({ ok: false, messages: [e.toString()] });
-  }
-}
-
-// ===== 读取扩展内数据文件（绕开 CEP 对 fetch file:// 的限制） =====
-// 由客户端传入相对扩展根目录的文件路径（已 escape），host 直接读取文本后回传。
-// 客户端据此解析 JSON；文件缺失或读取失败时返回 ok:false，前端显示“未找到”。
-function AELT_readFile(path) {
-  try {
-    var raw = path;
-    try { raw = unescape(path); } catch (d) { raw = path; }
-    var f = new File(raw);
-    if (!f.exists) {
-      return AELocalToolkit.returnResult({ ok: false, exists: false, text: "" });
-    }
-    f.encoding = "UTF-8";
-    if (!f.open("r")) {
-      return AELocalToolkit.returnResult({ ok: false, exists: true, text: "" });
-    }
-    var text = f.read();
-    f.close();
-    return AELocalToolkit.returnResult({ ok: true, exists: true, text: String(text || "") });
-  } catch (e) {
-    return AELocalToolkit.returnResult({ ok: false, exists: false, text: "", error: (e && e.toString ? e.toString() : e) });
-  }
-}
+function AELT_scanScripts(path) { return AELocalToolkit.returnResult(AELocalToolkit.launcher.scanScripts(path)); }
+function AELT_launchScript(path) { return AELocalToolkit.returnResult(AELocalToolkit.launcher.launchScript(path)); }
+function AELT_exportUserData() { return AELocalToolkit.storage.exportData(); }
+function AELT_importUserData() { return AELocalToolkit.storage.importData(); }

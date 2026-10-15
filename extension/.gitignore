@@ -6,3 +6,10 @@ data/organizer-schemes/
 
 # 安装器构建产物（installer/dist/ 为自动生成的 exe，不纳入版本控制）
 installer/dist/
+
+# Portable user state and local recovery snapshots
+data/user-data.json*
+data/before-import*.json*
+backups/
+data/*.tmp
+data/last-import.json*

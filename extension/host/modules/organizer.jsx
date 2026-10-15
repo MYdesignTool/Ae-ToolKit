@@ -5,22 +5,6 @@
  */
 AELocalToolkit = AELocalToolkit || {};
 AELocalToolkit.organizer = (function () {
-  var defaultScheme = {
-    id: "preset-default",
-    name: "默认整理方案",
-    builtin: true,
-    fallbackPath: "Footage",
-    rules: [
-      { path: "Comp", itemTypes: ["CompItem"], extensions: [] },
-      { path: "Image", itemTypes: [], extensions: ["JPEG", "JPG", "PNG", "TIFF", "GIF", "BMP", "SWF", "EXR", "WEBP"] },
-      { path: "Video", itemTypes: [], extensions: ["AVI", "MP4", "MOV", "MPEG2", "MKV", "M4V", "WEBM"] },
-      { path: "Audio", itemTypes: [], extensions: ["MP3", "WAV", "AIFF", "AAC", "FLAC"] },
-      { path: "PSD", itemTypes: [], extensions: ["PSD", "PSB"] },
-      { path: "Live2D", itemTypes: [], extensions: ["CAE"] },
-      { path: "3D", itemTypes: [], extensions: ["OBJ", "FBX", "GLTF"] },
-      { path: "Solids", itemTypes: ["SolidSource"], extensions: [] }
-    ]
-  };
 
   function createSummary() {
     return {
@@ -30,14 +14,16 @@ AELocalToolkit.organizer = (function () {
       errors: 0,
       removedEmptyFolders: 0,
       ignoredMainComp: 0,
-      folders: {},
+      folders: [],
       messages: []
     };
   }
 
   function incrementFolder(summary, folderPath) {
-    if (!summary.folders[folderPath]) summary.folders[folderPath] = 0;
-    summary.folders[folderPath]++;
+    for (var i=0; i<summary.folders.length; i++) {
+      if (summary.folders[i].path === folderPath) { summary.folders[i].count++; return; }
+    }
+    summary.folders.push({path:folderPath,count:1});
   }
 
   function findChildFolder(parentFolder, folderName) {
@@ -81,26 +67,14 @@ AELocalToolkit.organizer = (function () {
       var parts = item.file.name.split(".");
       if (parts.length < 2) return "";
       var ext = parts[parts.length - 1].toUpperCase();
-      return ext.length <= 5 ? ext : "";
+      return ext;
     } catch (e) {
       return "";
     }
   }
 
-  function findRuleByExtension(scheme, ext) {
-    for (var i = 0; i < scheme.rules.length; i++) {
-      var extensions = scheme.rules[i].extensions || [];
-      for (var j = 0; j < extensions.length; j++) {
-        if (String(extensions[j]).toUpperCase() === ext) {
-          return scheme.rules[i];
-        }
-      }
-    }
-    return null;
-  }
-
   // 预建「扩展名 → 目标文件夹路径」查表，分类时 O(1) 命中，避免逐规则遍历。
-  // 与 findRuleByExtension 一致：同名扩展名以首个匹配规则为准。
+  // 同名扩展名以首个匹配规则为准。
   function buildExtensionMap(scheme) {
     var map = {};
     for (var i = 0; i < scheme.rules.length; i++) {
@@ -139,33 +113,8 @@ AELocalToolkit.organizer = (function () {
     return out;
   }
 
-  // 从扩展目录 data/settings.json 读取忽略主合成配置（无参整理路径 / 客户端未注入时使用）。
-  function readIgnoreFromSettings() {
-    var cfg = { enabled: false, names: [], fuzzy: false };
-    try {
-      var res = AELocalToolkit.fileStorage.loadSettings();
-      if (res && res.ok && res.settings) {
-        var s = res.settings;
-        if (s.ignoreMainComp === true) cfg.enabled = true;
-        cfg.names = parseIgnoreNames(s.ignoreMainCompNames);
-        if (s.ignoreMainCompFuzzy === true) cfg.fuzzy = true;
-      }
-    } catch (e) {}
-    return cfg;
-  }
-
-  // 有效忽略配置：优先采用 scheme 注入值（来自客户端当前设置缓存，即时生效），
-  // 否则回退读取 settings.json（用于 AELT_organizeProject 无参路径）。
   function getEffectiveIgnoreConfig(scheme) {
-    var fromScheme = !!(scheme && (scheme.ignoreMainComp === true || scheme.ignoreMainCompNames));
-    if (fromScheme) {
-      return {
-        enabled: scheme.ignoreMainComp === true,
-        names: parseIgnoreNames(scheme.ignoreMainCompNames),
-        fuzzy: scheme.ignoreMainCompFuzzy === true
-      };
-    }
-    return readIgnoreFromSettings();
+    return { enabled: scheme.ignoreMainComp === true, names: parseIgnoreNames(scheme.ignoreMainCompNames), fuzzy: scheme.ignoreMainCompFuzzy === true };
   }
 
   // fuzzy=true 时为“包含式”部分匹配（名称含名单任一项即命中，仍忽略大小写）；
@@ -205,20 +154,20 @@ AELocalToolkit.organizer = (function () {
         }
         var compRule = findRuleByItemType(scheme, "CompItem");
         var compPath = compRule ? compRule.path : "Comp";
-        moveToFolder(item, folders[compPath], compPath, summary);
+        moveToFolder(item, folders["$" + compPath], compPath, summary);
         return;
       }
 
       if (item.mainSource instanceof SolidSource) {
         var solidRule = findRuleByItemType(scheme, "SolidSource");
         var solidPath = solidRule ? solidRule.path : "Solids";
-        moveToFolder(item, folders[solidPath], solidPath, summary);
+        moveToFolder(item, folders["$" + solidPath], solidPath, summary);
         return;
       }
 
       var ext = getFileExtension(item);
       var targetPath = (ext && extMap[ext]) ? extMap[ext] : scheme.fallbackPath;
-      moveToFolder(item, folders[targetPath], targetPath, summary);
+      moveToFolder(item, folders["$" + targetPath], targetPath, summary);
     } catch (e) {
       summary.errors++;
       summary.messages.push("Classify failed: " + item.name + " / " + e.toString());
@@ -256,7 +205,7 @@ AELocalToolkit.organizer = (function () {
 
   function normalizeScheme(scheme) {
     if (!scheme || !scheme.rules || !(scheme.rules instanceof Array)) {
-      scheme = defaultScheme;
+      throw new Error("整理方案缺少规则，请重新加载方案。");
     }
 
     var normalized = {
@@ -273,7 +222,7 @@ AELocalToolkit.organizer = (function () {
     for (var i = 0; i < scheme.rules.length; i++) {
       var rule = scheme.rules[i];
       var path = normalizePath(rule.path || rule.name || "");
-      if (!path) continue;
+      if (!path) throw new Error("整理规则缺少文件夹路径。");
       normalized.rules.push({
         path: path,
         itemTypes: rule.itemTypes || [],
@@ -297,9 +246,9 @@ AELocalToolkit.organizer = (function () {
   function collectTargetPaths(scheme) {
     var paths = {};
     for (var i = 0; i < scheme.rules.length; i++) {
-      paths[scheme.rules[i].path] = true;
+      paths["$" + scheme.rules[i].path] = true;
     }
-    paths[scheme.fallbackPath] = true;
+    paths["$" + scheme.fallbackPath] = true;
     return paths;
   }
 
@@ -322,10 +271,14 @@ AELocalToolkit.organizer = (function () {
       var folders = {};
       var allItems = [];
       var targetPaths = collectTargetPaths(scheme);
+      var compRule = findRuleByItemType(scheme, 'CompItem');
+      var solidRule = findRuleByItemType(scheme, 'SolidSource');
+      targetPaths['$' + (compRule ? compRule.path : 'Comp')] = true;
+      targetPaths['$' + (solidRule ? solidRule.path : 'Solids')] = true;
 
       for (var folderPath in targetPaths) {
-        if (targetPaths.hasOwnProperty(folderPath)) {
-          folders[folderPath] = getOrCreateFolderPath(project, rootFolder, folderPath);
+        if (Object.prototype.hasOwnProperty.call(targetPaths, folderPath)) {
+          folders[folderPath] = getOrCreateFolderPath(project, rootFolder, folderPath.slice(1));
         }
       }
 
@@ -352,16 +305,12 @@ AELocalToolkit.organizer = (function () {
       app.endUndoGroup();
     }
 
+    summary.ok = summary.ok && summary.errors === 0;
     return summary;
   }
 
-  function organizeProject() {
-    return organizeProjectWithScheme(defaultScheme);
-  }
 
   return {
-    organizeProject: organizeProject,
-    organizeProjectWithScheme: organizeProjectWithScheme,
-    defaultScheme: defaultScheme
+    organizeProjectWithScheme: organizeProjectWithScheme
   };
 })();

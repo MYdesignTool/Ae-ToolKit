@@ -1,6 +1,6 @@
-﻿// ============================================================================
+// ============================================================================
 // AE Local Toolkit — 通用工具模块 (client/js/util.js)
-// 提供状态栏/Toast/Debug 日志、AE 脚本求值封装、本地存储读写、JSON 加载，
+// 提供状态栏/Toast/Debug 日志、统一主机调用、确认对话框，
 // 以及路径/扩展名/类型/方案等各类规范化辅助函数。
 // 全部为全局函数，任意模块可按名直接调用。依赖 core.js 的 state/els。
 // ============================================================================
@@ -16,71 +16,59 @@
    var toast = document.createElement("div");
    toast.className = "toast" + (type === "error" ? " error" : type === "success" ? " success" : "");
    toast.textContent = message;
+   container.textContent = "";
    container.appendChild(toast);
    setTimeout(function () {
      toast.classList.add("out");
      setTimeout(function () { if (toast.parentNode) toast.parentNode.removeChild(toast); }, 300);
-   }, 1000);
+   }, type === "error" ? 6000 : 2400);
  }
 
- // 自定义输入对话框（替代原生 window.prompt，避免 CEP 标题栏显示乱码扩展路径）。
-// onConfirm(value) 中 value 为用户输入（已 trim），取消/关闭时为 null。
-function showInputDialog(title, defaultText, onConfirm) {
-  var modal = document.getElementById("inputModal");
-  if (!modal) { var fb = window.prompt(title, defaultText); if (onConfirm) onConfirm(fb); return; }
-  var titleEl = document.getElementById("inputModalTitle");
-  var field = document.getElementById("inputModalField");
-  var okBtn = document.getElementById("inputModalOk");
-  var cancelBtn = document.getElementById("inputModalCancel");
-  titleEl.textContent = title || "输入";
-  field.style.display = "";
-  field.value = defaultText || "";
-  modal.style.display = "flex";
-  field.focus();
-  field.select();
-  function done(val) {
-    modal.style.display = "none";
-    okBtn.onclick = null; cancelBtn.onclick = null; modal.onclick = null; field.onkeydown = null;
-    if (onConfirm) onConfirm(val);
+
+function showDialog(options, callback) {
+  var modal = $('inputModal'), previous = document.activeElement;
+  var ok = $('inputModalOk'), cancel = $('inputModalCancel'), field = $('inputModalField');
+  $('inputModalTitle').textContent = options.title || '确认操作';
+  $('confirmMessage').textContent = options.message || '';
+  $('confirmMessage').hidden = !options.message;
+  field.hidden = !options.input; field.value = options.value || '';
+  ok.textContent = options.confirmLabel || '确定';
+  ok.className = options.destructive ? 'danger' : 'primary';
+  modal.style.display = 'flex';
+  if (options.input) { field.focus(); field.select(); } else cancel.focus();
+  function done(accepted) {
+    modal.style.display = 'none';
+    ok.onclick = null; cancel.onclick = null; modal.onclick = null; modal.onkeydown = null;
+    callback(options.input ? (accepted ? field.value.trim() || null : null) : accepted);
+    if (previous && previous.isConnected && !previous.disabled) previous.focus();
   }
-  okBtn.onclick = function () { done(field.value.trim() || null); };
-  cancelBtn.onclick = function () { done(null); };
-  modal.onclick = function (e) { if (e.target === modal) done(null); };
-  field.onkeydown = function (e) {
-    if (e.key === "Enter") done(field.value.trim() || null);
-    else if (e.key === "Escape") done(null);
+  ok.onclick = function () { done(true); };
+  cancel.onclick = function () { done(false); };
+  modal.onclick = function (event) { if (event.target === modal) done(false); };
+  modal.onkeydown = function (event) {
+    if (event.key === 'Escape') { event.preventDefault(); done(false); }
+    if (event.key === 'Enter' && event.target === field) { event.preventDefault(); done(true); }
+    if (event.key === 'Tab') {
+      event.preventDefault();
+      var controls = options.input ? [field, cancel, ok] : [cancel, ok];
+      var index = controls.indexOf(document.activeElement);
+      controls[(index + (event.shiftKey ? -1 : 1) + controls.length) % controls.length].focus();
+    }
   };
 }
-
-// 自定义确认对话框（替代原生 window.confirm，同样规避乱码标题栏）。
-// onConfirm(result) 中 result 为 true(确定) / false(取消或关闭)。
-function showConfirmDialog(message, onConfirm) {
-  var modal = document.getElementById("inputModal");
-  if (!modal) { var fb = window.confirm(message); if (onConfirm) onConfirm(fb); return; }
-  var titleEl = document.getElementById("inputModalTitle");
-  var field = document.getElementById("inputModalField");
-  var okBtn = document.getElementById("inputModalOk");
-  var cancelBtn = document.getElementById("inputModalCancel");
-  titleEl.textContent = message || "确认";
-  field.style.display = "none";
-  field.value = "";
-  modal.style.display = "flex";
-  function done(val) {
-    modal.style.display = "none";
-    okBtn.onclick = null; cancelBtn.onclick = null; modal.onclick = null;
-    if (onConfirm) onConfirm(val);
-  }
-  okBtn.onclick = function () { done(true); };
-  cancelBtn.onclick = function () { done(false); };
-  modal.onclick = function (e) { if (e.target === modal) done(false); };
+function showInputDialog(title, value, callback) { showDialog({title:title,input:true,value:value,confirmLabel:'保存'}, callback); }
+function showConfirmDialog(message, callback, options) {
+  options = options || {}; options.message = message;
+  showDialog(options, callback);
 }
 
 function addDebug(type, detail) {
+    if (!state.debugMode) return;
     var time = new Date().toLocaleTimeString();
     state.debugEntries.unshift({
       time: time,
       type: type,
-      detail: typeof detail === "string" ? detail : JSON.stringify(detail, null, 2)
+      detail: String(typeof detail === "string" ? detail : JSON.stringify(detail, null, 2)).slice(0, 16000)
     });
     if (state.debugEntries.length > 80) state.debugEntries.length = 80;
     renderDebug();
@@ -89,85 +77,50 @@ function addDebug(type, detail) {
   function renderDebug() {
     if (!els.debugLog) return;
     els.debugLog.innerHTML = state.debugEntries.map(function (entry) {
-      return '<div class="debug-item"><strong>[' + entry.time + '] ' + entry.type + '</strong>\n' + entry.detail + '</div>';
+      return '<div class="debug-item"><strong>[' + entry.time + '] ' + escapeHtml(entry.type) + '</strong>\n' + escapeHtml(entry.detail) + '</div>';
     }).join("") || '<div class="selection-status">暂无 Debug 信息</div>';
   }
 
-  function escapeForEvalScript(value) {
-    return String(value)
-      .replace(/\\/g, "\\\\")
-      .replace(/'/g, "\\'")
-      .replace(/\r/g, "\\r")
-      .replace(/\n/g, "\\n");
-  }
-
-  function evalAe(script, callback) {
-    addDebug("evalScript", script);
-    if (window.__adobe_cep__ && window.__adobe_cep__.evalScript) {
+  // All bridge arguments use one JSON encoding; paths and percent signs stay literal.
+  function callHost(name, args, callback) {
+    if (!/^AELT_[a-zA-Z]+$/.test(name)) throw new Error('无效主机方法');
+    var script = name + '(' + (args || []).map(function (arg) {
+      return JSON.stringify(arg).replace(/\u2028/g, '\\u2028').replace(/\u2029/g, '\\u2029');
+    }).join(',') + ')';
+    addDebug('host', name);
+    if (!window.__adobe_cep__) {
+      callback({ ok: false, messages: ['请在 After Effects 的扩展面板中使用此功能。'] }); return;
+    }
+    function fail(error) { callback({ ok: false, messages: [String(error)] }); }
+    try {
       window.__adobe_cep__.evalScript(script, function (raw) {
-        var data = null;
-        addDebug("raw return", raw === "" ? "(empty string)" : raw);
+        var data;
         try {
           data = JSON.parse(raw);
-        } catch (e) {
-          data = { ok: false, messages: ["AE 返回结果解析失败。", String(raw)] };
-        }
-        addDebug("parsed return", data);
+          if (!data || typeof data.ok !== 'boolean') throw new Error('无效主机返回');
+        } catch (e) { fail('无法解析 AE 返回结果：' + String(raw)); return; }
+        addDebug('result', data);
         callback(data);
       });
-      return;
-    }
-
-    callback({
-      ok: false,
-      messages: ["当前不在 AE CEP 环境中，无法执行 AE 操作。"]
-    });
+    } catch (e) { fail(e); }
   }
-
-  function cloneData(value) {
-    return JSON.parse(JSON.stringify(value));
-  }
-
-  function loadJson(path, fallback) {
-    return new Promise(function (resolve) {
-      if (!window.fetch) {
-        addDebug("data fallback", path + " fetch unavailable");
-        resolve(cloneData(fallback));
-        return;
-      }
-
-      // 注意：在 CEP（CEF）中通过 fetch 读取 file:// 本地资源时，响应常常
-      // response.ok === false（status 为 0），但响应体仍是正常的 JSON。
-      // 因此不能仅凭 !response.ok 就判定失败；直接解析响应体，仅当文件缺失
-      // 或 JSON 解析出错时才回退到 fallback（changelog 的 fallback 为 null）。
-      fetch(path).then(function (response) {
-        return response.json();
-      }).then(function (data) {
-        addDebug("data loaded", path);
-        resolve(data);
-      }).catch(function (error) {
-        addDebug("data fallback", path + " / " + error.toString());
-        resolve(cloneData(fallback));
-      });
-    });
-  }
+  function cloneData(value) { return JSON.parse(JSON.stringify(value)); }
 
   function getUserExpressions() {
     var items = AELT.settings.get("userExpressions", []);
-    if (!(items instanceof Array)) return [];
-    return items;
+    return Array.isArray(items) ? items : [];
   }
 
-  function setUserExpressions(items) {
-    AELT.settings.set("userExpressions", items || []);
-    return true;
+  function setUserExpressions(items, callback) {
+    AELT.settings.set('userExpressions', items);
+    AELT.settings.persist(callback);
   }
 
-  function confirmAction(message, onConfirm) {
+  function confirmAction(message, onConfirm, options) {
     if (state.quietMode) { if (onConfirm) onConfirm(true); return; }
     showConfirmDialog(message, function (result) {
       if (onConfirm) onConfirm(result === true);
-    });
+    }, options);
   }
 
   function escapeHtml(value) {
@@ -218,29 +171,17 @@ function addDebug(type, detail) {
   }
 
   function normalizeScheme(raw) {
-    var scheme = cloneData(raw || fallbackRules);
-
-    if (scheme.folders && !scheme.rules) {
-      scheme.rules = scheme.folders.map(function (folder) {
-        return {
-          path: folder.path || folder.name,
-          itemTypes: folder.itemTypes || [],
-          extensions: folder.extensions || []
-        };
-      });
-    }
+    var scheme = cloneData(raw);
 
     scheme.id = scheme.id || createId("scheme");
     scheme.name = scheme.name || "整理方案";
-    scheme.fallbackPath = normalizePath(scheme.fallbackPath || scheme.fallbackFolder || "Footage");
+    scheme.fallbackPath = normalizePath(scheme.fallbackPath || "Footage");
     scheme.rules = (scheme.rules || []).map(function (rule) {
       return {
-        path: normalizePath(rule.path || rule.name),
+        path: normalizePath(rule.path),
         itemTypes: normalizeItemTypes(rule.itemTypes || []),
         extensions: normalizeExtensions(rule.extensions || [])
       };
-    }).filter(function (rule) {
-      return rule.path;
     });
     return scheme;
   }
@@ -251,10 +192,8 @@ AELT.util = {
   showToast: showToast,
   addDebug: addDebug,
   renderDebug: renderDebug,
-  escapeForEvalScript: escapeForEvalScript,
-  evalAe: evalAe,
+  callHost: callHost,
   cloneData: cloneData,
-  loadJson: loadJson,
   getUserExpressions: getUserExpressions,
   setUserExpressions: setUserExpressions,
   confirmAction: confirmAction,

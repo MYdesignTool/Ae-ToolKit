@@ -1,12 +1,12 @@
-﻿// ============================================================================
+// ============================================================================
 // AE Local Toolkit — 工程整理模块 (client/js/organizer.js)
 // 整理方案的读取/渲染/校验/保存/删除，以及一键整理逻辑。
-// 依赖 core.js 的 state/els/fallbackRules 与 util.js 的规范化函数。
+// 依赖 core.js 的 state/els/state.rules 与 util.js 的规范化函数。
 // ============================================================================
 
   // ==========================================================================
   // 全局整理文件夹（合成 / 固态层 / 未匹配素材）
-  // 这三项由所有整理方案共用，持久化于扩展目录 data/settings.json（随扩展一起拷贝），
+  // 这三项由所有整理方案共用，持久化于用户数据目录，
   // 主界面只配置素材规则。主界面渲染时剥离内部项目规则；整理/保存时再动态注入回 scheme，
   // 保证发给 host 的数据结构与旧版完全一致。
   // ==========================================================================
@@ -57,7 +57,7 @@
     if (els.fallbackFolderInput) els.fallbackFolderInput.value = folders.fallback;
   }
 
-  // 绑定设置页全局文件夹输入框，输入即持久化到扩展目录 data/settings.json（全局共用）。
+  // 绑定设置页全局文件夹输入框，输入即持久化到用户数据目录（全局共用）。
   function bindGlobalFolderInputs() {
     if (els.compFolderInput) {
       els.compFolderInput.addEventListener("input", function () {
@@ -82,7 +82,7 @@
         return state.organizerSchemes[i];
       }
     }
-    return state.organizerSchemes[0] || normalizeScheme(fallbackRules);
+    return state.organizerSchemes[0] || normalizeScheme(state.rules);
   }
 
   function getSchemeFromEditor() {
@@ -188,15 +188,8 @@
     els.ruleGrid.innerHTML = html || '<div class="selection-status">暂无规则</div>';
   }
 
-  // 确保 host 模块已加载：重新设置模块根目录（幂等），避免面板初始化顺序竞态导致
-  // 整理/读取方案时 organizer 模块尚未就绪。
-  function ensureModules(callback) {
-    evalAe('AELT_setModuleBase("' + escape(getExtensionRoot()) + '")', function () { callback(); });
-  }
-
   function loadOrganizerSchemesFromHost() {
-    ensureModules(function () {
-      evalAe("AELT_loadOrganizerSchemes()", function (result) {
+      callHost('AELT_loadOrganizerSchemes', [], function (result) {
         if (result.ok && result.schemes && result.schemes.length) {
           state.organizerSchemes = result.schemes.map(normalizeScheme);
           if (!state.organizerSchemes.some(function (scheme) { return scheme.id === state.selectedSchemeId; })) {
@@ -205,13 +198,12 @@
           renderRules();
           setStatus("已加载整理方案 " + state.organizerSchemes.length + " 套。");
         } else {
-          state.organizerSchemes = [normalizeScheme(fallbackRules)];
+          state.organizerSchemes = [normalizeScheme(state.rules)];
           state.selectedSchemeId = "preset-default";
           renderRules();
           setStatus("整理方案文件读取失败，已使用内置预设。");
         }
       });
-    });
   }
 
  function organizeProject() {
@@ -232,9 +224,7 @@
     if (els.organizeBtn) els.organizeBtn.disabled = true;
     showOrganizeProgress();
     setStatus("正在整理工程：" + scheme.name);
-    var script = "AELT_organizeProjectWithScheme('" + escape(escapeForEvalScript(JSON.stringify(scheme))) + "')";
-    ensureModules(function () {
-      evalAe(script, function (result) {
+    callHost('AELT_organizeProjectWithScheme', [scheme], function (result) {
         hideOrganizeProgress();
         if (els.organizeBtn) els.organizeBtn.disabled = false;
         if (!result.ok) {
@@ -245,7 +235,6 @@
         setStatus("整理完成：移动 " + result.moved + " 项，跳过 " + result.skipped + " 项，错误 " + result.errors + " 个" + ignoredMsg + "。");
         showToast("整理完成：移动 " + result.moved + " 项", "success");
       });
-    });
   }
 
   function showOrganizeProgress() {
@@ -288,8 +277,7 @@
       return;
     }
 
-    var script = "AELT_saveOrganizerScheme('" + escape(escapeForEvalScript(JSON.stringify(scheme))) + "')";
-    evalAe(script, function (result) {
+    callHost('AELT_saveOrganizerScheme', [scheme], function (result) {
       if (!result.ok) {
         setStatus((result.messages && result.messages[0]) || "方案保存失败。");
         return;
@@ -321,7 +309,7 @@
     confirmAction("确认删除整理方案“" + scheme.name + "”？", function (ok) {
       if (!ok) return;
 
-      evalAe("AELT_deleteOrganizerScheme('" + escapeForEvalScript(scheme.id) + "')", function (result) {
+      callHost('AELT_deleteOrganizerScheme', [scheme.id], function (result) {
         if (!result.ok) {
           setStatus((result.messages && result.messages[0]) || "方案删除失败。");
           return;
