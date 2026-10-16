@@ -15,3 +15,5 @@ ExtendScript 的 `host/lib/json.jsx` 是 ES3 兼容的严格 JSON 解析器，�
 Pages 只发布 index.html 与 assets/。安装器和 ZIP 使用程序目录及四个默认 JSON 的白名单，版本来自 changelog.json。安装器使用系统级 CEP 目录，仅 data 子目录授予安装用户的修改权限；更新前备份 data，保留个人文件，旧用户级及其他系统级清单校验扩展 ID 后重命名停用。网页无 CDN 运行时依赖；首屏粒子使用 WebGL，在离屏、隐藏及减少动态效果时停止逐帧渲染。
 
 验证：`node --test tests/*.test.cjs`；浏览器交互测试见 `tests/browser.cjs`，需要 Playwright。模拟测试不替代 AE 2023 / 新版 AE 回归。
+
+Host 启动按 UTF-8 读取已安装的文本模块后执行，不对自身模块使用 `$.evalFile`。真实 AE 中已复现后者对 launcher.jsx 抛出 Cannot convert，而 Node 模拟不会复现。启动失败时 Debug 临时可见并记录完整错误，不依赖尚未读取的 Debug 设置，也不写回用户偏好。

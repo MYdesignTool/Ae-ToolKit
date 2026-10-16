@@ -186,6 +186,14 @@
     var path = decodeURIComponent(url.pathname).replace(/\/client\/index\.html$/i, '');
     return url.hostname ? '//' + url.hostname + path : path.replace(/^\/([A-Za-z]:)/, '$1');
   }
+  function reportStartupFailure(stage, result) {
+    state.ready = false; state.startupError = true;
+    syncDebugTabVisibility();
+    addDebug('startup', { stage:stage, extensionRoot:getExtensionRoot(), result:result }, true);
+    setStatus('扩展启动失败，详细原因见 Debug。');
+    showToast('扩展启动失败，详细原因见 Debug', 'error');
+    document.querySelector('.tab[data-view="debug"]').click();
+  }
   function init() {
     cacheEls(); bindEvents(); bindScriptEvents(); bindExpressionEvents();
     positionTabIndicator(false);
@@ -200,7 +208,7 @@
     });
     function bootstrap() {
       callHost('AELT_bootstrap', [], function (result) {
-        if (!result.ok) { setStatus(result.messages.join(' ')); showToast('默认数据加载失败，请重新安装扩展', 'error'); return; }
+        if (!result.ok) { reportStartupFailure('bootstrap', result); return; }
         state.rules = normalizeScheme(result.rules);
         state.organizerSchemes = [cloneData(state.rules)]; state.selectedSchemeId = state.rules.id;
         state.expressions = result.expressions.concat(getUserExpressions()); state.changelog = result.changelog;
@@ -209,8 +217,11 @@
       });
     }
     callHost('AELT_setModuleBase', [getExtensionRoot()], function (result) {
-      if (!result.ok) { setStatus((result.messages || result.loadErrors || []).join(' ')); showToast('主机初始化失败，请检查扩展安装', 'error'); return; }
-      AELT.settings.load(function () { bootstrap(); });
+      if (!result.ok) { reportStartupFailure('host-loader', result); return; }
+      AELT.settings.load(function (loaded, settingsResult) {
+        if (!loaded) { reportStartupFailure('settings', settingsResult); return; }
+        bootstrap();
+      });
     });
     els.exportDataBtn.addEventListener('click', function () {
       AELT.settings.persist(function (saved) {

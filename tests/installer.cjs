@@ -17,6 +17,10 @@ run(setup,['/S']);
 assert.equal(text(path.join(installed,'data/settings.json')),oldSettings);assert.equal(text(path.join(installed,'data/organizer-schemes/custom.json')),oldScheme);assert.equal(text(path.join(legacy,'data/settings.json')),oldSettings);
 assert.equal(fs.existsSync(path.join(legacy,'CSXS/manifest.xml')),false);assert.ok(fs.readdirSync(path.join(legacy,'CSXS')).some(name=>name.startsWith('manifest.xml.before-')),'old copy disabled reversibly');
 assert.ok(fs.existsSync(path.join(installed,'CSXS/manifest.xml')));
+for(const part of ['host','client','CSXS']){
+ function verify(relative){for(const entry of fs.readdirSync(path.join(root,'extension',relative),{withFileTypes:true})){if(entry.name==='.gitkeep')continue;const file=path.join(relative,entry.name);if(entry.isDirectory())verify(file);else assert.ok(fs.readFileSync(path.join(installed,file)).equals(fs.readFileSync(path.join(root,'extension',file))),'installed bytes match: '+file);}}
+ verify(part);
+}
 const aclScript = "$sid=[Security.Principal.WindowsIdentity]::GetCurrent().User.Value; $rights=[Security.AccessControl.FileSystemRights]::Modify; [bool]([IO.Directory]::GetAccessControl('"+path.join(installed,'data').replace(/'/g,"''")+"').Access | Where-Object { $_.IdentityReference.Translate([Security.Principal.SecurityIdentifier]).Value -eq $sid -and ($_.FileSystemRights -band $rights) -eq $rights -and -not $_.IsInherited })";
 const acl=cp.execFileSync('powershell.exe',['-NoProfile','-NonInteractive','-Command',aclScript],{encoding:'utf8',windowsHide:true});assert.equal(acl.trim(),'True','the installing user can modify portable data without elevation');
 const userData=JSON.stringify({format:'ae-local-toolkit',version:1,settings:{quietMode:true,userExpressions:[{id:'user-personal',name:'Personal',code:'time % 1'}]},schemes:[{id:'scheme-personal',name:'Personal',rules:[]}]});

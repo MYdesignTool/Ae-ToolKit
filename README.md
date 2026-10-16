@@ -17,6 +17,8 @@
 
 更新日志条目的 `changes` 同时供扩展使用；可选 `highlights` 是发布页的简短摘要（`title`、`description`），未提供时直接展示该版本的 `changes`。部署找不到已发布版本的对应条目时会报错，不会拼接不同版本的信息。
 
+启动诊断回归运行 `node tests/startup.cjs`；有本机 AE 时可显式运行 `node tests/ae-host.cjs "完整路径/AfterFX.exe"`，使用独立实例和临时扩展副本验证真实 ExtendScript 加载。浏览器与 Node 模拟不能替代此项兼容性检查。
+
 CEP 内核由宿主 AE 携带，不能通过修改清单单独升级。发布页以原生元素呈现功能示意，不代表 AE 宿主实测结果。
 
 [GPLv3](extension/License.md)

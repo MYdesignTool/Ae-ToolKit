@@ -59,7 +59,7 @@ test('recovering a missing portable file restores settings and presets together'
 
 test('a read-only extension never silently moves its data elsewhere',()=>{
  const env=storage();env.fault.open=(path,mode)=>mode==='w';
- const result=JSON.parse(env.call('AELocalToolkit.storage.loadSettings()'));assert.equal(result.ok,false);assert.match(result.messages[0],/可写/);assert.ok(!env.files.has('/user/AE Local Toolkit/settings.json'));assert.ok(!env.files.has(canonical));
+ const result=JSON.parse(env.call('AELocalToolkit.storage.loadSettings()'));assert.equal(result.ok,false);assert.match(result.messages[0],/无法写入/);assert.ok(!env.files.has('/user/AE Local Toolkit/settings.json'));assert.ok(!env.files.has(canonical));
 });
 
 test('invalid legacy data stops migration without replacing it with defaults',()=>{

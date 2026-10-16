@@ -1,18 +1,26 @@
 /* CEP entry. The panel supplies its own root once; no global directory scan. */
 var AELocalToolkit = AELocalToolkit || {};
 AELocalToolkit.moduleBase = null;
+AELocalToolkit.ready = false;
 AELocalToolkit.loadErrors = [];
 
 AELocalToolkit.returnResult = function (result) {
-  return AELocalToolkit.json.stringify(result);
+  if (AELocalToolkit.json) return AELocalToolkit.json.stringify(result);
+  // Startup errors must survive failure of the JSON module itself.
+  var text = (result.messages || AELocalToolkit.loadErrors).join('\n');
+  var quoted = '"' + String(text).replace(/[\\"\u0000-\u001f]/g, function (c) {
+    return '\\u' + ('0000' + c.charCodeAt(0).toString(16)).slice(-4);
+  }) + '"';
+  return '{"ok":false,"messages":[' + quoted + ']}';
 };
 AELocalToolkit.error = function (error) {
   return AELocalToolkit.returnResult({ ok: false, messages: [String(error)] });
 };
 function AELT_setModuleBase(path) {
-  var root = new Folder(path);
+  var root, file = null;
   AELocalToolkit.loadErrors = [];
   try {
+    root = new Folder(path);
     if (!new File(root.fullName + '/CSXS/manifest.xml').exists) throw new Error('扩展根目录无效');
     if (AELocalToolkit.moduleBase === root.fullName && AELocalToolkit.ready) {
       return AELocalToolkit.returnResult({ ok: true, moduleBase: root.fullName });
@@ -22,19 +30,26 @@ function AELT_setModuleBase(path) {
     var modules = ['lib/json.jsx', 'modules/storage.jsx', 'modules/organizer.jsx', 'modules/expressions.jsx', 'modules/launcher.jsx'];
     var keys = ['json', 'storage', 'organizer', 'expressions', 'launcher'];
     for (var i = 0; i < modules.length; i++) {
-      var file = new File(root.fullName + '/host/' + modules[i]);
+      file = new File(root.fullName + '/host/' + modules[i]);
       if (!file.exists) throw new Error('缺少模块：' + modules[i]);
       AELocalToolkit[keys[i]] = null;
-      $.evalFile(file);
+      // These shipped text modules are UTF-8. Reading explicitly avoids evalFile's
+      // path/locale conversion differences; no directory scan or temp copy is needed.
+      file.encoding = 'UTF-8';
+      if (!file.open('r')) throw new Error('无法读取模块：' + file.error);
+      var source;
+      try { source = file.read(); } finally { file.close(); }
+      eval(source.replace(/^\uFEFF/, ''));
       if (!AELocalToolkit[keys[i]]) throw new Error("模块未执行：" + modules[i]);
     }
     AELocalToolkit.ready = true;
     return AELocalToolkit.returnResult({ ok: true, moduleBase: root.fullName });
   } catch (e) {
-    AELocalToolkit.loadErrors.push(String(e));
-    // The JSON module can itself be missing; this fixed response requires no serializer.
-    if (!AELocalToolkit.json) return '{"ok":false,"messages":["JSON 模块加载失败，请重新安装扩展。"]}';
-    return AELocalToolkit.error(e);
+    AELocalToolkit.ready = false;
+    var message = (file ? file.fsName + '\n' : '') + String(e);
+    if (e.line) message += '\nLine: ' + e.line;
+    AELocalToolkit.loadErrors.push(message);
+    return AELocalToolkit.returnResult({ ok:false, messages:[message], loadErrors:AELocalToolkit.loadErrors });
   }
 }
 function AELT_ping() {

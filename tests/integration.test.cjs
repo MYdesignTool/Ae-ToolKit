@@ -27,13 +27,17 @@ test('old folder-format schemes are migrated only at the storage boundary',()=>{
  const env=storage();env.files.set('/extension/data/organizer-schemes/old.json','{"id":"scheme-v1","name":"v1","folders":[{"name":"Images","extensions":["PNG"]}]}');
  const result=env.call('AELocalToolkit.storage.listSchemes()');assert.equal(result.length,2);assert.equal(result[1].rules[0].path,'Images');
 });
-test('the actual host bootstrap loads exactly one ordered copy of each module',()=>{
+test('host loads ordered UTF-8 module text without evalFile path conversion',()=>{
  const env=storage();env.files.set('/extension/CSXS/manifest.xml','manifest');for(const file of ['default-expressions.json','changelog.json'])env.files.set('/extension/data/'+file,source('extension/data/'+file));
- const modules=['lib/json.jsx','modules/storage.jsx','modules/organizer.jsx','modules/expressions.jsx','modules/launcher.jsx'];for(const file of modules)env.files.set('/extension/host/'+file,'module');
- let loads=0;env.context.$={evalFile:file=>{loads++;run(env.context,file.fullName.replace('/extension/','extension/'));}};env.context.app={version:'23.0'};run(env.context,'extension/host/index.jsx');
- assert.equal(JSON.parse(env.call('AELT_setModuleBase("/extension")')).ok,true);assert.equal(loads,5);assert.equal(JSON.parse(env.call('AELT_bootstrap()')).expressions.length,2);assert.equal(JSON.parse(env.call('AELT_setModuleBase("/extension")')).ok,true);assert.equal(loads,5);
- env.context.AELocalToolkit.ready=false;env.context.$.evalFile=()=>{};assert.equal(JSON.parse(env.call('AELT_setModuleBase("/extension")')).ok,false);assert.equal(env.context.AELocalToolkit.ready,false);
+ const modules=['lib/json.jsx','modules/storage.jsx','modules/organizer.jsx','modules/expressions.jsx','modules/launcher.jsx'];for(const file of modules)env.files.set('/extension/host/'+file,source('extension/host/'+file));
+ const reads=[],read=env.context.File.prototype.read;env.context.File.prototype.read=function(){if(this.fullName.includes('/host/')){assert.equal(this.encoding,'UTF-8');reads.push(this.fullName);}return read.call(this);};
+ env.context.$={evalFile:()=>{throw Error('Cannot convert to encoded path');}};env.context.app={version:'24.0'};run(env.context,'extension/host/index.jsx');
+ assert.equal(JSON.parse(env.call('AELT_setModuleBase("/extension")')).ok,true);assert.equal(reads.length,5);assert.equal(JSON.parse(env.call('AELT_bootstrap()')).expressions.length,2);assert.equal(JSON.parse(env.call('AELT_setModuleBase("/extension")')).ok,true);assert.equal(reads.length,5);
+ env.context.AELocalToolkit.ready=false;env.files.set('/extension/host/modules/launcher.jsx','AELocalToolkit.launcher = null;');const failed=JSON.parse(env.call('AELT_setModuleBase("/extension")'));assert.equal(failed.ok,false);assert.match(failed.messages[0],/launcher.jsx/);assert.equal(env.context.AELocalToolkit.ready,false);
+ env.context.badLoaderMessage="Bad \"quoted\" JSON loader\nline two";env.files.set('/extension/host/lib/json.jsx','throw new Error(badLoaderMessage);');
+ const missingJson=JSON.parse(env.call('AELT_setModuleBase("/extension")'));assert.equal(missingJson.ok,false);assert.match(missingJson.messages[0],/lib\/json.jsx/);assert.ok(missingJson.messages[0].includes('quoted'));assert.equal(JSON.parse(env.call('AELT_ping()')).ok,false);
 });
+
 test('failed earlier save resolves newer waiters with failure instead of hanging the editor',()=>{
  const pending=[];const ctx=context({AELT:{},cloneData:v=>JSON.parse(JSON.stringify(v)),els:{},setStatus:()=>{},showToast:()=>{},clearTimeout:()=>{},setTimeout:()=>1,callHost:(name,args,cb)=>name==='AELT_loadSettings'?cb({ok:true,settings:{}}):pending.push(cb)});run(ctx,'extension/client/js/settings.js');
  require('node:vm').runInContext('AELT.settings.load(function(){});AELT.settings.set("folder","one");AELT.settings.persist();AELT.settings.set("folder","two");AELT.settings.persist(function(result){saved=result.ok;});',ctx);pending[0]({ok:false,messages:['disk full']});assert.equal(ctx.saved,false);

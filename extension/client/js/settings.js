@@ -7,7 +7,7 @@ AELT.settings = (function () {
       if (loaded) { cache = result.settings; savedRevision = revision = 0; }
       else { setStatus(result.messages.join(' ')); showToast('设置加载失败，已停止写入以保护原数据', 'error'); }
       if (els.dataLocation) els.dataLocation.textContent = result.path || '设置不可用';
-      callback(result.ok);
+      callback(result.ok, result);
     });
   }
   function set(key, value) {

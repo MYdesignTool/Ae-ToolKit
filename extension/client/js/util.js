@@ -62,8 +62,8 @@ function showConfirmDialog(message, callback, options) {
   showDialog(options, callback);
 }
 
-function addDebug(type, detail) {
-    if (!state.debugMode) return;
+function addDebug(type, detail, force) {
+    if (!state.debugMode && !force) return;
     var time = new Date().toLocaleTimeString();
     state.debugEntries.unshift({
       time: time,

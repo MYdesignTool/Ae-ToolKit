@@ -24,7 +24,7 @@ AELocalToolkit.storage = (function () {
     var targetPath = file.fullName, targetName = file.name;
     var backup = new File(targetPath + '.bak');
     temp.encoding = 'UTF-8';
-    if (!temp.open('w')) throw new Error('无法写入：' + file.fsName + '。请将整个扩展放到可写的用户级 CEP 目录。');
+    if (!temp.open('w')) throw new Error('无法写入：' + file.fsName + '。请确认 AE 已允许脚本写文件，且当前 Windows 用户对扩展 data 目录有写入权限。');
     var written, closed;
     try { written = temp.write(json.stringify(data)); } finally { closed = temp.close(); }
     if (!written || !closed) { temp.remove(); throw new Error('写入失败：' + file.fsName); }

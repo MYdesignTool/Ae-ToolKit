@@ -28,7 +28,7 @@
     var debugTab = document.querySelector('.tab[data-view="debug"]');
     var debugView = document.getElementById("debugView");
     if (!debugTab || !debugView) return;
-    if (state.debugMode) {
+    if (state.debugMode || state.startupError) {
       debugTab.style.display = "";
     } else {
       debugTab.style.display = "none";
@@ -130,8 +130,8 @@
 
   function pingHost() {
     callHost('AELT_ping', [], function (result) {
+      addDebug('connection', result, true);
       if (result.loadErrors && result.loadErrors.length) {
-        addDebug("host load errors", result.loadErrors);
         setStatus("Host 模块加载失败，详见 Debug。");
         showToast("Host 模块加载失败", "error");
         return;
