@@ -11,6 +11,7 @@ if (-not $compiler) {
   }
 }
 if (-not $compiler) { throw 'NSIS is required. Install it explicitly, then rerun this build.' }
+$installerName = 'aetoolkit-v' + $version + '-installer.exe'
 $output = Join-Path $PSScriptRoot 'dist'
 New-Item -ItemType Directory -Force -Path $output | Out-Null
 Push-Location $PSScriptRoot
@@ -35,4 +36,4 @@ try {
 } finally {
   if (Test-Path -LiteralPath $stagingRoot) { Remove-Item -LiteralPath $stagingRoot -Recurse -Force }
 }
-Get-FileHash -Algorithm SHA256 -LiteralPath (Join-Path $output 'aetoolkit-installer.exe'), (Join-Path $output 'aetoolkit-extension.zip') | Format-Table -AutoSize
+Get-FileHash -Algorithm SHA256 -LiteralPath (Join-Path $output $installerName), (Join-Path $output 'aetoolkit-extension.zip') | Format-Table -AutoSize

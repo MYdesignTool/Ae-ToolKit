@@ -2,7 +2,7 @@
 
 显式安装 NSIS 后执行 `build-installer.cmd` 或 `./build.ps1`。脚本不会下载或安装依赖。版本来自 `../data/changelog.json`，必须与 manifest 一致。
 
-产物在 dist/：`aetoolkit-installer.exe` 和 `aetoolkit-extension.zip`。只打包 CSXS、client、host、许可证、README 和四个默认 JSON；不包含便携用户数据、迁移源、备份、个人脚本或开发文件。输出 SHA256，不上传、不运行安装器。
+产物在 dist/：`aetoolkit-v<version>-installer.exe` 和 `aetoolkit-extension.zip`。安装器文件名中的版本号从 `../data/changelog.json` 自动读取，例如 `aetoolkit-v0.3.1-installer.exe`；签名脚本使用同一个版本源定位文件。只打包 CSXS、client、host、许可证、README 和四个默认 JSON；不包含便携用户数据、迁移源、备份、个人脚本或开发文件。输出 SHA256，不上传、不运行安装器。
 
 安装器固定使用系统级 CEP 目录：`C:\Program Files (x86)\Common Files\Adobe\CEP\extensions\AeLocalToolkit`。直接运行即可覆盖更新，更新前备份完整 data；个人配置不在覆盖清单内。优先迁移旧用户级位置的数据，兼容另一系统级位置和注册表记录的位置，确认扩展 ID 后复制数据并停用旧清单，不调用旧版卸载器。卸载保留 data、backups 和扩展根目录额外的个人脚本目录。
 

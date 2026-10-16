@@ -17,7 +17,7 @@
   !define LEGACYUSER_DIR "$APPDATA\Adobe\CEP\extensions\${EXT_ID}"
   !define LEGACY32_DIR "$COMMONFILES32\Adobe\CEP\extensions\${EXT_ID}"
   !define LEGACY64_DIR "$COMMONFILES64\Adobe\CEP\extensions\${EXT_ID}"
-  OutFile "dist\aetoolkit-installer.exe"
+  OutFile "dist\aetoolkit-v${VERSION}-installer.exe"
   ; Install program files system-wide; only data/ is writable without elevation.
   RequestExecutionLevel admin
 !endif

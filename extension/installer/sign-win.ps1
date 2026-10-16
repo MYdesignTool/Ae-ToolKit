@@ -15,7 +15,9 @@ if (-not (Get-Command $signtool -ErrorAction SilentlyContinue)) {
   exit 1
 }
 
-$files = @((Join-Path $PSScriptRoot "dist\aetoolkit-installer.exe"))
+$version = (Get-Content -LiteralPath (Join-Path $PSScriptRoot '..\data\changelog.json') -Raw | ConvertFrom-Json).version
+if ($version -notmatch '^\d+\.\d+\.\d+$') { throw 'Invalid changelog version' }
+$files = @((Join-Path $PSScriptRoot ('dist\aetoolkit-v' + $version + '-installer.exe')))
 foreach ($f in $files) {
   if (-not (Test-Path $f)) { Write-Error "File not found: $f"; exit 1 }
   & $signtool sign /fd SHA256 /td SHA256 /tr $TimestampServer /f $CertPath /p $Password $f
