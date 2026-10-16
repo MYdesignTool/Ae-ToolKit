@@ -84,10 +84,6 @@
   );
   revealEls.forEach(function (el) {
     el.classList.add("reveal");
-    if (document.documentElement.hasAttribute("data-language-continued")) {
-      var rect = el.getBoundingClientRect();
-      if (rect.bottom > 0 && rect.top < innerHeight) el.classList.add("in");
-    }
   });
 
   // 同组元素按出现顺序错落延迟

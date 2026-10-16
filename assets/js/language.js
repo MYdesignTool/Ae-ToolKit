@@ -20,12 +20,18 @@
   document.addEventListener('DOMContentLoaded', function () {
     var link = document.querySelector('[data-language-switch]');
     if (!link) return;
-    var next = current === 'en' ? 'zh' : 'en';
-    var destination = new URL(next === 'en' ? 'en/' : './', root);
-    destination.search = location.search;
-    destination.searchParams.set('lang', next);
-    destination.hash = location.hash;
-    link.href = destination.href;
+    var next, destination;
+    function updateLink() {
+      current = document.documentElement.lang === 'en' ? 'en' : 'zh';
+      next = current === 'en' ? 'zh' : 'en';
+      destination = new URL(next === 'en' ? 'en/' : './', root);
+      destination.search = location.search;
+      destination.searchParams.set('lang', next);
+      destination.hash = location.hash;
+      link.href = destination.href;
+    }
+    updateLink();
+    document.addEventListener('site-language-change', updateLink);
     link.addEventListener('click', function () {
       var section;
       document.querySelectorAll('section[id]').forEach(function (item) {

@@ -92,7 +92,7 @@
     }
   `;
   let gl, program, uniforms, buffer, geometry, count = 0;
-  let width = 1, height = 1, dpr = 1, frame = 0, visible = true, time = root.hasAttribute('data-language-continued') ? 1.65 : 0, last = 0;
+  let width = 1, height = 1, dpr = 1, frame = 0, visible = true, time = 0, last = 0;
   let pointer = [0, 0, 0], targetPointer = [0, 0, 0];
   let ripples = new Float32Array(16), rippleIndex = 0;
   const flow = new Float32Array(32);
@@ -220,6 +220,13 @@
   // Pointer light stays within the letter strokes, following the site's blue-violet palette.
   const title = document.querySelector('.hero-title'), lines = [...title.querySelectorAll('.title-line')];
   for (const line of lines) { const shine=document.createElement('span'); shine.className='title-shine'; shine.setAttribute('aria-hidden','true'); shine.textContent=line.textContent; line.appendChild(shine); }
+  document.addEventListener('site-language-change', () => {
+    for (const line of lines) {
+      const shine = line.querySelector('.title-shine');
+      shine.textContent = [...line.childNodes].filter(n => n.nodeType === 3).map(n => n.nodeValue).join('');
+    }
+    hideLight(true);
+  });
   const finePointer = matchMedia('(hover: hover) and (pointer: fine)');
   let lightFrame = 0, lightLast = 0, lightActive = false, lightAlpha = 0;
   let lightX = 0, lightY = 0, aimX = 0, aimY = 0;

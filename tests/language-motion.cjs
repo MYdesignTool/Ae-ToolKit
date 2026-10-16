@@ -1,48 +1,137 @@
-const fs=require('node:fs'),path=require('node:path'),assert=require('node:assert/strict');
-const {chromium}=require('playwright'),{server}=require('./site.cjs'),{root}=require('./helpers.cjs');
-const out=path.join(root,'.artifacts/language-motion');fs.mkdirSync(out,{recursive:true});
-function observe(){
- window.__languageMotion={ready:[],finished:0,entries:[]};
- addEventListener('pagereveal',e=>{
-  if(!e.viewTransition)return;
-  e.viewTransition.ready.then(()=>{
-   const r=document.documentElement,n=getComputedStyle(r,'::view-transition-new(root)'),o=getComputedStyle(r,'::view-transition-old(root)');
-   window.__languageMotion.ready.push({direction:r.getAttribute('data-language-transition'),newName:n.animationName,oldName:o.animationName,duration:n.animationDuration,clip:n.clipPath,transform:n.transform,headerGroup:getComputedStyle(r,'::view-transition-group(language-header)').animationName});
-  }).catch(()=>{});
-  e.viewTransition.finished.then(()=>window.__languageMotion.finished++,()=>{});
- });
- const animate=Element.prototype.animate;
- Element.prototype.animate=function(frames,options){window.__languageMotion.entries.push({id:this.id,frames,duration:options.duration});return animate.call(this,frames,options);};
- const context=HTMLCanvasElement.prototype.getContext;
- HTMLCanvasElement.prototype.getContext=function(type,...args){const gl=context.call(this,type,...args);if(type!=='webgl'||!gl||this.id!=='logo-particles')return gl;const names=new Map(),get=gl.getUniformLocation.bind(gl),set=gl.uniform1f.bind(gl);gl.getUniformLocation=(p,n)=>{const l=get(p,n);names.set(l,n);return l};gl.uniform1f=(l,v)=>{if(names.get(l)==='u_intro'&&window.__firstIntro===undefined)window.__firstIntro=v;return set(l,v)};return gl;};
+// Language motion must keep the actual glass / GPU surfaces alive and never snapshot the header.
+const fs = require('node:fs'), path = require('node:path'), assert = require('node:assert/strict');
+const {chromium} = require('playwright');
+const {server} = require('./site.cjs');
+const {root} = require('./helpers.cjs');
+const out = path.join(root, '.artifacts/language-motion');
+fs.mkdirSync(out, {recursive:true});
+function observe() {
+  window.__languageAnimations = [];
+  const animate = Element.prototype.animate;
+  Element.prototype.animate = function (frames, options) {
+    const animation = animate.call(this, frames, options);
+    window.__languageAnimations.push({element:this, frames, options, animation});
+    if (window.__pauseEntry && options.duration === 300) { animation.pause(); animation.currentTime = 100; }
+    return animation;
+  };
 }
-async function main(){
- await new Promise(r=>server.listen(0,'127.0.0.1',r));const base='http://127.0.0.1:'+server.address().port+'/Ae-ToolKit/';
- const browser=await chromium.launch({channel:'msedge',headless:true,args:['--enable-unsafe-swiftshader']});const errors=[];
- try{
-  const c=await browser.newContext({locale:'zh-CN',viewport:{width:1280,height:900}}),p=await c.newPage();await p.addInitScript(observe);p.on('pageerror',e=>errors.push(e.message));
-  await p.goto(base+'?lang=zh');await p.waitForFunction(()=>document.getElementById('particle-logo').dataset.renderer==='webgl');await p.waitForTimeout(1700);
-  await p.locator('[data-language-switch]').click();await p.waitForFunction(()=>__languageMotion.ready.length>0);
-  let trace=await p.evaluate(()=>__languageMotion.ready.at(-1));assert.equal(trace.newName,'language-in');assert.equal(trace.oldName,'language-out');assert.equal(trace.direction,'en');assert.equal(trace.clip,'none');assert.equal(trace.duration,'0.32s');assert.equal(trace.headerGroup,'none','navigation bar stays steady');
-  await p.screenshot({path:path.join(out,'native-to-en-during.png'),animations:'allow'});
-  await p.waitForFunction(()=>!document.documentElement.hasAttribute('data-language-transition'));await p.waitForFunction(()=>window.__firstIntro!==undefined);assert.equal(await p.evaluate(()=>__firstIntro),1,'language switch keeps the particle logo assembled');
-  assert.equal(await p.locator('html').getAttribute('lang'),'en');assert.equal(await p.evaluate(()=>sessionStorage.getItem('language-transition')),null);assert.equal(await p.locator('html').getAttribute('data-language-arrival'),null);assert.equal(await p.locator('.site-header').evaluate(e=>e.style.viewTransitionName),'');
-  await p.screenshot({path:path.join(out,'native-to-en-finished.png')});
-  await p.locator('#updates').evaluate(e=>scrollTo(0,e.getBoundingClientRect().top+scrollY-112));await p.locator('[data-language-switch]').click();await p.waitForFunction(()=>__languageMotion.ready.some(t=>t.direction==='zh'));
-  trace=await p.evaluate(()=>__languageMotion.ready.at(-1));assert.equal(trace.direction,'zh');assert.equal(trace.newName,'language-in');assert.equal(new URL(p.url()).hash,'#updates');
-  await p.screenshot({path:path.join(out,'native-to-zh-during.png'),animations:'allow'});await p.waitForFunction(()=>!document.documentElement.hasAttribute('data-language-transition'));
-  // A theme change after language navigation must still use its original circular reveal.
-  await p.evaluate(()=>{const start=document.startViewTransition.bind(document);document.startViewTransition=fn=>{const t=start(fn);t.ready.then(()=>window.__themeAnimation=getComputedStyle(document.documentElement,'::view-transition-new(root)').animationName).catch(()=>{});return t;};});
-  await p.locator('#theme-toggle').click();await p.waitForFunction(()=>window.__themeAnimation);assert.equal(await p.evaluate(()=>__themeAnimation),'theme-in');await p.waitForTimeout(650);
-  assert.equal(await p.locator('html').getAttribute('data-theme'),'dark');await p.locator('[data-language-switch]').click();await p.waitForFunction(()=>document.documentElement.lang==='en');await p.waitForFunction(()=>!document.documentElement.hasAttribute('data-language-transition'));assert.equal(await p.locator('html').getAttribute('data-theme'),'dark');
-  await p.goBack();await p.waitForFunction(()=>document.documentElement.lang==='zh-CN');await p.waitForFunction(()=>!document.documentElement.hasAttribute('data-language-transition'));await p.locator('[data-language-switch]').click();await p.waitForFunction(()=>document.documentElement.lang==='en');await p.waitForFunction(()=>!document.documentElement.hasAttribute('data-language-transition'));
-  await c.close();
-  // No navigation transition API: keep normal navigation and animate only the incoming content.
-  const fallback=await browser.newContext({locale:'zh-CN',viewport:{width:390,height:884}}),f=await fallback.newPage();await f.addInitScript(()=>{Object.defineProperty(window,'PageSwapEvent',{value:undefined,configurable:true});});await f.addInitScript(observe);f.on('pageerror',e=>errors.push(e.message));await f.goto(base+'?lang=zh');await f.locator('[data-language-switch]').click();await f.waitForFunction(()=>document.documentElement.lang==='en'&&__languageMotion.entries.length>0);assert.ok(await f.evaluate(()=>__languageMotion.entries.some(e=>e.duration===320&&e.frames[0].transform==='translateX(22px)')));await f.waitForFunction(()=>!document.documentElement.hasAttribute('data-language-arrival'));assert.ok(await f.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));await f.screenshot({path:path.join(out,'fallback-en-mobile.png')});await fallback.close();
-  const reduced=await browser.newContext({locale:'zh-CN',reducedMotion:'reduce'}),r=await reduced.newPage();await r.addInitScript(observe);r.on('pageerror',e=>errors.push(e.message));await r.goto(base+'?lang=zh');await r.locator('[data-language-switch]').click();await r.waitForFunction(()=>document.documentElement.lang==='en');assert.deepEqual(await r.evaluate(()=>__languageMotion.entries),[]);assert.equal(await r.locator('html').getAttribute('data-language-transition'),null);assert.equal(await r.evaluate(()=>sessionStorage.getItem('language-transition')),null);await reduced.close();
-  // Embedded browsers may expose the API but decline native transitions inside an iframe.
-  const embedded=await browser.newContext({locale:'zh-CN'}),host=await embedded.newPage();await host.addInitScript(observe);host.on('pageerror',e=>errors.push(e.message));await host.setContent('<iframe src="'+base+'?lang=zh" style="width:390px;height:844px"></iframe>');let child=host.frames().find(frame=>frame.url().startsWith(base));assert.ok(child);await child.locator('[data-language-switch]').click();await child.waitForFunction(()=>document.documentElement.lang==='en'&&(__languageMotion.ready.length>0||__languageMotion.entries.length>0));await child.waitForFunction(()=>!document.documentElement.hasAttribute('data-language-arrival'));await embedded.close();
-  assert.deepEqual(errors,[]);console.log('Language motion passed: native directional dissolve, no circular clip, assembled particle continuity, retained section/theme, back navigation and re-entry, mobile fallback, reduced motion and clean state.');
- }finally{await browser.close();server.close();}
+async function main() {
+  await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
+  const base = process.env.SITE_URL || 'http://127.0.0.1:' + server.address().port + '/Ae-ToolKit/';
+  const browser = await chromium.launch({channel:'msedge', headless:true, args:['--enable-unsafe-swiftshader']});
+  const errors = [];
+  try {
+    const context = await browser.newContext({locale:'zh-CN', viewport:{width:1280, height:900}});
+    const page = await context.newPage();
+    await page.addInitScript(observe);
+    page.on('pageerror', error => errors.push(error.message));
+    await page.goto(base + (base.includes('?') ? '&' : '?') + 'lang=zh');
+    await page.waitForFunction(() => document.getElementById('particle-logo').dataset.renderer === 'webgl');
+    await page.evaluate(() => {
+      window.__surfaces = ['.site-header', '.page-bg', '#logo-particles', '.feature-card', '#glass-optics-0'].map(q => document.querySelector(q));
+      window.__context = document.querySelector('#logo-particles').getContext('webgl');
+    });
+    for (const theme of ['light', 'dark']) {
+      await page.evaluate(theme => { document.documentElement.dataset.theme = theme; localStorage.setItem('theme', theme); }, theme);
+      await page.evaluate(() => scrollTo({top:0, behavior:'instant'}));
+      await page.waitForTimeout(450);
+      await page.screenshot({path:path.join(out, 'live-glass-' + theme + '-before.png')});
+      await page.evaluate(() => window.__pauseEntry = true);
+      await page.locator('[data-language-switch]').click();
+      await page.waitForFunction(() => document.documentElement.lang === 'en');
+      await page.screenshot({path:path.join(out, 'live-glass-' + theme + '-during.png'), animations:'allow'});
+      const state = await page.evaluate(() => ({
+        identities: ['.site-header', '.page-bg', '#logo-particles', '.feature-card', '#glass-optics-0'].map((q, i) => document.querySelector(q) === window.__surfaces[i]),
+        gpu: document.querySelector('#logo-particles').getContext('webgl') === window.__context,
+        snapshot: !!document.querySelector(':root').getAnimations().find(a => a.effect?.pseudoElement?.startsWith('::view-transition')),
+        headerAnimations: window.__languageAnimations.filter(a => a.element.matches('.site-header, .brand, .page-bg, #logo-particles')).length,
+        headerFilter: getComputedStyle(document.querySelector('.site-header')).filter,
+        headerTransform: getComputedStyle(document.querySelector('.site-header')).transform,
+        blurFrames: window.__languageAnimations.some(a => a.frames.some(f => f.filter)),
+        title: document.querySelector('.title-line').childNodes[0].nodeValue,
+        shine: document.querySelector('.title-shine').textContent,
+        asset: document.querySelector('.logo-icon').src,
+        example: document.querySelector('#code-view').textContent
+      }));
+      assert.ok(state.identities.every(Boolean), 'all original glass, background, canvas and refraction objects survive');
+      assert.ok(state.gpu, 'the same WebGL context remains alive');
+      assert.equal(state.snapshot, false); assert.equal(state.headerAnimations, 0);
+      assert.equal(state.headerFilter, 'none');
+      assert.equal(state.blurFrames, false); assert.equal(state.title, state.shine);
+      assert.ok(state.asset.includes('/Ae-ToolKit/assets/')); assert.ok(state.example.includes('Asset organization'));
+      await page.evaluate(() => { window.__pauseEntry = false; __languageAnimations.forEach(a => { if (a.animation.playState === 'paused') a.animation.play(); }); });
+      await page.waitForFunction(() => !document.documentElement.hasAttribute('data-language-transition'));
+      await page.locator('#updates').evaluate(el => scrollTo({top:el.getBoundingClientRect().top + scrollY - 112, behavior:'instant'}));
+      await page.locator('[data-language-switch]').click();
+      await page.waitForFunction(() => document.documentElement.lang === 'zh-CN' && !document.documentElement.hasAttribute('data-language-transition'));
+      assert.equal(new URL(page.url()).hash, '#updates');
+      assert.ok(Math.abs(await page.locator('#updates').evaluate(el => el.getBoundingClientRect().top) - 112) < 3, 'localized section keeps its viewport position');
+      assert.ok((await page.locator('#code-view').textContent()).includes('素材整理'));
+      await page.goBack();
+      await page.waitForFunction(() => document.documentElement.lang === 'en' && !document.documentElement.hasAttribute('data-language-transition'));
+      await page.goForward();
+      await page.waitForFunction(() => document.documentElement.lang === 'zh-CN' && !document.documentElement.hasAttribute('data-language-transition'));
+    }
+    // Back during the incoming animation must not leave the URL and language out of sync.
+    await page.evaluate(() => window.__pauseEntry = true);
+    await page.locator('[data-language-switch]').click();
+    await page.waitForFunction(() => document.documentElement.lang === 'en');
+    await page.goBack();
+    await page.evaluate(() => { window.__pauseEntry = false; __languageAnimations.forEach(a => { if (a.animation.playState === 'paused') a.animation.play(); }); });
+    await page.waitForFunction(() => document.documentElement.lang === 'zh-CN' && !document.documentElement.hasAttribute('data-language-transition'));
+    assert.equal(new URL(page.url()).searchParams.get('lang'), 'zh');
+    // Preserve the selected example, and translate its contents and copy status together.
+    await page.locator('.code-tab[data-key=launcher]').click();
+    await page.locator('[data-language-switch]').click();
+    await page.waitForFunction(() => document.documentElement.lang === 'en' && !document.documentElement.hasAttribute('data-language-transition'));
+    assert.ok((await page.locator('#code-view').textContent()).includes('Scan the script folder'));
+    assert.equal(await page.locator('.code-tab.active').getAttribute('data-key'), 'launcher');
+    await page.evaluate(() => Object.defineProperty(navigator, 'clipboard', {configurable:true, value:{writeText:() => Promise.reject(Error('denied'))}}));
+    await page.locator('#code-copy').click();
+    await page.waitForFunction(() => document.querySelector('#code-copy').textContent.includes('failed'));
+    await page.locator('[data-language-switch]').click();
+    await page.waitForFunction(() => document.documentElement.lang === 'zh-CN' && !document.documentElement.hasAttribute('data-language-transition'));
+    assert.equal(await page.locator('#code-copy').textContent(), '复制');
+    // Theme transitions retain their circular reveal after multiple in-place language changes.
+    await page.evaluate(() => {
+      const start = document.startViewTransition.bind(document);
+      document.startViewTransition = callback => {
+        const transition = start(callback);
+        transition.ready.then(() => window.__themeAnimation = getComputedStyle(document.documentElement, '::view-transition-new(root)').animationName).catch(() => {});
+        return transition;
+      };
+    });
+    await page.locator('#theme-toggle').click();
+    await page.waitForFunction(() => window.__themeAnimation);
+    assert.equal(await page.evaluate(() => window.__themeAnimation), 'theme-in');
+    await context.close();
+    for (const reduced of [false, true]) {
+      const mobile = await browser.newContext({locale:'zh-CN', viewport:{width:390, height:884}, reducedMotion:reduced ? 'reduce' : 'no-preference'});
+      const p = await mobile.newPage();
+      await p.addInitScript(observe); p.on('pageerror', error => errors.push(error.message));
+      await p.goto(base + (base.includes('?') ? '&' : '?') + 'lang=zh');
+      await p.locator('[data-language-switch]').click();
+      await p.waitForFunction(() => document.documentElement.lang === 'en' && !document.documentElement.hasAttribute('data-language-transition'));
+      assert.ok(await p.evaluate(() => document.documentElement.scrollWidth <= innerWidth));
+      if (reduced) assert.deepEqual(await p.evaluate(() => __languageAnimations), []);
+      else {
+        assert.ok(await p.evaluate(() => __languageAnimations.some(a => a.options.duration === 300)));
+        await p.screenshot({path:path.join(out, 'live-glass-mobile.png')});
+      }
+      await mobile.close();
+    }
+    if (!process.env.SITE_URL) {
+      const fallback = await browser.newContext({locale:'zh-CN'}), p = await fallback.newPage();
+      p.on('pageerror', error => errors.push(error.message));
+      await p.goto(base + '?lang=zh'); await p.evaluate(() => window.__oldDocument = true);
+      await p.route('**/en/**', route => route.request().resourceType() === 'fetch' ? route.abort() : route.continue());
+      await p.locator('[data-language-switch]').click();
+      await p.waitForFunction(() => document.documentElement.lang === 'en');
+      assert.equal(await p.evaluate(() => window.__oldDocument), undefined, 'failed template fetch falls back to static English navigation');
+      await fallback.close();
+    }
+    assert.deepEqual(errors, []);
+    console.log('Language motion passed: original glass and GPU retained, no snapshots or blur, light/dark mid-animation captures, section position, back/forward, code state, theme reveal, mobile, reduced motion and network fallback.');
+  } finally { await browser.close(); server.close(); }
 }
-main().catch(e=>{console.error(e);server.close();process.exitCode=1});
+main().catch(error => { console.error(error); server.close(); process.exitCode = 1; });

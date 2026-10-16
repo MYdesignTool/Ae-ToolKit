@@ -329,24 +329,6 @@ html[data-theme=light] { --title-glint:#527ee5; }
 html:lang(en) .code-tabs { min-width:0; flex:1; }
 html:lang(en) .code-copy { max-width:45%; white-space:normal; }
 
-/* Language navigation: a short lateral dissolve, separate from the circular theme reveal. */
-@view-transition { navigation:auto; }
-html[data-language-transition=en] { --language-out:-18px; --language-in:22px; }
-html[data-language-transition=zh] { --language-out:18px; --language-in:-22px; }
-html[data-language-transition]::view-transition-group(root) { animation-duration:320ms; }
-html[data-language-transition]::view-transition-old(root) { animation:language-out 220ms cubic-bezier(.2,.75,.25,1) both; mix-blend-mode:normal; }
-html[data-language-transition]::view-transition-new(root) { animation:language-in 320ms cubic-bezier(.2,.75,.25,1) both; mix-blend-mode:normal; }
-@keyframes language-out { from { opacity:1; transform:translateX(0); filter:blur(0); } to { opacity:0; transform:translateX(var(--language-out)); filter:blur(2px); } }
-@keyframes language-in { from { opacity:0; transform:translateX(var(--language-in)); filter:blur(2px); } to { opacity:1; transform:translateX(0); filter:blur(0); } }
-html[data-language-arrival] .reveal { opacity:1; transform:none; transition-delay:0s !important; }
-@media (prefers-reduced-motion:reduce) {
- @view-transition { navigation:none; }
- html[data-language-transition]::view-transition-old(root),html[data-language-transition]::view-transition-new(root) { animation:none; }
-}
-html[data-language-continued] .particle-fallback { transition:none; }
-
-::view-transition-group(language-header) { animation:none; }
-::view-transition-old(language-header) { animation:language-header-out 140ms ease both; mix-blend-mode:normal; }
-::view-transition-new(language-header) { animation:language-header-in 180ms ease both; mix-blend-mode:normal; }
-@keyframes language-header-out { to { opacity:0; } }
-@keyframes language-header-in { from { opacity:0; } to { opacity:1; } }
+/* Language motion uses live elements. Glass never enters a snapshot or blur layer. */
+html[data-language-transition] { overflow-anchor:none; }
+.language-toggle[aria-busy=true] { cursor:progress; }
