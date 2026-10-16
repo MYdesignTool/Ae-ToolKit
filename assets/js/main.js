@@ -138,7 +138,7 @@
           var px = Math.max(0,Math.min(100,(pointer.clientX - rect.left) / rect.width * 100));
           var py = Math.max(0,Math.min(100,(pointer.clientY - rect.top) / rect.height * 100));
           // A broad reflection moves less than the pointer, rather than acting as a spotlight.
-          aimX = 30 + (px - 30) * .45; aimY = 5 + py * .3;
+          aimX = 15 + px * .7; aimY = py * .8;
           var tiltScale = card.classList.contains('site-header') ? .35 : 1;
           card.style.setProperty('--tilt-x', (0.5 - py / 100) * 3 * tiltScale + 'deg');
           card.style.setProperty('--tilt-y', (px / 100 - 0.5) * 4 * tiltScale + 'deg');

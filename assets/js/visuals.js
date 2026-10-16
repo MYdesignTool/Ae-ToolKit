@@ -14,7 +14,7 @@
     attribute float a_size, a_seed;
     uniform vec2 u_resolution;
     uniform vec3 u_pointer;
-    uniform vec4 u_ripples[4];
+    uniform vec4 u_ripples[4], u_flow[8];
     uniform float u_time, u_intro, u_dpr, u_dark, u_motion;
     varying vec3 v_color;
     varying float v_alpha;
@@ -36,21 +36,42 @@
       float light = 0.;
       for (int i=0; i<4; i++) {
         float age = u_time - u_ripples[i].z;
-        // The sign selects a short drag wake or a gentler, wider click ripple.
-        bool trail = u_ripples[i].w < 0.;
-        float strength = abs(u_ripples[i].w);
-        if (strength > 0. && age >= 0. && age < (trail ? .36 : 1.8)) {
+        if (u_motion > 0. && u_ripples[i].w > 0. && age >= 0. && age < 1.8) {
           vec2 radial = p.xy - u_ripples[i].xy;
-          float radius = length(radial);
-          float band = radius - age * (trail ? 155. : 215.);
-          float envelope = exp(-pow(band / (trail ? 20. : 28.), 2.)) * exp(-age * (trail ? 2.8 : 1.7)) * strength;
-          if (trail) envelope *= 1. - smoothstep(.18, .36, age);
-          float phase = band * (trail ? .11 : .075);
-          p.xy += radial / max(radius, 1.) * sin(phase) * envelope * (trail ? 24. : 12.);
-          p.z += cos(phase) * envelope * (trail ? 16. : 14.);
-          light += envelope * (trail ? .10 : .08);
+          float radius = length(radial), band = radius - age * 215.;
+          float envelope = exp(-pow(band / 28., 2.)) * exp(-age * 1.7) * u_ripples[i].w;
+          p.xy += radial / max(radius, 1.) * sin(band * .075) * envelope * 12.;
+          p.z += cos(band * .075) * envelope * 14.;
+          light += envelope * .08;
         }
       }
+      // Dragging deforms a continuous path; it never emits expanding click rings.
+      vec2 flowOffset = vec2(0.);
+      float flowWeight = 0., flowDepth = 0.;
+      for (int i=0; i<7; i++) {
+        vec4 head = u_flow[i], tail = u_flow[i+1];
+        vec2 segment = head.xy - tail.xy;
+        float lengthSquared = dot(segment, segment);
+        if (u_motion > 0. && head.w > 0. && head.w == tail.w && lengthSquared > .1) {
+          float along = clamp(dot(p.xy-tail.xy,segment) / lengthSquared, 0., 1.);
+          vec2 closest = tail.xy + segment * along;
+          float age = u_time - mix(tail.z,head.z,along);
+          if (age >= 0. && age < .4) {
+            vec2 direction = segment / sqrt(lengthSquared), normal = vec2(-direction.y,direction.x);
+            vec2 offset = p.xy - closest;
+            float side = dot(offset,normal), distance = length(offset);
+            float width = 20. + age * 30.;
+            float envelope = exp(-pow(distance / width, 2.)) * exp(-age * 3.) * (1. - smoothstep(.22,.4,age));
+            float wave = abs(side) * .15 - age * 13.;
+            flowOffset += (direction * 13. + normal * sign(side) * sin(wave) * 14.) * envelope;
+            flowDepth += cos(wave) * envelope * 7.;
+            flowWeight += envelope;
+          }
+        }
+      }
+      p.xy += flowOffset / max(1.,flowWeight);
+      p.z += flowDepth / max(1.,flowWeight);
+      light += min(flowWeight,1.) * .09;
       p.xy *= 1. + p.z / (scale * 3.8);
       vec2 clip = p.xy / u_resolution * 2.;
       gl_Position = vec4(clip.x, -clip.y, 0., 1.);
@@ -74,7 +95,8 @@
   let width = 1, height = 1, dpr = 1, frame = 0, visible = true, time = 0, last = 0;
   let pointer = [0, 0, 0], targetPointer = [0, 0, 0];
   let ripples = new Float32Array(16), rippleIndex = 0;
-  let stroke = null, strokeDragged = false;
+  const flow = new Float32Array(32);
+  let stroke = null, strokeDragged = false, strokeId = 0;
   let dark = root.dataset.theme === 'dark' ? 1 : 0;
 
   function stop() { cancelAnimationFrame(frame); frame = 0; }
@@ -91,6 +113,7 @@
     gl.uniform2f(uniforms.resolution, width, height);
     gl.uniform3fv(uniforms.pointer, motion.matches ? [0,0,0] : pointer);
     gl.uniform4fv(uniforms.ripples, ripples);
+    gl.uniform4fv(uniforms.flow, flow);
     gl.uniform1f(uniforms.time, time);
     gl.uniform1f(uniforms.intro, motion.matches ? 1 : Math.min(time / 1.65, 1));
     gl.uniform1f(uniforms.dpr, dpr);
@@ -126,7 +149,7 @@
       for (const [name, size] of [['target',3],['start',3],['color',3],['size',1],['seed',1]]) {
         const location = gl.getAttribLocation(program, 'a_' + name); gl.enableVertexAttribArray(location); gl.vertexAttribPointer(location, size, gl.FLOAT, false, 44, offset * 4); offset += size;
       }
-      uniforms = Object.fromEntries(['resolution','pointer','ripples','time','intro','dpr','dark','motion'].map(name => [name, gl.getUniformLocation(program, 'u_' + (name === 'ripples' ? 'ripples[0]' : name))]));
+      uniforms = Object.fromEntries(['resolution','pointer','ripples','flow','time','intro','dpr','dark','motion'].map(name => [name, gl.getUniformLocation(program, 'u_' + (['ripples','flow'].includes(name) ? name+'[0]' : name))]));
       gl.enable(gl.BLEND); gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA); gl.clearColor(0,0,0,0);
       button.dataset.renderer = 'webgl'; button.dataset.particles = String(count); resize();
     } catch (error) {
@@ -159,16 +182,21 @@
     strokeDragged = false;
     if (event.pointerType !== 'mouse' || event.button !== 0 || motion.matches || isControl(event)) return;
     event.preventDefault(); targetPointer[2] = .35;
-    stroke = { x:event.clientX, y:event.clientY, at:event.timeStamp };
+    const r = button.getBoundingClientRect(), x = event.clientX-r.left-width/2, y = event.clientY-r.top-height/2;
+    stroke = { x:event.clientX, y:event.clientY, id:++strokeId };
+    // Each stroke has its own identity, so re-entry cannot bridge an unrelated path.
+    flow.copyWithin(8,0,24);
+    flow.set([x,y,time,stroke.id,x,y,time,stroke.id],0);
   });
   scene.addEventListener('pointermove', event => {
     if (event.pointerType === 'touch' || motion.matches) return;
     const r = button.getBoundingClientRect(); targetPointer = [event.clientX-r.left-width/2,event.clientY-r.top-height/2,stroke && (event.buttons & 1) ? .35 : 1];
     if (!(event.buttons & 1)) stroke = null;
     if (!stroke || isControl(event)) return;
-    if (Math.hypot(event.clientX-stroke.x,event.clientY-stroke.y) < 12 || event.timeStamp-stroke.at < 95) return;
-    addRipple(targetPointer[0],targetPointer[1],-.875);
-    stroke = { x:event.clientX, y:event.clientY, at:event.timeStamp }; strokeDragged = true;
+    if (Math.hypot(event.clientX-stroke.x,event.clientY-stroke.y) > 3) strokeDragged = true;
+    // Keep a live endpoint; older anchors preserve turns without frame-by-frame storage.
+    if (time-flow[6] > .05 || Math.hypot(targetPointer[0]-flow[4],targetPointer[1]-flow[5]) > 28) flow.copyWithin(4,0,28);
+    flow.set([targetPointer[0],targetPointer[1],time,stroke.id],0);
   });
   scene.addEventListener('pointerleave', () => { targetPointer[2] = 0; stroke = null; });
   window.addEventListener('pointerup', () => { stroke = null; if (targetPointer[2]) targetPointer[2] = 1; });
@@ -185,7 +213,7 @@
   new ResizeObserver(resize).observe(button);
   new IntersectionObserver(entries => { visible = entries[0].isIntersecting; if (visible) wake(); else stop(); }, { threshold:.05 }).observe(button);
   document.addEventListener('visibilitychange', () => { if (document.hidden) stop(); else wake(); });
-  motion.addEventListener('change', () => { pointer[2] = targetPointer[2] = 0; ripples.fill(0); stop(); wake(); });
+  motion.addEventListener('change', () => { pointer[2] = targetPointer[2] = 0; stroke = null; flow.fill(0); ripples.fill(0); stop(); wake(); });
   new MutationObserver(() => { dark = root.dataset.theme === 'dark' ? 1 : 0; wake(); }).observe(root, { attributes:true, attributeFilter:['data-theme'] });
   loadLogo().catch(() => { button.dataset.renderer = 'fallback'; });
 

@@ -47,14 +47,27 @@ async function main(){
  await p.mouse.move(2,2);await p.waitForFunction(()=>__gpu.values.u_pointer[2]<.003);
  await p.locator('#particle-logo').focus();await p.keyboard.press('Enter');await p.waitForTimeout(40);
  assert.ok(await p.evaluate(()=>{const r=__gpu.values['u_ripples[0]'];return [0,4,8,12].some(i=>r[i]===0&&r[i+1]===0&&r[i+3]===.625);}), 'keyboard ripple starts at the center');
- // A held left button leaves small waves, and releasing it does not add a large click ripple.
+ // Dragging updates a connected path, while the click-ripple buffer remains untouched.
+ const clickState=await p.evaluate(()=>__gpu.values['u_ripples[0]']);
  await p.mouse.move(x,y);await p.mouse.down();
- for(let i=1;i<=6;i++){await p.waitForTimeout(110);await p.mouse.move(x+i*14,y+Math.sin(i)*14);}
- await p.waitForTimeout(50);
- const trail=await p.evaluate(()=>__gpu.values['u_ripples[0]']);assert.equal(trail.length,16);assert.ok([0,4,8,12].every(i=>trail[i+3]<0),'drag uses bounded wake slots distinct from click ripples');
+ for(let i=1;i<=6;i++){await p.waitForTimeout(30);await p.mouse.move(x+i*14,y+Math.sin(i)*14);}
+ await p.waitForTimeout(40);
+ const flowPath=await p.evaluate(()=>__gpu.values['u_flow[0]']);assert.equal(flowPath.length,32,'the path has bounded storage');
+ assert.ok(flowPath[3]>0&&flowPath[3]===flowPath[7]&&flowPath[0]>flowPath[4],'the live endpoint connects to its previous anchor');
+ assert.deepEqual(await p.evaluate(()=>__gpu.values['u_ripples[0]']),clickState,'dragging emits no click rings');
+ await p.mouse.move(x+75,y+60);await p.waitForTimeout(40);
+ const turned=await p.evaluate(()=>__gpu.values['u_flow[0]']);assert.ok(turned[1]>flowPath[1]+30,'the live endpoint follows a turn within one short movement');
  await p.screenshot({path:path.join(out,'drag-water.png')});
- await p.mouse.up();await p.waitForTimeout(80);assert.deepEqual(await p.evaluate(()=>__gpu.values['u_ripples[0]']),trail,'release does not trigger a full click ripple');
- await p.mouse.move(x+110,y+40);await p.waitForTimeout(80);assert.deepEqual(await p.evaluate(()=>__gpu.values['u_ripples[0]']),trail,'hover after release stops emitting wake');
+ await p.mouse.up();await p.waitForTimeout(80);assert.deepEqual(await p.evaluate(()=>__gpu.values['u_ripples[0]']),clickState,'release does not trigger a click ripple');
+ assert.deepEqual(await p.evaluate(()=>__gpu.values['u_flow[0]']),turned,'the last path fades without emitting new samples');
+ await p.mouse.move(x+110,y+40);await p.waitForTimeout(80);assert.deepEqual(await p.evaluate(()=>__gpu.values['u_flow[0]']),turned,'hover after release stops updating the path');
+ // Starting elsewhere keeps the old wake but creates no connecting segment between strokes.
+ await p.mouse.move(x-35,y+80);await p.mouse.down();await p.waitForTimeout(40);
+ const restarted=await p.evaluate(()=>__gpu.values['u_flow[0]']);
+ assert.equal(restarted[3],restarted[7]);assert.notEqual(restarted[3],turned[3]);
+ assert.equal(restarted[0],restarted[4]);assert.equal(restarted[1],restarted[5]);
+ assert.ok(restarted.slice(8).some((v,i)=>i%4===3&&v===turned[3]),'the previous path retains its own stroke identity');
+ await p.mouse.up();
  await p.locator('#theme-toggle').click();await p.waitForFunction(()=>document.documentElement.dataset.theme==='dark');await p.waitForTimeout(700);
  assert.equal(await p.evaluate(()=>__gpu.values.u_dark),1);await p.screenshot({path:path.join(out,'hero-dark.png')});
  // Three rapid toggles must finish in light, including a click during an existing transition.
@@ -63,6 +76,7 @@ async function main(){
  await p.locator('#install').scrollIntoViewIfNeeded();await p.waitForTimeout(150);let n=await p.evaluate(()=>__gpu.frames);await p.waitForTimeout(250);assert.equal(await p.evaluate(()=>__gpu.frames),n,'offscreen logo stops drawing');
  await p.evaluate(()=>scrollTo(0,0));await p.waitForFunction(n=>__gpu.frames>n,n);
  await p.emulateMedia({reducedMotion:'reduce'});await p.waitForTimeout(150);n=await p.evaluate(()=>__gpu.frames);await p.waitForTimeout(250);assert.equal(await p.evaluate(()=>__gpu.frames),n,'reduced motion has a static logo');
+ assert.equal(await p.evaluate(()=>__gpu.values.u_motion),0,'reduced motion disables the shader disturbance');
  await p.mouse.move(title.x+105,title.y+50);assert.equal(await p.locator('.title-shine').first().evaluate(e=>getComputedStyle(e).display),'none');
  const before=await p.evaluate(()=>__gpu.values['u_ripples[0]']);await p.locator('#particle-logo').click();await p.waitForTimeout(40);assert.deepEqual(await p.evaluate(()=>__gpu.values['u_ripples[0]']),before,'reduced motion does not introduce ripples');
  // Losing GPU context restores the SVG; restoring context rebuilds GPU state.
@@ -79,7 +93,7 @@ async function main(){
  const right={x:cr.x+cr.width*.8,y:cr.y+cr.height*.65},left={x:cr.x+cr.width*.15,y:cr.y+cr.height*.35};
  async function light(){return card.evaluate(e=>({x:parseFloat(e.style.getPropertyValue('--mx')),alpha:parseFloat(e.style.getPropertyValue('--sheen-opacity'))}));}
  await p.mouse.move(right.x,right.y);await p.waitForTimeout(700);
- const initialLight=await light();assert.ok(initialLight.x>50&&initialLight.x<60,'reflection travels a shorter distance than the pointer');
+ const initialLight=await light();assert.ok(initialLight.x>65&&initialLight.x<80,'reflection travels a shorter distance than the pointer');
  await p.mouse.move(left.x,left.y);await p.evaluate(()=>new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r))));
  const crossing=await light();assert.ok(crossing.x>27&&crossing.x<initialLight.x-1,'a sudden crossing passes through intermediate positions');
  await p.waitForTimeout(650);await p.mouse.move(2,2);await p.waitForTimeout(25);const departing=await light();
@@ -114,7 +128,7 @@ async function main(){
  await mobile.touchscreen.tap(touchLogo.x+touchLogo.width/2,touchLogo.y+touchLogo.height/2);await mobile.waitForFunction(()=>__gpu.values['u_ripples[0]'][3]===.625);assert.equal(await mobile.locator('.title-shine').first().evaluate(e=>getComputedStyle(e).display),'none');
  const cdp=await touch.newCDPSession(mobile),start=await mobile.evaluate(()=>scrollY),tx=touchLogo.x+touchLogo.width/2,ty=Math.min(720,touchLogo.y+touchLogo.height*.8);
  await cdp.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[{x:tx,y:ty}]});for(let i=1;i<=5;i++){await cdp.send('Input.dispatchTouchEvent',{type:'touchMove',touchPoints:[{x:tx,y:ty-i*30}]});await mobile.waitForTimeout(20);}await cdp.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});await mobile.waitForTimeout(150);assert.ok(await mobile.evaluate(()=>scrollY)>start,'dragging the logo can scroll the mobile page');await touch.close();
- assert.deepEqual(errors,[]);console.log('Visuals passed: GPU formation, pointer repulsion, bounded drag water trails, continuous soft reflections, three-card tilt, keyboard ripples, theme transitions, letter light, offscreen/reduced-motion pause, context recovery, WebGL fallback, responsive glass and native touch scrolling.');
+ assert.deepEqual(errors,[]);console.log('Visuals passed: GPU formation, pointer repulsion, continuous directional drag paths, continuous soft reflections, three-card tilt, keyboard ripples, theme transitions, letter light, offscreen/reduced-motion pause, context recovery, WebGL fallback, responsive glass and native touch scrolling.');
  }finally{await context.close();await browser.close();server.close();}
 }
 main().catch(e=>{console.error(e);server.close();process.exitCode=1;});
