@@ -1,0 +1,67 @@
+name: Build Windows installer
+on:
+  workflow_dispatch:
+  push:
+    branches: [main, codex/signpath-application]
+    paths: ['extension/**', 'tests/**', 'scripts/sync-release.cjs', '.github/workflows/build-windows.yml']
+  pull_request:
+    paths: ['extension/**', 'tests/**', 'scripts/sync-release.cjs', '.github/workflows/build-windows.yml']
+permissions:
+  contents: read
+jobs:
+  build:
+    runs-on: windows-2022
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: '24'
+      - name: Check release metadata and unit tests
+        shell: pwsh
+        run: |
+          node scripts/sync-release.cjs --check
+          if ($LASTEXITCODE -ne 0) { throw 'Release metadata check failed' }
+          node --test tests/*.test.cjs
+          if ($LASTEXITCODE -ne 0) { throw 'Unit tests failed' }
+      - name: Verify installer migration and data retention
+        shell: pwsh
+        run: |
+          $compiler = 'C:\Program Files (x86)\NSIS\makensis.exe'
+          if (-not (Test-Path -LiteralPath $compiler)) { throw 'The Windows runner must provide NSIS' }
+          node tests/installer.cjs $compiler
+          if ($LASTEXITCODE -ne 0) { throw 'Installer regression failed' }
+      - name: Build unsigned packages from this checkout
+        shell: pwsh
+        run: '& ./extension/installer/build.ps1'
+      - name: Record source and checksums
+        shell: pwsh
+        run: |
+          $output = Join-Path $env:GITHUB_WORKSPACE 'extension/installer/dist'
+          $names = @('aetoolkit-installer.exe', 'aetoolkit-extension.zip')
+          $lines = foreach ($name in $names) {
+            $hash = (Get-FileHash -Algorithm SHA256 -LiteralPath (Join-Path $output $name)).Hash.ToLowerInvariant()
+            "$hash  $name"
+          }
+          [IO.File]::WriteAllText((Join-Path $output 'SHA256SUMS.txt'), ($lines -join "`n") + "`n")
+          $version = (Get-Content -Raw extension/data/changelog.json | ConvertFrom-Json).version
+          @{
+            repository = $env:GITHUB_REPOSITORY
+            commit = $env:GITHUB_SHA
+            ref = $env:GITHUB_REF
+            version = $version
+            run = "$env:GITHUB_SERVER_URL/$env:GITHUB_REPOSITORY/actions/runs/$env:GITHUB_RUN_ID"
+            signing = 'unsigned'
+          } | ConvertTo-Json | Set-Content -Encoding utf8 (Join-Path $output 'BUILD-INFO.json')
+      - name: Upload unsigned build for provenance verification
+        id: unsigned
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: aetoolkit-unsigned-${{ github.sha }}
+          path: |
+            extension/installer/dist/aetoolkit-installer.exe
+            extension/installer/dist/aetoolkit-extension.zip
+            extension/installer/dist/SHA256SUMS.txt
+            extension/installer/dist/BUILD-INFO.json
+          if-no-files-found: error
+          retention-days: 30

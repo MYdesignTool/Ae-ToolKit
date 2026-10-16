@@ -6,6 +6,7 @@
 - [安装说明](extension/docs/install.md)
 - [架构与维护](extension/docs/architecture.md)
 - [审查和回归记录](docs/audit.md)
+- [Code signing policy / 签名状态](docs/code-signing.md)
 
 ## 目录与验证
 
