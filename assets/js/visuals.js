@@ -92,7 +92,7 @@
     }
   `;
   let gl, program, uniforms, buffer, geometry, count = 0;
-  let width = 1, height = 1, dpr = 1, frame = 0, visible = true, time = 0, last = 0;
+  let width = 1, height = 1, dpr = 1, frame = 0, visible = true, time = root.hasAttribute('data-language-continued') ? 1.65 : 0, last = 0;
   let pointer = [0, 0, 0], targetPointer = [0, 0, 0];
   let ripples = new Float32Array(16), rippleIndex = 0;
   const flow = new Float32Array(32);
@@ -103,7 +103,7 @@
   function draw(now) {
     frame = 0;
     if (!program || document.hidden || !visible) return;
-    const dt = Math.min((now - (last || now)) / 1000, .05); last = now;
+    const dt = Math.max(0, Math.min((now - (last || now)) / 1000, .05)); last = now;
     if (!motion.matches) time += dt;
     const blend = 1 - Math.exp(-dt * 13);
     for (let i=0; i<3; i++) pointer[i] += (targetPointer[i] - pointer[i]) * blend;

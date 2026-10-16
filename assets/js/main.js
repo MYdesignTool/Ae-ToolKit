@@ -82,7 +82,13 @@
   var revealEls = document.querySelectorAll(
     ".section-title, .section-subtitle, .feature-card, .release-card, .code-panel, .step, .footer-top, .footer-bottom"
   );
-  revealEls.forEach(function (el) { el.classList.add("reveal"); });
+  revealEls.forEach(function (el) {
+    el.classList.add("reveal");
+    if (document.documentElement.hasAttribute("data-language-continued")) {
+      var rect = el.getBoundingClientRect();
+      if (rect.bottom > 0 && rect.top < innerHeight) el.classList.add("in");
+    }
+  });
 
   // 同组元素按出现顺序错落延迟
   revealEls.forEach(function (el) {
