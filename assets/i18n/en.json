@@ -130,6 +130,7 @@
     "返回顶部": "Back to top",
     "。": ".",
     "English：": "English UI: ",
-    "＋": "+"
+    "＋": "+",
+    "当前 Windows 安装器未进行代码签名。若出现“Windows 已保护你的电脑”，确认安装包来自本项目 GitHub Releases 后，点击“更多信息” → “仍要运行”继续安装。": "The current Windows installer is not code-signed. If Windows displays “Windows protected your PC”, confirm that the installer came from this project’s GitHub Releases, then click “More info” → “Run anyway” to continue."
   }
 }

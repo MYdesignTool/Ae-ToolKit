@@ -4,6 +4,8 @@
 
 ## Windows 安装器与更新
 
+当前 Windows 安装器未进行代码签名。若出现“Windows 已保护你的电脑”，确认安装包来自本项目 GitHub Releases 后，点击“更多信息” → “仍要运行”继续安装。
+
 安装到系统级 `C:\Program Files (x86)\Common Files\Adobe\CEP\extensions\AeLocalToolkit`，需要管理员授权。安装器只给 data 子目录授予安装用户的修改权限，程序代码仍受系统目录权限保护。数据统一保存在这个文件夹的 `data/user-data.json`，不再写到扩展外的用户配置目录。
 
 更新前关闭 AE，直接运行新版安装器，不要先卸载。安装器会：
