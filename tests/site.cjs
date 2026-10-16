@@ -4,12 +4,12 @@ const {chromium}=require('playwright'),{root}=require('./helpers.cjs');
 const release=JSON.parse(fs.readFileSync(path.join(root,'extension/data/changelog.json'),'utf8'));
 const current=release.entries.find(e=>e.version===release.version);
 const out=process.env.ARTIFACT_DIR||path.join(root,'.artifacts','site-composition');fs.mkdirSync(out,{recursive:true});
-const server=http.createServer((req,res)=>{const pathname=new URL(req.url,'http://localhost').pathname;const file=path.resolve(root,pathname==='/'?'index.html':'.'+decodeURIComponent(pathname));if(file!==path.join(root,'index.html')&&!file.startsWith(path.join(root,'assets')+path.sep)){res.writeHead(404).end();return;}fs.readFile(file,(e,b)=>{if(e){res.writeHead(404).end();return;}res.writeHead(200,{'Content-Type':({'.html':'text/html','.css':'text/css','.js':'application/javascript','.png':'image/png','.webp':'image/webp','.svg':'image/svg+xml'})[path.extname(file)]||'application/octet-stream'}).end(b);});});
+const server=http.createServer((req,res)=>{const requested=new URL(req.url,'http://localhost');if(requested.pathname==='/Ae-ToolKit'){res.writeHead(308,{Location:'/Ae-ToolKit/'+requested.search}).end();return;}const pathname=requested.pathname.replace(/^\/Ae-ToolKit(?=\/)/,'');const file=path.resolve(root,pathname==='/'?'index.html':pathname==='/en/'?'en/index.html':'.'+decodeURIComponent(pathname));if(file!==path.join(root,'index.html')&&file!==path.join(root,'en/index.html')&&!file.startsWith(path.join(root,'assets')+path.sep)){res.writeHead(404).end();return;}fs.readFile(file,(e,b)=>{if(e){res.writeHead(404).end();return;}res.writeHead(200,{'Content-Type':({'.html':'text/html','.css':'text/css','.js':'application/javascript','.png':'image/png','.webp':'image/webp','.svg':'image/svg+xml'})[path.extname(file)]||'application/octet-stream'}).end(b);});});
 async function main(){
  await new Promise(r=>server.listen(0,'127.0.0.1',r));const base='http://127.0.0.1:'+server.address().port;
  const browser=await chromium.launch({channel:'msedge',headless:true,args:['--enable-unsafe-swiftshader']});
  try{
- const context=await browser.newContext({viewport:{width:1440,height:1000},reducedMotion:'reduce'}),page=await context.newPage(),errors=[];page.on('pageerror',e=>errors.push(e.message));
+ const context=await browser.newContext({locale:'zh-CN',viewport:{width:1440,height:1000},reducedMotion:'reduce'}),page=await context.newPage(),errors=[];page.on('pageerror',e=>errors.push(e.message));
  const apiRequests=[];page.on('request',r=>{if(r.url().startsWith('https://api.github.com/'))apiRequests.push(r.url());});
  await page.route('https://api.github.com/**',r=>r.abort());await page.goto(base);await page.waitForFunction(()=>document.getElementById('particle-logo').dataset.renderer);
  const rocket=page.locator('#back-to-top');

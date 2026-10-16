@@ -242,7 +242,7 @@ html[data-theme=light] { --title-glint:#527ee5; }
 @media (max-width:768px) {
  .hero-title { margin-left:auto; margin-right:auto; }
  /* Center the Chinese characters optically, compensating for the full-width ending punctuation. */
- .hero-title .title-line { transform:translateX(.48em); }
+ html:lang(zh-CN) .hero-title .title-line { transform:translateX(.48em); }
  .release-banner img { right:12px; bottom:-9px; width:390px; height:130px; }
  .release-banner-copy { z-index:3; }
 
@@ -321,3 +321,10 @@ html[data-theme=light] { --title-glint:#527ee5; }
  .hero-content .hero-title { filter:drop-shadow(0 0 8px var(--bg)); }
 }
 @media (prefers-reduced-motion:reduce) { .feature-card:hover .loose-files span,.feature-card:hover .wave-line { transform:none; } }
+
+/* Language controls share the existing glass navigation. */
+.language-toggle { display:grid; place-items:center; flex-shrink:0; min-width:36px; height:36px; padding:0 7px; border:1px solid var(--glass-border); border-radius:50%; color:var(--fg); background:var(--soft); font-size:11px; font-weight:600; line-height:1; transition:background .18s; }
+.language-toggle:hover { background:var(--glass-highlight); }
+@media (max-width:768px) { .language-toggle { min-width:34px; height:34px; } html:lang(en) .hero-title { font-size:clamp(36px,9.2vw,51px); } html:lang(en) .hero-note { flex-wrap:wrap; gap:4px 8px; } }
+html:lang(en) .code-tabs { min-width:0; flex:1; }
+html:lang(en) .code-copy { max-width:45%; white-space:normal; }

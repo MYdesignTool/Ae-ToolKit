@@ -2,6 +2,7 @@
 const fs = require('node:fs');
 const path = require('node:path');
 const root = path.resolve(__dirname, '..');
+const {renderEnglish} = require('./localize-site.cjs');
 const semver = /^\d+\.\d+\.\d+$/;
 const escapeHtml = value => String(value).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 
@@ -65,11 +66,13 @@ function main(args) {
   const release = selectRelease(data, tag);
   const files = new Map();
   function update(file, render) {
-    const full = path.join(root, file), current = fs.readFileSync(full, 'utf8');
+    const full = path.join(root, file), current = fs.existsSync(full) ? fs.readFileSync(full, 'utf8') : '';
     const next = render(current).replace(/\r\n/g, '\n');
     if (current !== next) files.set(full, next);
   }
-  update('index.html', html => renderPage(html, release));
+  const chinese = renderPage(fs.readFileSync(path.join(root, 'index.html'), 'utf8'), release);
+  update('index.html', () => chinese);
+  update('en/index.html', () => renderEnglish(chinese));
   if (!siteOnly) {
     const version = data.version;
     update('extension/CSXS/manifest.xml', xml => renderManifest(xml, version));
@@ -77,7 +80,7 @@ function main(args) {
     update('extension/README.md', text => text.replace(/版本 \d+\.\d+\.\d+。/, '版本 ' + version + '。'));
   }
   if (check && files.size) throw Error('Run node scripts/sync-release.cjs to update: ' + [...files.keys()].map(f => path.relative(root, f)).join(', '));
-  if (!check) for (const [file, content] of files) fs.writeFileSync(file, content);
+  if (!check) for (const [file, content] of files) { fs.mkdirSync(path.dirname(file), {recursive:true}); fs.writeFileSync(file, content); }
   console.log('Release metadata ' + (check ? 'verified: ' : 'generated: ') + release.tag);
 }
 

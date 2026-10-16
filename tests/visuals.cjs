@@ -16,7 +16,7 @@ function instrument(){
 async function main(){
  await new Promise(r=>server.listen(0,'127.0.0.1',r));
  const browser=await chromium.launch({channel:'msedge',headless:true,args:['--enable-unsafe-swiftshader']});
- const errors=[];const context=await browser.newContext({viewport:{width:1440,height:1000}});
+ const errors=[];const context=await browser.newContext({locale:'zh-CN',viewport:{width:1440,height:1000}});
  await context.route('https://api.github.com/**',r=>r.fulfill({status:503,body:''}));
  const base='http://127.0.0.1:'+server.address().port;
  const p=await context.newPage();p.on('pageerror',e=>errors.push(e.message));await p.addInitScript(instrument);

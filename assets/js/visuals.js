@@ -158,7 +158,7 @@
     }
   }
   async function loadLogo() {
-    const image = new Image(); image.src = 'assets/img/logo.svg?v=glass3'; await image.decode();
+    const image = new Image(); image.src = button.querySelector('.particle-fallback').src; await image.decode();
     const mask = document.createElement('canvas'); mask.width = 256; mask.height = 224;
     const ctx = mask.getContext('2d', { willReadFrequently:true }); ctx.drawImage(image, 0, 0, 256, 224);
     const pixels = ctx.getImageData(0,0,256,224).data, points = [];

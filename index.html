@@ -5,11 +5,16 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Ae-ToolKit — After Effects 离线扩展工具集</title>
   <meta name="description" content="Ae-ToolKit 是一款完全离线运行的 After Effects CEP 扩展面板，集成项目整理器、表达式管理器、脚本启动器三大核心功能。支持 AE 2023+，开源 · 本地优先，开源免费。">
+  <link rel="canonical" href="https://mydesigntool.github.io/Ae-ToolKit/">
+  <link rel="alternate" hreflang="zh-CN" href="https://mydesigntool.github.io/Ae-ToolKit/">
+  <link rel="alternate" hreflang="en" href="https://mydesigntool.github.io/Ae-ToolKit/en/">
+  <link rel="alternate" hreflang="x-default" href="https://mydesigntool.github.io/Ae-ToolKit/">
+  <script src="assets/js/language.js?v=lang1"></script>
   <meta name="theme-color" content="#f1f5fb">
   <script>try{if(localStorage.getItem('theme')==='dark')document.documentElement.dataset.theme='dark';}catch(e){}</script>
   <link rel="icon" type="image/svg+xml" href="assets/img/logo.svg?v=glass4">
-  <link rel="stylesheet" href="assets/css/style.css?v=glass8">
-  <link rel="stylesheet" href="assets/css/theme-light.css?v=glass8">
+  <link rel="stylesheet" href="assets/css/style.css?v=lang1">
+  <link rel="stylesheet" href="assets/css/theme-light.css?v=lang1">
 </head>
 <body>
 
@@ -33,6 +38,7 @@
         <li><a href="#install">安装</a></li>
         <li><a href="https://github.com/MYdesignTool/Ae-ToolKit" target="_blank" rel="noopener">GitHub ↗</a></li>
       </ul>
+      <a class="language-toggle" data-language-switch href="en/?lang=en" hreflang="en" lang="en" aria-label="Switch to English" title="English">EN</a>
       <button class="theme-toggle" id="theme-toggle" type="button" aria-label="切换主题" title="切换亮色 / 暗色主题">
         <svg class="theme-sun" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M2 12h2m16 0h2M5 5l1.5 1.5m11 11L19 19M5 19l1.5-1.5m11-11L19 5"/></svg><svg class="theme-moon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M20.5 14A8.5 8.5 0 0110 3.5 8.5 8.5 0 1020.5 14z"/></svg>
       </button>
@@ -186,7 +192,7 @@
         <div class="install-note__body">
           <strong>安装前必读（两种方式均需要）</strong>：本工具会在本地写入文件（整理素材、保存方案与自定义表达式），需开启 AE 脚本写权限。打开 After Effects 2023+：
           <br>
-          <strong>中文：</strong>编辑 → 首选项 → 脚本与表达式 → 勾选「允许脚本写入文件和访问网络」
+          <strong>中文：</strong><span lang="zh-CN">编辑 → 首选项 → 脚本与表达式 → 勾选「允许脚本写入文件和访问网络」</span>
           <br>
           <strong>English：</strong>Edit → Preferences → Scripting &amp; Expressions → Check "Allow Scripts to Write Files and Access Network"
           <br>
@@ -300,7 +306,7 @@ defaults write com.adobe.CSXS.11 PlayerDebugMode -bool true</code></pre>
 
   <a class="back-to-top" id="back-to-top" href="#hero" aria-label="返回页面顶部"><img src="assets/img/team-rocket.webp" alt="" width="288" height="288" loading="lazy"><span>返回顶部 <span aria-hidden="true">↑</span></span></a>
   <script src="assets/js/main.js?v=glass8"></script>
-  <script src="assets/js/visuals.js?v=flow1"></script>
-  <script src="assets/js/code-showcase.js?v=031"></script>
+  <script src="assets/js/visuals.js?v=lang1"></script>
+  <script src="assets/js/code-showcase.js?v=lang1"></script>
 </body>
 </html>

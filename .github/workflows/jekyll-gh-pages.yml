@@ -2,7 +2,7 @@ name: Deploy static GitHub Pages
 on:
   push:
     branches: [main]
-    paths: [index.html, 'assets/**', 'extension/data/changelog.json', 'scripts/sync-release.cjs', 'tests/release.test.cjs', '.github/workflows/jekyll-gh-pages.yml']
+    paths: [index.html, 'en/**', 'assets/**', 'scripts/localize-site.cjs', 'tests/localization.test.cjs', 'extension/data/changelog.json', 'scripts/sync-release.cjs', 'tests/release.test.cjs', '.github/workflows/jekyll-gh-pages.yml']
   release:
     types: [published, edited]
   workflow_dispatch:
@@ -24,7 +24,7 @@ jobs:
         with:
           ref: ${{ github.event_name == 'release' && github.event.repository.default_branch || github.sha }}
       - name: Verify release rendering
-        run: node --test tests/release.test.cjs
+        run: node --test tests/release.test.cjs tests/localization.test.cjs
       - name: Render the latest published stable release
         env:
           GH_TOKEN: ${{ github.token }}
@@ -37,6 +37,7 @@ jobs:
           mkdir _site
           cp index.html _site/
           cp -R assets _site/assets
+          cp -R en _site/en
           touch _site/.nojekyll
       - uses: actions/upload-pages-artifact@v3
         with:

@@ -1,0 +1,313 @@
+<!-- Generated from index.html and assets/i18n/en.json by scripts/sync-release.cjs. -->
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ae-ToolKit — Offline tools for After Effects</title>
+  <meta name="description" content="Ae-ToolKit is a fully offline After Effects CEP panel with project organization, expression management, and a script launcher. Supports AE 2023+. Free and open source, with a local-first approach.">
+  <link rel="canonical" href="https://mydesigntool.github.io/Ae-ToolKit/en/">
+  <link rel="alternate" hreflang="zh-CN" href="https://mydesigntool.github.io/Ae-ToolKit/">
+  <link rel="alternate" hreflang="en" href="https://mydesigntool.github.io/Ae-ToolKit/en/">
+  <link rel="alternate" hreflang="x-default" href="https://mydesigntool.github.io/Ae-ToolKit/">
+  <script src="../assets/js/language.js?v=lang1"></script>
+  <meta name="theme-color" content="#f1f5fb">
+  <script>try{if(localStorage.getItem('theme')==='dark')document.documentElement.dataset.theme='dark';}catch(e){}</script>
+  <link rel="icon" type="image/svg+xml" href="../assets/img/logo.svg?v=glass4">
+  <link rel="stylesheet" href="../assets/css/style.css?v=lang1">
+  <link rel="stylesheet" href="../assets/css/theme-light.css?v=lang1">
+</head>
+<body>
+
+  <!-- 全页流动背景：让液态玻璃在滚动时持续可见 -->
+  <div class="page-bg" aria-hidden="true">
+    <span class="pg-blob pg-blob-1"></span>
+    <span class="pg-blob pg-blob-2"></span>
+    <span class="pg-caustic"></span>
+  </div>
+
+  <!-- ===== Header ===== -->
+  <header class="site-header" id="top">
+    <nav class="nav container">
+      <a href="#top" class="brand">
+        <img src="../assets/img/logo.svg?v=glass4" alt="Ae-ToolKit" class="logo-icon">
+        Ae-ToolKit
+      </a>
+      <ul class="nav-links" id="nav-links">
+        <li><a href="#features">Features</a></li>
+        <li><a href="#updates">Updates</a></li>
+        <li><a href="#install">Install</a></li>
+        <li><a href="https://github.com/MYdesignTool/Ae-ToolKit" target="_blank" rel="noopener">GitHub ↗</a></li>
+      </ul>
+      <a class="language-toggle" data-language-switch href="../?lang=zh" hreflang="zh-CN" lang="zh-CN" aria-label="切换中文" title="中文">中文</a>
+      <button class="theme-toggle" id="theme-toggle" type="button" aria-label="Switch theme" title="Switch between light and dark themes">
+        <svg class="theme-sun" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M2 12h2m16 0h2M5 5l1.5 1.5m11 11L19 19M5 19l1.5-1.5m11-11L19 5"/></svg><svg class="theme-moon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M20.5 14A8.5 8.5 0 0110 3.5 8.5 8.5 0 1020.5 14z"/></svg>
+      </button>
+      <button class="mobile-toggle" aria-label="Menu" id="mobile-toggle" aria-expanded="false" aria-controls="nav-links">
+        <span></span><span></span><span></span>
+      </button>
+    </nav>
+  </header>
+
+  <!-- ===== Hero ===== -->
+  <section id="hero" class="hero">
+    <div class="hero-layout container">
+      <div class="hero-content">
+        <div class="hero-badge"><span class="status-dot"></span><span id="app-version" data-release-field="tag">v0.3.1</span><span class="badge-divider"></span>After Effects 2023+</div>
+        <h1 class="hero-title" id="hero-title" tabindex="-1"><span class="title-line">Make time</span><br><span class="title-line gradient-text">for creativity.</span></h1>
+        <p class="hero-desc">Organize projects, reuse expressions, and launch your go-to scripts.<br>Your familiar workflow, together in one offline panel.</p>
+        <div class="hero-actions">
+          <a data-release-link href="https://github.com/MYdesignTool/Ae-ToolKit/releases/tag/v0.3.1" class="btn btn-primary" data-download target="_blank" rel="noopener"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M12 3v12m-5-5l5 5 5-5M5 16v4h14v-4"/></svg><span data-download-label data-release-field="download">Download 0.3.1</span></a>
+          <a href="#features" class="btn btn-ghost">Explore features<span aria-hidden="true">↗</span></a>
+        </div>
+        <p class="hero-note">Free &amp; open source<span>·</span>Runs locally<span>·</span>Settings stay in the folder</p>
+      </div>
+      <div class="hero-stage particle-stage">
+        <div class="stage-orbit" aria-hidden="true"></div>
+        <button class="particle-logo" id="particle-logo" type="button" aria-label="Interactive AE Toolkit logo: move the pointer to scatter particles; click or press Enter to create a ripple">
+          <canvas id="logo-particles" aria-hidden="true"></canvas>
+          <img class="particle-fallback" src="../assets/img/logo.svg?v=glass4" alt="" width="256" height="224">
+        </button>
+        <div class="particle-caption"><strong>AE TOOLKIT</strong></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== Features ===== -->
+  <section id="features" class="features section">
+    <div class="container">
+      <h2 class="section-title">
+        <span class="eyebrow">A lighter everyday workflow</span>Three everyday tasks. One place.
+      </h2>
+      <p class="section-subtitle">Organization, expressions, and scripts. Keep repetitive tasks in order and let creativity move forward.</p>
+      <div class="feature-grid">
+
+        <article class="feature-card glass">
+          <div class="feature-visual visual-organizer" role="img" aria-label="Images, video, and audio are automatically sorted into folders by type">
+            <div class="visual-heading"><span>Project assets</span><small>Auto-sort</small></div>
+            <div class="loose-files" aria-hidden="true"><span>JPG</span><span>MOV</span><span>WAV</span></div>
+            <div class="flow-guide" aria-hidden="true"><span></span><i>↓</i><span></span></div>
+            <div class="folder-stack"><div class="folder-row"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7a2 2 0 0 1 2-2h5l2 3h7a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z"/></svg><span>Images</span><small>12 items</small><i>✓</i></div><div class="folder-row"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7a2 2 0 0 1 2-2h5l2 3h7a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z"/></svg><span>Video</span><small>8 items</small><i>✓</i></div><div class="folder-row"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7a2 2 0 0 1 2-2h5l2 3h7a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z"/></svg><span>Audio</span><small>4 items</small><i>✓</i></div></div>
+          </div>
+          <h3>Project organization</h3>
+          <p>Put assets where you expect them, with rules of your own. Save multiple organization presets and reuse them in your next project.</p>
+          <ul class="feature-list">
+            <li>Automatic media type detection</li>
+            <li>Custom organization presets</li>
+            <li>Automatic empty-folder cleanup</li>
+          </ul>
+        </article>
+
+        <article class="feature-card glass">
+          <div class="feature-visual visual-expression" role="img" aria-label="One expression applied to Position, Rotation, and Scale together">
+            <div class="visual-heading"><span>One expression</span><small>Apply together</small></div>
+            <div class="expression-sample"><code>wiggle(<b>5</b>, <b>20</b>)</code><svg viewBox="0 0 260 56" aria-hidden="true"><path class="wave-baseline" d="M0 28H260"/><path class="wave-line" d="M0 28C12 28 14 8 27 8S42 48 55 48 70 8 83 8 98 48 111 48 126 8 139 8 154 48 167 48 182 8 195 8 210 48 223 48 238 28 260 28"/></svg></div>
+            <div class="property-fan" aria-hidden="true"><span>Position<i>✓</i></span><span>Rotation<i>✓</i></span><span>Scale<i>✓</i></span></div>
+            <p class="visual-caption">Select properties. Apply once.</p>
+          </div>
+          <h3>Batch expressions</h3>
+          <p>Select properties, choose or write an expression, and apply it in one go. Confirm before overwriting, and save your frequently used code.</p>
+          <ul class="feature-list">
+            <li>One-click batch actions</li>
+            <li>Custom expression library</li>
+            <li>Overwrite confirmation and results</li>
+          </ul>
+        </article>
+
+        <article class="feature-card glass">
+          <div class="feature-visual visual-scripts" role="img" aria-label="Local scripts listed by name, with favorites and quick launch">
+            <div class="visual-heading"><span>Go-to scripts</span><small>Ready to run</small></div>
+            <div class="mini-scripts"><div class="mini-script"><span class="mini-art art-landscape" aria-hidden="true"></span><span>Keyframe easing</span><i class="mini-star">★</i></div><div class="mini-script"><span class="mini-art art-ribbon" aria-hidden="true"></span><span>Batch rename layers</span><i class="mini-star">★</i></div><div class="mini-script"><span class="mini-art art-path" aria-hidden="true"></span><span>Align anchor points</span><i class="mini-star">☆</i></div></div>
+            <p class="visual-caption">Local folders · Search · Favorites</p>
+          </div>
+          <h3>Local script library</h3>
+          <p>Keep your favorite scripts in your own folders. Search, favorite, and double-click to run. Images are matched automatically from the script library’s image folder.</p>
+          <ul class="feature-list">
+            <li>Double-click to run JSX / JSXBIN</li>
+            <li>Favorites and search</li>
+            <li>Image matching and polished placeholders</li>
+          </ul>
+        </article>
+
+      </div>
+    </div>
+  </section>
+
+  <section id="updates" class="updates section">
+    <div class="container">
+      <h2 class="section-title"><span class="eyebrow">Continually refining the details</span><span data-release-field="version">0.3.1</span> — what’s new.</h2>
+      <p class="section-subtitle">Smoother operation. A workspace that is easier to take with you.</p>
+      <article class="release-card glass">
+        <div class="release-banner"><img src="../assets/img/team-peek.webp" alt="The team’s cat-eared mascot holding onto the update card" width="1200" height="400" loading="lazy"><div class="release-banner-copy"><span>AE Toolkit</span><h3 data-release-field="tag">v0.3.1</h3><time data-release-date datetime="2026-10-15">2026.10.15</time></div></div>
+        <!-- release:notes:start --><div class="release-notes"><div><span class="feature-index">01</span><h3>Take your workspace with you</h3><p>Settings, favorites, expressions, and organization presets are saved together. Copy the extension folder to take your familiar workspace along.</p></div><div><span class="feature-index">02</span><h3>Feedback that feels right</h3><p>A compact script list, drag scrolling, directional page transitions, and subtle favorite animations make each interaction feel more natural.</p></div><div><span class="feature-index">03</span><h3>Update directly. Keep your work.</h3><p>The new installer backs up your data before updating program files. No need to uninstall first: personal settings and presets are kept.</p></div></div>
+        <!-- release:notes:end -->
+        <a class="release-link" data-release-link href="https://github.com/MYdesignTool/Ae-ToolKit/releases/tag/v0.3.1" target="_blank" rel="noopener">Full release notes and downloads<span aria-hidden="true">↗</span></a>
+      </article>
+    </div>
+  </section>
+
+  <!-- ===== Code Showcase ===== -->
+  <section id="code" class="code-showcase section">
+    <div class="container">
+      <h2 class="section-title">
+        <span class="eyebrow">Open source. Ready to build on.</span>Simple implementation. Clear boundaries.
+      </h2>
+      <p class="section-subtitle">Native JavaScript and ExtendScript. These are API usage examples; the panel needs no frontend runtime installation.</p>
+
+      <div class="code-panel glass">
+        <div class="code-header">
+          <div class="code-tabs" role="tablist">
+            <button class="code-tab active" data-key="organizer" role="tab">Project organization</button>
+            <button class="code-tab" data-key="expressions" role="tab">Expressions</button>
+            <button class="code-tab" data-key="launcher" role="tab">Script launcher</button>
+          </div>
+          <button class="code-copy" id="code-copy" type="button">Copy</button>
+        </div>
+        <div class="code-body">
+          <div class="code-meta">
+            <span class="code-dot"></span>
+            <span id="code-file">host/modules/organizer.jsx</span>
+          </div>
+          <pre><code id="code-view" class="language-javascript"></code></pre>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== Project Structure ===== -->
+  <section id="structure" class="structure"><div class="container"><details class="developer-details glass"><summary>Project structure and development<span aria-hidden="true">+</span></summary><div class="developer-content"><p><code>client/</code>  panel UI ·  <code>host/</code>  AE host logic ·  <code>data/</code>  default data and personal settings</p><p>Personal data is saved in  <code>data/user-data.json</code>; the package contains only program files and built-in defaults.</p><a href="https://github.com/MYdesignTool/Ae-ToolKit/blob/main/extension/docs/architecture.md" target="_blank" rel="noopener">Read the architecture and maintenance guide ↗</a></div></details></div></section>
+
+  <!-- ===== Install ===== -->
+  <section id="install" class="install section">
+    <div class="container">
+      <div class="install-heading">
+        <h2 class="section-title">
+        <span class="eyebrow">Ready when you are</span>A few steps to your AE.
+      </h2>
+        <div class="install-mascot" aria-hidden="true"><img src="../assets/img/team-guide.webp" alt="" width="384" height="384" loading="lazy"></div>
+      </div>
+      <p class="section-subtitle">Supports After Effects 2023 and later. The Windows installer is recommended; macOS uses manual installation.</p>
+
+      <!-- 先开启 AE 的脚本写入权限 -->
+        <div class="install-note glass" role="note">
+        <div class="install-note__body">
+          <strong>Before installing (required for both methods)</strong>: This tool writes local files to organize assets and save presets and custom expressions. Enable script write access in After Effects 2023+:
+          <br>
+          <strong>Chinese UI: </strong><span lang="zh-CN">编辑 → 首选项 → 脚本与表达式 → 勾选「允许脚本写入文件和访问网络」</span>
+          <br>
+          <strong>English UI: </strong>Edit → Preferences → Scripting &amp; Expressions → Check "Allow Scripts to Write Files and Access Network"
+          <br>
+          Restart After Effects for the setting to take effect. The core tools work offline; this option allows local file writing.
+        </div>
+      </div>
+
+      <!-- 方式一：一键安装器 -->
+      <h3 class="method-title">Method 1 · One-click installer <span class="method-tag">Recommended for Windows</span></h3>
+      <div class="steps">
+        <div class="step glass">
+          <span class="step-num">01</span>
+          <span class="step-line" aria-hidden="true"></span>
+          <div class="step-body">
+            <h4>Download the installer</h4>
+            <p>From  <a data-release-link href="https://github.com/MYdesignTool/Ae-ToolKit/releases/tag/v0.3.1" target="_blank" rel="noopener">GitHub Releases</a>, download the Windows installer  <code>aetoolkit-installer.exe</code>.</p>
+          </div>
+        </div>
+        <div class="step glass">
+          <span class="step-num">02</span>
+          <span class="step-line" aria-hidden="true"></span>
+          <div class="step-body">
+            <h4>Run the setup wizard</h4>
+            <p>Close AE before updating, then run the new installer without uninstalling first. The wizard backs up data before updating program files, keeping settings and presets in the extension folder. Installation uses the system-wide CEP directory and requires administrator approval. Data from an old user-level installation is migrated and backed up. For an unsigned development package, select development mode on the components page.</p>
+          </div>
+        </div>
+        <div class="step glass">
+          <span class="step-num">03</span>
+          <div class="step-body">
+            <h4>Open the panel</h4>
+            <p>Restart After Effects as prompted, then open the panel from:</p>
+            <p><code>Window → Extensions → AE Local Toolkit</code></p>
+            <p class="step-note">Check the download source and version before installing, and follow your organization’s installation policy when responding to system prompts.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- 方式二：手动安装 -->
+      <h3 class="method-title">Method 2 · Manual installation <span class="method-tag method-tag--ghost">All platforms</span></h3>
+      <div class="steps">
+        <div class="step glass">
+          <span class="step-num">01</span>
+          <span class="step-line" aria-hidden="true"></span>
+          <div class="step-body">
+            <h4>Download and extract</h4>
+            <p>From  <a data-release-link href="https://github.com/MYdesignTool/Ae-ToolKit/releases/tag/v0.3.1" target="_blank" rel="noopener">GitHub Releases</a>, download the clean extension package  <code>aetoolkit-extension.zip</code> and extract the  <code>AeLocalToolkit/</code>  folder.</p>
+          </div>
+        </div>
+        <div class="step glass">
+          <span class="step-num">02</span>
+          <span class="step-line" aria-hidden="true"></span>
+          <div class="step-body">
+            <h4>Copy to the extensions directory</h4>
+            <p>Copy the entire  <code>AeLocalToolkit/</code>  folder into the CEP extensions directory. Use the system-wide paths below; administrator privileges are required. Avoid keeping multiple copies of the extension with the same ID:</p>
+            <pre><code># Windows — system-wide
+C:\Program Files (x86)\Common Files\Adobe\CEP\extensions\
+
+# macOS — system-wide
+/Library/Application Support/Adobe/CEP/extensions/</code></pre>
+            <p>After copying manually, give the current user Modify permission on the extension’s  <code>data</code>  folder so settings and presets can be saved. The Windows installer handles this permission automatically.</p>
+          </div>
+        </div>
+        <div class="step glass">
+          <span class="step-num">03</span>
+          <span class="step-line" aria-hidden="true"></span>
+          <div class="step-body">
+            <h4>Enable debug mode (for unsigned packages)</h4>
+            <p>Unsigned development packages require debug mode for the matching CEP version. AE 2023/2024 uses CSXS.11; AE 2025 and later uses CSXS.12. Signed CEP extensions do not need this setting:</p>
+            <pre><code># Windows registry (current user, string value)
+HKEY_CURRENT_USER\Software\Adobe\CSXS.11\PlayerDebugMode = 1
+
+# macOS Terminal
+defaults write com.adobe.CSXS.11 PlayerDebugMode -bool true</code></pre>
+          </div>
+        </div>
+        <div class="step glass">
+          <span class="step-num">04</span>
+          <div class="step-body">
+            <h4>Open the panel</h4>
+            <p>Restart After Effects, then open the panel from:</p>
+            <p><code>Window → Extensions → AeLocalToolkit</code></p>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ===== Footer ===== -->
+  <footer class="site-footer">
+    <div class="container">
+      <div class="footer-top">
+        <div class="footer-brand">
+          <img src="../assets/img/logo.svg?v=glass4" alt="" class="logo-sm">
+          <strong>Ae-ToolKit</strong>
+        </div>
+        <p class="footer-desc">
+          A few handy tools for everyday creativity.<br>Open source · Offline · Local first
+        </p>
+      </div>
+      <div class="footer-bottom">
+        <div class="footer-links">
+          <a href="https://github.com/MYdesignTool/Ae-ToolKit" target="_blank" rel="noopener">GitHub repository</a>
+          <a href="https://github.com/MYdesignTool/Ae-ToolKit/issues" target="_blank" rel="noopener">Report an issue</a>
+          <a href="https://github.com/MYdesignTool/Ae-ToolKit/blob/main/extension/License.md" target="_blank" rel="noopener">GPL v3.0 license</a>
+        </div>
+        <p class="copyright">&copy; <span id="year">2026</span> MYdesignTool · GPLv3</p>
+      </div>
+    </div>
+  </footer>
+
+  <a class="back-to-top" id="back-to-top" href="#hero" aria-label="Back to the top of the page"><img src="../assets/img/team-rocket.webp" alt="" width="288" height="288" loading="lazy"><span>Back to top <span aria-hidden="true">↑</span></span></a>
+  <script src="../assets/js/main.js?v=glass8"></script>
+  <script src="../assets/js/visuals.js?v=lang1"></script>
+  <script src="../assets/js/code-showcase.js?v=lang1"></script>
+</body>
+</html>
