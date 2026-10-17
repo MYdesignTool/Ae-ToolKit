@@ -2,44 +2,21 @@
 
 离线 After Effects 工具箱，最低支持 AE 2023（23.x）和 CEP 11，兼容新版 CEP 12。版本 0.3.1。
 
-## 批量表达式
+本文件随安装包分发。完整的功能说明、数据与备份、安装兼容与开发验证统一维护在[项目主 README](https://github.com/MYdesignTool/Ae-ToolKit/blob/main/README.md)。
 
-1. 在 AE 时间线中展开属性，选中位置、旋转等具体属性；仅选中图层不等于选中属性。
-2. 搜索并从下拉框选择表达式，直接在编辑区修改代码，也可清空选择后输入新代码。
-3. 查看选中属性数量；回到面板或切换到表达式页时自动刷新，也可手动刷新。
-4. 点击“应用到选中属性”，或在编辑器按 Ctrl/Cmd + Enter。已有表达式沿用原来的覆盖确认流程；安静模式沿用原来的免确认设置。
-5. 底部状态栏显示成功、跳过和失败数量。失败属性尝试恢复原表达式；整批操作可在 AE 中一次撤销。
+## 快速上手
 
-“另存为”打开命名弹窗，自定义条目可保存修改或删除。切换条目会提示未保存内容。Tab 在代码编辑器内插入两个空格。界面保留原有的搜索、下拉选择与编辑结构，编辑区随面板高度伸缩，保存操作集中在编辑区标题旁。
+1. 在 After Effects 首选项「脚本与表达式」启用「允许脚本写入文件和访问网络」。
+2. 重启 AE，通过「窗口 > 扩展」打开 AE Local Toolkit。
+3. 在设置页选择脚本目录；首次运行会自动整合旧版本的设置与方案。
 
-## 脚本集
+设置、脚本收藏、自定义表达式和整理方案统一保存在本文件夹的 `data/user-data.json`，旁边的 `.bak` 是上一次成功保存前的完整快照。复制整个 `AeLocalToolkit` 文件夹即可带走全部个人数据，或在 AE 面板的设置页导入导出 JSON 备份。
 
-在设置中选择脚本目录，扫描 JSX / JSXBIN 文件（不区分大小写）。保留原有的横幅列表、搜索、收藏与刷新；双击脚本运行，键盘 Enter 也可运行。每行只显示一次脚本名称，完整相对路径放在悬停提示中。标准行高 52px、横幅 120×30；窄面板为 48px、96×24。切页时可见行短距离依次向上淡入，收藏有弹性点亮和小粒子；启用系统减少动态效果时自动关闭这些动画。
+使用细节见主 README：
 
-图片相对于用户选择的脚本目录查找，支持 PNG/JPG/JPEG/WebP/GIF，依次匹配：
+- [批量表达式](https://github.com/MYdesignTool/Ae-ToolKit/blob/main/README.md#批量表达式)
+- [脚本集](https://github.com/MYdesignTool/Ae-ToolKit/blob/main/README.md#脚本集)
+- [工程整理](https://github.com/MYdesignTool/Ae-ToolKit/blob/main/README.md#工程整理)
+- [数据与备份](https://github.com/MYdesignTool/Ae-ToolKit/blob/main/README.md#数据与备份)
 
-1. 根目录 image 中保留子路径的同名图片：Sub/Tool.jsx 对应 image/Sub/Tool.png。
-2. 根目录 image 中的扁平同名图片：image/Tool.png。
-3. 脚本旁的同名图片：Sub/Tool.png。
-
-不绑定某台电脑的路径。原生文件路径转换为浏览器可用的 file URL，正确保留中文、百分号和井号；图片统一放入 4:1 的圆角横幅区域，等比填充并裁切边缘，不拉伸。加载失败或没有图片时使用项目原有的山景占位图。image 和括号包围的目录不扫描为脚本；扫描限制为 24 层、20000 项，达到限制会提示。第三方脚本由 AE 执行，具有宿主脚本权限，请使用可信来源。
-
-## 工程整理
-
-选择方案并配置后缀与目标路径。合成、固态层和未匹配素材路径在设置中全局配置；支持忽略指定名称的主合成。素材直接移到目标目录，整理后清除空文件夹，可在 AE 中撤销。
-
-## 数据与备份
-
-设置、脚本收藏、自定义表达式和全部自定义整理方案，统一保存在扩展文件夹内的 data/user-data.json。内置默认规则保持单独分发，更新时不会覆盖个人数据。
-
-换电脑：保存完成并关闭 AE 后，复制整个 AeLocalToolkit 文件夹到新电脑的系统级 CEP 目录（Windows：C:\Program Files (x86)\Common Files\Adobe\CEP\extensions；macOS：/Library/Application Support/Adobe/CEP/extensions），并确保 data 子目录对当前用户可写，再打开面板即可。Windows 安装器会自动设置 data 权限，无需给程序文件开放修改权限。user-data.json 是完整数据，旁边的 .bak 是上一次成功保存前的完整快照。安装器更新前还会备份整个 data 到 backups/before-版本-时间/。
-
-脚本目录和收藏如果位于扩展文件夹内，会存为相对路径，移动文件夹后自动对应新位置。例如将脚本放进 AeLocalToolkit/scripts，并在设置里选择它；其 image 子目录也一并复制。扩展外的脚本、图片和 AE 工程不会被配置文件复制，换电脑时需另行携带，并按实际位置重新选择脚本目录。
-
-首次升级会整合旧版 data/settings.json、data/organizer-schemes/ 以及上一版 Folder.userData/AE Local Toolkit/ 中的数据，保留所有源文件。如果两处同时存在，上一版用户目录的设置和同 ID 方案优先；其他方案合并。此后始终以本扩展的 user-data.json 为准，不会重新导入已删除的旧方案。
-
-保存先写临时文件再替换，失败保留原数据；主文件缺失时恢复 .bak。设置页仍可导入、导出完整 JSON 备份。导入源保留为 last-import.json；导入前保存 before-import.json，替换设置并合并同 ID 方案，最终单次写入完整数据；损坏原文件保留为 before-import-corrupt.json。
-
-安装器直接运行即可升级，无需卸载。它只更新程序和内置默认 JSON，保留个人文件；从旧系统级安装迁移时，先复制数据，在新版写入后将旧清单重命名停用，旧目录与数据保留。卸载保留 data、backups 和扩展根目录额外的个人脚本目录。手动升级应将新包合并覆盖到旧文件夹，保留原 data，避免先删除旧文件夹。
-
-[安装](docs/install.md) · [构建](installer/README.md) · [GPLv3](License.md)
+[完整说明](https://github.com/MYdesignTool/Ae-ToolKit/blob/main/README.md) · [GPLv3](License.md)
