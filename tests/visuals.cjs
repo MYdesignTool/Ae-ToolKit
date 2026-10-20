@@ -22,7 +22,9 @@ async function main(){
  const p=await context.newPage();p.on('pageerror',e=>errors.push(e.message));await p.addInitScript(instrument);
  try{
  await p.goto(base);await p.waitForFunction(()=>document.querySelector('#particle-logo').dataset.renderer==='webgl');
- assert.ok(Number(await p.locator('#particle-logo').getAttribute('data-particles'))>15000);
+ const particleCount=Number(await p.locator('#particle-logo').getAttribute('data-particles'));
+ assert.ok(particleCount>15000&&particleCount<19000,'the logo uses roughly 17,000 particles after halving density');
+ console.log('Particle count: '+particleCount);
  const marks=await p.locator('.brand img,.logo-sm,.particle-fallback').evaluateAll(els=>els.map(e=>new URL(e.src).pathname));
  assert.equal(marks.length,3);assert.ok(marks.every(s=>s==='/assets/img/logo.svg'),'navigation, footer and particles use one brand mark');
  assert.ok((await p.locator('link[rel=icon]').getAttribute('href')).startsWith('assets/img/logo.svg'));

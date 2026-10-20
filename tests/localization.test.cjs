@@ -42,7 +42,7 @@ test('English generation keeps every release field and all section structure in 
  assert.equal((rendered.match(/data-release-link/g)||[]).length,4);
  assert.ok(rendered.includes('Download '+changelog.version));
  assert.ok(rendered.includes('href="../assets/css/style.css?v=lang-motion2"'));
- assert.ok(rendered.includes('src="../assets/js/visuals.js?v=lang-motion2"'));
+ assert.ok(rendered.includes('src="../assets/js/visuals.js?v=particles-half1"'));
  assert.ok(rendered.includes('Window → Extensions → AE Local Toolkit'));
  const future={version:'9.8.7',entries:[{version:'9.8.7',date:'2030-01-02',changes:['New release'],highlights:[{title:'New version',description:'New content'}]}]};
  const english=renderEnglish(renderPage(source,selectRelease(future)));assert.ok(english.includes('Download 9.8.7'));assert.ok(english.includes('v9.8.7'));assert.ok(!english.includes('v0.3.1'));assert.ok(english.includes('New content'));

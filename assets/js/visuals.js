@@ -162,8 +162,8 @@
     const mask = document.createElement('canvas'); mask.width = 256; mask.height = 224;
     const ctx = mask.getContext('2d', { willReadFrequently:true }); ctx.drawImage(image, 0, 0, 256, 224);
     const pixels = ctx.getImageData(0,0,256,224).data, points = [];
-    // Sampling in two dimensions: divide spacing by sqrt(2) for twice the particles.
-    const spacing = 1.25 / Math.SQRT2;
+    // Increase spacing by sqrt(2) on both axes to halve the particle density.
+    const spacing = 1.25;
     for (let y=spacing; y<223; y+=spacing) for (let x=spacing; x<255; x+=spacing) {
       const at = (Math.floor(y)*256+Math.floor(x))*4; if (pixels[at+3] < 110) continue;
       const seed = Math.random(), nx = (x + Math.random()*.6 - 128) / 256, ny = (y + Math.random()*.6 - 112) / 224;
