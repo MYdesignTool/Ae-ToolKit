@@ -105,7 +105,7 @@
     var folders = getGlobalFolders();
     return normalizeScheme({
       id: current.id,
-      name: els.schemeNameInput.value.trim() || "整理方案",
+      name: els.schemeNameInput.value.trim() || t("整理方案"),
       builtin: false,
       fallbackPath: normalizePath(folders.fallback || "Footage"),
       rules: rules
@@ -139,10 +139,10 @@
     });
 
     if (invalidRules.length) {
-      return { ok: false, message: "有规则缺少文件夹路径。" };
+      return { ok: false, message: t("有规则缺少文件夹路径。") };
     }
     if (duplicates.length) {
-      return { ok: false, message: "文件类型不能重复：" + duplicates.join(", ") };
+      return { ok: false, message: t("文件类型不能重复：") + duplicates.join(", ") };
     }
     return { ok: true, message: "" };
   }
@@ -150,7 +150,7 @@
   function renderSchemeSelect() {
     els.schemeSelect.innerHTML = state.organizerSchemes.map(function (scheme) {
       var selected = scheme.id === state.selectedSchemeId ? " selected" : "";
-      var label = scheme.name + (scheme.builtin ? " · 预设" : "");
+      var label = AELT.i18n.builtin(scheme, 'name') + (scheme.builtin ? t(" · 预设") : "");
       return '<option value="' + escapeHtml(scheme.id) + '"' + selected + ">" + escapeHtml(label) + "</option>";
     }).join("");
   }
@@ -158,7 +158,7 @@
   function renderRules() {
     var scheme = getSelectedScheme();
     state.selectedSchemeId = scheme.id;
-    els.schemeNameInput.value = scheme.name || "";
+    els.schemeNameInput.value = AELT.i18n.builtin(scheme, 'name') || '';
     // 首次从当前方案吸收全局文件夹初始值（幂等）。
     absorbGlobalFoldersFromScheme(scheme);
     // 回填设置页的全局文件夹输入框（此时已吸收过，显示用户/方案值）。
@@ -176,16 +176,16 @@
 
       // Header row
       html += '<div class="rule-header">';
-      html += '<label class="field"><span>文件夹路径</span><input data-rule-path type="text" value="' + escapeHtml(rule.path) + '" placeholder="Footage/Image" /></label>';
-      html += '<button class="icon-btn danger" data-remove-rule="' + index + '" title="删除规则">\u2716</button>';
+      html += '<label class="field"><span data-i18n="文件夹路径">' + escapeHtml(t('文件夹路径')) + '</span><input data-rule-path type="text" value="' + escapeHtml(rule.path) + '" placeholder="Footage/Image" /></label>';
+      html += '<button class="icon-btn danger" data-i18n-title="删除规则" data-remove-rule="' + index + '" title="' + escapeHtml(t('删除规则')) + '">✖</button>';
       html += '</div>';
 
       // File types
-      html += '<label class="field"><span>文件类型</span><input data-rule-extensions type="text" value="' + escapeHtml((rule.extensions || []).join(", ")) + '" placeholder="MP4, MOV, PNG" /></label>';
+      html += '<label class="field"><span data-i18n="文件类型">' + escapeHtml(t('文件类型')) + '</span><input data-rule-extensions type="text" value="' + escapeHtml((rule.extensions || []).join(', ')) + '" placeholder="MP4, MOV, PNG" /></label>';
 
       html += '</div>';  // end rule-item
     });
-    els.ruleGrid.innerHTML = html || '<div class="selection-status">暂无规则</div>';
+    els.ruleGrid.innerHTML = html || '<div class="selection-status" data-i18n="暂无规则">' + escapeHtml(t('暂无规则')) + '</div>';
   }
 
   function loadOrganizerSchemesFromHost() {
@@ -196,12 +196,12 @@
             state.selectedSchemeId = state.organizerSchemes[0].id;
           }
           renderRules();
-          setStatus("已加载整理方案 " + state.organizerSchemes.length + " 套。");
+          setStatus(t('已加载整理方案 {count} 套。', {count:state.organizerSchemes.length}));
         } else {
           state.organizerSchemes = [normalizeScheme(state.rules)];
           state.selectedSchemeId = "preset-default";
           renderRules();
-          setStatus("整理方案文件读取失败，已使用内置预设。");
+          setStatus(t("整理方案文件读取失败，已使用内置预设。"));
         }
       });
   }
@@ -223,17 +223,17 @@
 
     if (els.organizeBtn) els.organizeBtn.disabled = true;
     showOrganizeProgress();
-    setStatus("正在整理工程：" + scheme.name);
+    setStatus(t("正在整理工程：") + scheme.name);
     callHost('AELT_organizeProjectWithScheme', [scheme], function (result) {
         hideOrganizeProgress();
         if (els.organizeBtn) els.organizeBtn.disabled = false;
         if (!result.ok) {
-          setStatus((result.messages && result.messages[0]) || "整理失败。");
+          setStatus((result.messages && result.messages[0]) || t("整理失败。"));
           return;
         }
-        var ignoredMsg = (result.ignoredMainComp > 0) ? "，忽略主合成 " + result.ignoredMainComp + " 项" : "";
-        setStatus("整理完成：移动 " + result.moved + " 项，跳过 " + result.skipped + " 项，错误 " + result.errors + " 个" + ignoredMsg + "。");
-        showToast("整理完成：移动 " + result.moved + " 项", "success");
+        var ignoredMsg = result.ignoredMainComp > 0 ? t('，忽略主合成 {count} 项', {count:result.ignoredMainComp}) : '';
+        setStatus(t('整理完成：移动 {moved} 项，跳过 {skipped} 项，错误 {errors} 个{ignored}。', {moved:result.moved, skipped:result.skipped, errors:result.errors, ignored:ignoredMsg}));
+        showToast(t('整理完成：移动 {count} 项', {count:result.moved}), 'success');
       });
   }
 
@@ -250,7 +250,7 @@
   function newScheme() {
     var scheme = normalizeScheme({
    id: createId("scheme"),
-   name: "新的整理方案",
+   name: t("新的整理方案"),
    builtin: false,
       fallbackPath: "Footage",
       rules: [
@@ -261,8 +261,8 @@
     state.organizerSchemes.push(scheme);
     state.selectedSchemeId = scheme.id;
     renderRules();
-    setStatus("已创建新方案，保存后会写入方案文件。");
-      showToast("已创建新方案", "success");
+    setStatus(t("已创建新方案，保存后会写入方案文件。"));
+      showToast(t("已创建新方案"), "success");
   }
 
   function saveScheme() {
@@ -279,7 +279,7 @@
 
     callHost('AELT_saveOrganizerScheme', [scheme], function (result) {
       if (!result.ok) {
-        setStatus((result.messages && result.messages[0]) || "方案保存失败。");
+        setStatus((result.messages && result.messages[0]) || t("方案保存失败。"));
         return;
       }
 
@@ -294,24 +294,24 @@
       if (!replaced) state.organizerSchemes.push(scheme);
       state.selectedSchemeId = scheme.id;
       renderRules();
-      setStatus("方案已保存：" + scheme.name);
-      showToast("方案已保存", "success");
+      setStatus(t("方案已保存：") + scheme.name);
+      showToast(t("方案已保存"), "success");
     });
   }
 
   function deleteScheme() {
     var scheme = getSelectedScheme();
     if (scheme.builtin) {
-      setStatus("预设方案不能删除。");
-      showToast("预设方案不能删除", "error");
+      setStatus(t("预设方案不能删除。"));
+      showToast(t("预设方案不能删除"), "error");
       return;
     }
-    confirmAction("确认删除整理方案“" + scheme.name + "”？", function (ok) {
+    confirmAction(t('确认删除整理方案“{name}”？', {name:scheme.name}), function (ok) {
       if (!ok) return;
 
       callHost('AELT_deleteOrganizerScheme', [scheme.id], function (result) {
         if (!result.ok) {
-          setStatus((result.messages && result.messages[0]) || "方案删除失败。");
+          setStatus((result.messages && result.messages[0]) || t("方案删除失败。"));
           return;
         }
         state.organizerSchemes = state.organizerSchemes.filter(function (item) {
@@ -319,8 +319,8 @@
         });
         state.selectedSchemeId = state.organizerSchemes[0] ? state.organizerSchemes[0].id : "preset-default";
         renderRules();
-        setStatus("方案已删除。");
-        showToast("方案已删除", "success");
+        setStatus(t("方案已删除。"));
+        showToast(t("方案已删除"), "success");
       });
     });
   }
@@ -330,7 +330,7 @@
     if (scheme.id === "preset-default") {
       var newScheme = normalizeScheme({
         id: createId("scheme"),
-        name: "新的整理方案",
+        name: t("新的整理方案"),
         builtin: false,
         fallbackPath: scheme.fallbackPath || "Footage",
         rules: JSON.parse(JSON.stringify(scheme.rules))

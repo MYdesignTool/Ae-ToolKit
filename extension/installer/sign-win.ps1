@@ -15,7 +15,7 @@ if (-not (Get-Command $signtool -ErrorAction SilentlyContinue)) {
   exit 1
 }
 
-$version = (Get-Content -LiteralPath (Join-Path $PSScriptRoot '..\data\changelog.json') -Raw | ConvertFrom-Json).version
+$version = (Get-Content -LiteralPath (Join-Path $PSScriptRoot '..\data\changelog.json') -Raw -Encoding UTF8 | ConvertFrom-Json).version
 if ($version -notmatch '^\d+\.\d+\.\d+$') { throw 'Invalid changelog version' }
 $files = @((Join-Path $PSScriptRoot ('dist\aetoolkit-v' + $version + '-installer.exe')))
 foreach ($f in $files) {

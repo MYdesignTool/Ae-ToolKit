@@ -41,6 +41,7 @@ AELocalToolkit.storage = (function () {
   function readData(name) { return read(new File(dataRoot.fullName + '/' + name)); }
   function validateSettings(settings) {
     if (!settings || typeof settings !== 'object' || settings instanceof Array) throw new Error('设置必须是 JSON 对象');
+    if (settings.language !== undefined && settings.language !== 'zh-CN' && settings.language !== 'en') throw new Error('不支持的界面语言');
     var arrays = ['scriptFavorites', 'userExpressions'];
     for (var i = 0; i < arrays.length; i++) if (settings[arrays[i]] !== undefined && !(settings[arrays[i]] instanceof Array)) throw new Error('设置列表格式错误：' + arrays[i]);
     var strings = ['compFolder', 'solidFolder', 'fallbackFolder', 'scriptFolder', 'ignoreMainCompNames'];
@@ -147,17 +148,17 @@ AELocalToolkit.storage = (function () {
     for (var i = 0; i < data.schemes.length; i++) if (data.schemes[i].id !== id) remaining.push(data.schemes[i]);
     data.schemes = remaining; write(dataFile(), data);
   }
-  function exportData() {
+  function exportData(language) {
     try {
-      var file = File.saveDialog('导出工具箱备份（JSON）', '*.json');
+      var file = File.saveDialog(language === 'en' ? 'Export Toolkit backup (JSON)' : '导出工具箱备份（JSON）', '*.json');
       if (!file) return AELocalToolkit.returnResult({ ok: true, cancelled: true });
       var path = file.fsName; write(file, loadDocument());
       return AELocalToolkit.returnResult({ ok: true, path: path });
     } catch (e) { return AELocalToolkit.error(e); }
   }
-  function importData() {
+  function importData(language) {
     try {
-      var file = File.openDialog('选择工具箱备份（JSON）', '*.json');
+      var file = File.openDialog(language === 'en' ? 'Choose Toolkit backup (JSON)' : '选择工具箱备份（JSON）', '*.json');
       if (!file) return AELocalToolkit.returnResult({ ok: true, cancelled: true });
       var imported = validateDocument(read(file)), previous = dataFile(), current;
       // Retain the valid import even if it came from the canonical file's .bak.

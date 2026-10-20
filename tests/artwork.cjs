@@ -31,9 +31,9 @@ async function main(){
   const output=process.env.ARTIFACT_DIR||path.join(root,'.artifacts','artwork');fs.mkdirSync(output,{recursive:true});
   for(const width of [626,360]){
    await page.setViewportSize({width,height:width===626?900:520});
-   const header=await page.locator('.brand-art').evaluate(img=>{const r=img.getBoundingClientRect();return{loaded:img.complete&&img.naturalWidth>0,drag:img.draggable,alt:img.alt,left:r.left,right:r.right,bottom:r.bottom};});
+   const header=await page.locator('.brand-art').evaluate(img=>{const r=img.closest('.brand').getBoundingClientRect();return{loaded:img.complete&&img.naturalWidth>0,drag:img.draggable,alt:img.alt,left:r.left,right:r.right,bottom:r.bottom};});
    const version=await page.locator('#versionLabel').boundingBox(),tabs=await page.locator('.tabs').boundingBox();
-   assert.equal(header.loaded,true);assert.equal(header.drag,false);assert.equal(header.alt,'AE工具箱');assert.ok(header.left>=0&&header.right<version.x&&header.bottom<=tabs.y);
+   assert.equal(header.loaded,true);assert.equal(header.drag,false);assert.equal(header.alt,'');assert.equal(await page.locator('.brand-name').textContent(),'AE工具箱');assert.ok(header.left>=0&&header.right<version.x&&header.bottom<=tabs.y);
    assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false);
    await page.mouse.move(2,2);await page.screenshot({path:path.join(output,'artwork-'+width+'.png')});
   }

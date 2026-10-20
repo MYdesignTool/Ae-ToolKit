@@ -5,8 +5,8 @@ AELT.settings = (function () {
     callHost('AELT_loadSettings', [], function (result) {
       loaded = result.ok;
       if (loaded) { cache = result.settings; savedRevision = revision = 0; }
-      else { setStatus(result.messages.join(' ')); showToast('设置加载失败，已停止写入以保护原数据', 'error'); }
-      if (els.dataLocation) els.dataLocation.textContent = result.path || '设置不可用';
+      else { setStatus(result.messages.join(' ')); showToast(t('设置加载失败，已停止写入以保护原数据'), 'error'); }
+      if (els.dataLocation) els.dataLocation.textContent = result.path || t('设置不可用');
       callback(result.ok, result);
     });
   }
@@ -18,14 +18,14 @@ AELT.settings = (function () {
     clearTimeout(timer);
     if (callback) waiting.push({ revision: revision, callback: callback });
     if (saving) return;
-    if (!loaded) { complete({ ok: false, messages: ['设置尚未成功读取，无法保存。'] }, revision); return; }
+    if (!loaded) { complete({ ok: false, messages: [t('设置尚未成功读取，无法保存。')] }, revision); return; }
     if (savedRevision === revision) { complete({ ok: true }, revision); return; }
     saving = true;
     var writing = revision;
     callHost('AELT_saveSettings', [cloneData(cache)], function (result) {
       saving = false;
       if (result.ok) savedRevision = writing;
-      else { setStatus(result.messages.join(' ')); showToast('保存失败，请检查脚本写文件权限', 'error'); }
+      else { setStatus(result.messages.join(' ')); showToast(t('保存失败，请检查脚本写文件权限'), 'error'); }
       complete(result, result.ok ? writing : revision);
       if (result.ok && revision > writing) persist();
     });

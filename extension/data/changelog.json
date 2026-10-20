@@ -1,6 +1,40 @@
 {
-  "version": "0.3.1",
+  "version": "0.3.2",
   "entries": [
+    {
+      "version": "0.3.2",
+      "date": "2026-10-20",
+      "changes": [
+        "新增表达式代码编辑器，支持语法高亮、行号、括号匹配与补全、自动缩进。",
+        "新增基础语法检查与错误行列定位，点击提示可跳转到错误位置。",
+        "新增一键格式化与 Shift+Alt+F 快捷键，支持一次撤销；语法错误时保留原稿。",
+        "新增简体中文 / English 界面切换，覆盖顶部品牌、设置、操作反馈、弹窗和更新日志，并记忆语言选择。",
+        "切换语言保留未保存的表达式、撤销历史与整理规则；用户名称、路径及代码保持原文。",
+        "编辑器、解析器和格式化工具随扩展本地分发，无需联网；保持 AE 2023 / CEP 11 及更新版本支持。"
+      ],
+      "changesEn": [
+        "Add an expression code editor with syntax highlighting, line numbers, bracket matching and completion, and automatic indentation.",
+        "Add basic syntax checks with line and column diagnostics. Click a diagnostic to jump to the error.",
+        "Add one-click formatting and the Shift+Alt+F shortcut, with single-step undo. Invalid drafts remain unchanged.",
+        "Add Simplified Chinese / English switching for the brand wordmark, settings, feedback, dialogs and changelog, with a saved language preference.",
+        "Preserve unsaved expressions, undo history and organizer rules when switching languages. Keep user names, paths and code unchanged.",
+        "Bundle the editor, parser and formatter locally for offline use. Retain support for AE 2023 / CEP 11 and later."
+      ],
+      "highlights": [
+        {
+          "title": "写表达式，更顺手",
+          "description": "语法高亮、行号与错误定位，配合括号补全和自动缩进，让代码更清楚。"
+        },
+        {
+          "title": "一键排版，随时撤销",
+          "description": "点击格式化或按 Shift+Alt+F，整理缩进、空格与换行；一次撤销即可恢复原稿。"
+        },
+        {
+          "title": "中英界面，即时切换",
+          "description": "设置中选择简体中文或 English，切换后保留草稿与撤销历史，重开仍记得你的选择。"
+        }
+      ]
+    },
     {
       "version": "0.3.1",
       "date": "2026-10-15",

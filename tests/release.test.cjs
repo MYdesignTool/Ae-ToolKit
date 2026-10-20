@@ -2,7 +2,7 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
-const {selectRelease, renderPage, renderManifest} = require('../scripts/sync-release.cjs');
+const {selectRelease, renderPage, renderManifest, renderPanel} = require('../scripts/sync-release.cjs');
 const root = path.resolve(__dirname, '..');
 const data = JSON.parse(fs.readFileSync(path.join(root, 'extension/data/changelog.json'), 'utf8'));
 const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
@@ -50,6 +50,9 @@ test('CEP versions sync while host and runtime compatibility remain intact', () 
   assert.ok(rendered.includes('Id="com.local.aetoolkit.panel" Version="9.8.7"'));
   assert.ok(rendered.includes('Host Name="AEFT" Version="[23.0,99.9]"'));
   assert.ok(rendered.includes('RequiredRuntime Name="CSXS" Version="11.0"'));
+  const panel = fs.readFileSync(path.join(root, 'extension/client/index.html'), 'utf8');
+  assert.match(renderPanel(panel, future.version), /id="versionLabel"[^>]*>9\.8\.7<\/button>/);
+  assert.throws(() => renderPanel('<p>Missing version</p>', future.version), /one panel version label/);
 });
 
 test('inconsistent or incomplete release metadata fails rather than mixing versions', () => {

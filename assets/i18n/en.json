@@ -131,6 +131,16 @@
     "。": ".",
     "English：": "English UI: ",
     "＋": "+",
-    "当前 Windows 安装器未进行代码签名。若出现“Windows 已保护你的电脑”，确认安装包来自本项目 GitHub Releases 后，点击“更多信息” → “仍要运行”继续安装。": "The current Windows installer is not code-signed. If Windows displays “Windows protected your PC”, confirm that the installer came from this project’s GitHub Releases, then click “More info” → “Run anyway” to continue."
+    "当前 Windows 安装器未进行代码签名。若出现“Windows 已保护你的电脑”，确认安装包来自本项目 GitHub Releases 后，点击“更多信息” → “仍要运行”继续安装。": "The current Windows installer is not code-signed. If Windows displays “Windows protected your PC”, confirm that the installer came from this project’s GitHub Releases, then click “More info” → “Run anyway” to continue.",
+    "写表达式，更顺手": "A better place to write expressions",
+    "语法高亮、行号与错误定位，配合括号补全和自动缩进，让代码更清楚。": "Syntax highlighting, line numbers and error locations, with bracket completion and automatic indentation, make code easier to read.",
+    "一键排版，随时撤销": "Format in one click. Undo in one step.",
+    "点击格式化或按 Shift+Alt+F，整理缩进、空格与换行；一次撤销即可恢复原稿。": "Click Format or press Shift+Alt+F to tidy indentation, spacing and line breaks. Undo once to restore your draft.",
+    "中英界面，即时切换": "Switch languages instantly",
+    "设置中选择简体中文或 English，切换后保留草稿与撤销历史，重开仍记得你的选择。": "Choose Simplified Chinese or English in Settings. Keep drafts and undo history when switching, and remember your choice after reopening.",
+    "高亮编辑、语法检查、一键格式化，写好表达式再批量应用。设置中可随时切换中英界面。": "Write expressions with syntax highlighting, syntax checks and one-click formatting, then apply them in batches. Switch between Chinese and English in Settings.",
+    "语法高亮与错误定位": "Syntax highlighting and error locations",
+    "一键格式化与撤销": "One-click formatting and undo",
+    "写表达式更顺手，中英界面随时切换。": "A better expression editor. Chinese and English, ready to switch."
   }
 }

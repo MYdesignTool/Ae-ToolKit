@@ -89,8 +89,11 @@ textarea {
   gap: 12px;
 }
 
-.brand { flex: 0 1 216px; min-width: 0; height: 48px; }
-.brand-art { display: block; width: 100%; height: 100%; object-fit: cover; -webkit-user-drag: none; }
+.brand { flex: 0 1 auto; min-width: 0; height: 48px; display: flex; align-items: center; gap: 10px; }
+/* Reuse the original emblem; keep the wordmark as translatable text. */
+.brand-icon { display: block; flex: 0 0 56px; width: 56px; height: 48px; overflow: hidden; }
+.brand-art { display: block; width: 216px; max-width: none; height: 48px; -webkit-user-drag: none; }
+.brand-name { font-size: 30px; font-weight: 750; letter-spacing: -.5px; white-space: nowrap; }
 
 /* ===== 标题通用样式 ===== */
 h1,
@@ -905,6 +908,34 @@ button:focus-visible, .script-item:focus-visible { outline: 2px solid var(--acce
 .expression-code-field textarea { flex: 1; min-height: 100px; resize: none; padding: 12px; font-size: 13px; line-height: 1.75; }
 .expression-actions { justify-content: flex-start; flex-shrink: 0; gap: 8px; }
 .expression-actions button { height: 34px; padding: 0 14px; }
+
+/* CodeMirror uses native input/IME and keeps its own selection and undo history. */
+.expression-editor-tools { display:flex; align-items:center; justify-content:space-between; color:var(--muted); font-size:11px; flex-shrink:0; }
+.expression-editor-tools button { padding:3px 8px; font-size:12px; min-height:26px; }
+.expression-code-field .CodeMirror { flex:1; min-height:100px; height:100px; width:100%; border:1px solid var(--line); border-radius:6px; font:13px/1.75 Consolas, 'SFMono-Regular', monospace; background:#1e1e1e; color:#d4d4d4; }
+.expression-code-field .CodeMirror-focused { border-color:var(--accent-strong); }
+.cm-s-aelt .CodeMirror-gutters { background:#1e1e1e; border-right:1px solid #303030; }
+.cm-s-aelt .CodeMirror-linenumber { color:#858585; }
+.cm-s-aelt .CodeMirror-cursor { border-left:1px solid #eee; }
+.cm-s-aelt .CodeMirror-selected { background:#264f78; }
+.cm-s-aelt .CodeMirror-activeline-background { background:#262626; }
+.cm-s-aelt .cm-keyword { color:#569cd6; }
+.cm-s-aelt .cm-atom, .cm-s-aelt .cm-number { color:#b5cea8; }
+.cm-s-aelt .cm-def, .cm-s-aelt .cm-variable { color:#9cdcfe; }
+.cm-s-aelt .cm-variable-2, .cm-s-aelt .cm-property { color:#dcdcaa; }
+.cm-s-aelt .cm-string, .cm-s-aelt .cm-string-2 { color:#ce9178; }
+.cm-s-aelt .cm-comment { color:#6a9955; }
+.cm-s-aelt .cm-operator { color:#d4d4d4; }
+.cm-s-aelt .cm-builtin { color:#4ec9b0; }
+.cm-s-aelt .cm-error { color:#f48771; }
+.cm-s-aelt .CodeMirror-matchingbracket { color:#ffd700 !important; background:#ffffff14; }
+.cm-s-aelt .CodeMirror-nonmatchingbracket { color:#f48771 !important; text-decoration:underline wavy; }
+.editor-status { text-align:left; padding:0; border:0; background:transparent; color:var(--muted); font-size:11px; line-height:1.5; white-space:normal; flex-shrink:0; }
+.editor-status:disabled { opacity:1; cursor:default; }
+.editor-status.has-error { color:#f48771; cursor:pointer; }
+.CodeMirror-lint-tooltip { max-width:320px; white-space:normal; color:var(--text); background:var(--panel); border-color:var(--line); }
+html[lang=en] .expression-editor-head { flex-wrap:wrap; }
+html[lang=en] .expression-manage button { padding:0 5px; }
 #applyExpressionBtn { min-width: 160px; }
 #dataLocation { overflow-wrap: anywhere; }
 .status { height: 26px; min-height: 26px; margin-top: auto; padding-top: 7px; font-size: 11px; flex-shrink: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }

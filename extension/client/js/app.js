@@ -82,7 +82,7 @@
       if (scheme.id === "preset-default") {
         var newScheme = normalizeScheme({
           id: createId("scheme"),
-          name: "新的整理方案",
+          name: t("新的整理方案"),
           builtin: false,
           fallbackPath: scheme.fallbackPath || "Footage",
           rules: JSON.parse(JSON.stringify(scheme.rules))
@@ -131,7 +131,7 @@
     els.clearDebugBtn.addEventListener("click", function () {
       state.debugEntries = [];
       renderDebug();
-      els.statusBar.textContent = "Debug 已清空";
+      els.statusBar.textContent = t("Debug 已清空");
     });
   }
 
@@ -156,6 +156,7 @@
       "expressionSearch",
       "expressionList",
       "expressionCode",
+      "formatExpressionBtn", "editorStatus", "languageSelect",
       "applyExpressionBtn",
       "removeExpressionBtn",
       "saveExpressionBtn",
@@ -190,12 +191,12 @@
     state.ready = false; state.startupError = true;
     syncDebugTabVisibility();
     addDebug('startup', { stage:stage, extensionRoot:getExtensionRoot(), result:result }, true);
-    setStatus('扩展启动失败，详细原因见 Debug。');
-    showToast('扩展启动失败，详细原因见 Debug', 'error');
+    setStatus(t('扩展启动失败，详细原因见 Debug。'));
+    showToast(t('扩展启动失败，详细原因见 Debug'), 'error');
     document.querySelector('.tab[data-view="debug"]').click();
   }
   function init() {
-    cacheEls(); bindEvents(); bindScriptEvents(); bindExpressionEvents();
+    cacheEls(); AELT.i18n.init(); bindEvents(); bindScriptEvents(); bindExpressionEvents(); AELT.editor.init();
     positionTabIndicator(false);
     window.addEventListener('resize', function () { positionTabIndicator(false); });
     window.addEventListener('focus', function () { if ($('expressionsView').classList.contains('active')) refreshSelection(); });
@@ -220,20 +221,21 @@
       if (!result.ok) { reportStartupFailure('host-loader', result); return; }
       AELT.settings.load(function (loaded, settingsResult) {
         if (!loaded) { reportStartupFailure('settings', settingsResult); return; }
+        AELT.i18n.setLanguage(AELT.settings.get('language', 'zh-CN'), false);
         bootstrap();
       });
     });
     els.exportDataBtn.addEventListener('click', function () {
       AELT.settings.persist(function (saved) {
         if (!saved.ok) return;
-        callHost('AELT_exportUserData', [], function (result) { if (!result.cancelled) showToast(result.ok ? '备份已导出' : result.messages.join(' '), result.ok ? 'success' : 'error'); });
+        callHost('AELT_exportUserData', [AELT.i18n.getLanguage()], function (result) { if (!result.cancelled) showToast(result.ok ? t('备份已导出') : result.messages.join(' '), result.ok ? 'success' : 'error'); });
       });
     });
     els.importDataBtn.addEventListener('click', function () {
-      showConfirmDialog('导入将替换当前设置并合并整理方案。未保存的表达式草稿会丢失，原数据会自动备份。继续？', function (ok) {
+      showConfirmDialog(t('导入将替换当前设置并合并整理方案。未保存的表达式草稿会丢失，原数据会自动备份。继续？'), function (ok) {
         if (!ok) return;
         function importBackup() {
-          callHost('AELT_importUserData', [], function (result) {
+          callHost('AELT_importUserData', [AELT.i18n.getLanguage()], function (result) {
             if (result.cancelled) return;
             if (!result.ok) { showToast(result.messages.join(' '), 'error'); return; }
             window.location.reload();

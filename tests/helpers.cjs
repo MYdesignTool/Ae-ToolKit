@@ -4,7 +4,7 @@ const path = require('node:path');
 const root = path.resolve(__dirname, '..');
 exports.root = root;
 exports.source = file => fs.readFileSync(path.join(root, file), 'utf8');
-exports.context = (extra = {}) => vm.createContext({ console, AELT: {}, ...extra });
+exports.context = (extra = {}) => vm.createContext({ console, AELT: {}, t:(key, values)=>String(key).replace(/\{(\w+)\}/g,(match,name)=>values?.[name]??match), ...extra });
 exports.run = (context, file) => vm.runInContext(exports.source(file), context, { filename: file });
 exports.storage = (options = {}) => {
   const moduleRoot = options.root || "/extension";

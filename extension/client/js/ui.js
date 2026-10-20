@@ -75,8 +75,8 @@
   function renderChangelog() {
    if (!state.changelog) {
      els.versionLabel.disabled = true;
-     els.versionLabel.textContent = "未找到更新日志";
-     els.versionLabel.title = "更新日志文件未找到";
+     els.versionLabel.textContent = t("未找到更新日志");
+     els.versionLabel.title = t("更新日志文件未找到");
      els.versionLabel.style.cursor = "default";
      els.versionLabel.onclick = null;
      return;
@@ -84,7 +84,7 @@
    els.versionLabel.disabled = false;
    els.versionLabel.textContent = state.changelog.version;
    els.versionLabel.style.cursor = "pointer";
-   els.versionLabel.title = "更新日志";
+   els.versionLabel.title = t('更新日志');
    els.versionLabel.onclick = showChangelog;
    addDebug("changelog", state.changelog);
  }
@@ -95,12 +95,15 @@
    if (!modal || !body) return;
    var entries = (state.changelog && state.changelog.entries) || [];
    var latest = entries[0];
-   var intro = latest ? '<div class="changelog-intro"><img src="images/changelog-team.webp?v=peek" alt="" draggable="false" /><div class="changelog-intro-copy"><span>AE工具箱</span><h3>v' + escapeHtml(latest.version) + '</h3><time datetime="' + escapeHtml(latest.date) + '">' + escapeHtml(latest.date) + '</time></div></div>' : '';
+   var intro = latest ? '<div class="changelog-intro"><img src="images/changelog-team.webp?v=peek" alt="" draggable="false" /><div class="changelog-intro-copy"><span>' + escapeHtml(t('AE工具箱')) + '</span><h3>v' + escapeHtml(latest.version) + '</h3><time datetime="' + escapeHtml(latest.date) + '">' + escapeHtml(latest.date) + '</time></div></div>' : '';
    body.innerHTML = intro + (entries.map(function (entry, index) {
      var heading = index ? '<div class="changelog-version"><strong>v' + escapeHtml(entry.version) + '</strong><time datetime="' + escapeHtml(entry.date) + '">' + escapeHtml(entry.date) + '</time></div>' : '';
      return '<div class="changelog-item' + (index ? '' : ' changelog-current') + '">' + heading + '<ul>' +
-       (entry.changes || []).map(function (change) { return '<li>' + escapeHtml(change) + '</li>'; }).join('') + '</ul></div>';
-   }).join('') || '<p class="muted">暂无更新日志</p>');
+       (entry.changes || []).map(function (change, changeIndex) {
+         var english = entry.changesEn || AELT.changelogTranslations[entry.version];
+         return '<li>' + escapeHtml(AELT.i18n.getLanguage() === 'en' && english ? english[changeIndex] || change : t(change)) + '</li>';
+       }).join('') + '</ul></div>';
+   }).join('') || "<p class=\"muted\">" + escapeHtml(t("暂无更新日志")) + "</p>");
    modal._previousFocus = document.activeElement;
    modal.style.display = "flex";
    body.scrollTop = 0;
@@ -132,16 +135,16 @@
     callHost('AELT_ping', [], function (result) {
       addDebug('connection', result, true);
       if (result.loadErrors && result.loadErrors.length) {
-        setStatus("Host 模块加载失败，详见 Debug。");
-        showToast("Host 模块加载失败", "error");
+        setStatus(t("Host 模块加载失败，详见 Debug。"));
+        showToast(t("Host 模块加载失败"), "error");
         return;
       }
       if (result.ok) {
-        setStatus("AE host 已连接：" + result.appVersion);
-        showToast("AE host 已连接", "success");
+        setStatus(t("AE host 已连接：") + result.appVersion);
+        showToast(t("AE host 已连接"), "success");
       } else {
-        setStatus("AE host 检测失败。");
-        showToast("AE host 检测失败", "error");
+        setStatus(t("AE host 检测失败。"));
+        showToast(t("AE host 检测失败"), "error");
       }
     });
   }

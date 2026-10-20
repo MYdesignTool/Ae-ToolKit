@@ -85,11 +85,11 @@ function AELT_organizeProjectWithScheme(scheme) {
 function AELT_getSelectedPropertySummary() { return AELocalToolkit.returnResult(AELocalToolkit.expressions.getSelectedPropertySummary()); }
 function AELT_applyExpression(expression, overwriteExisting, expectedSelection) { return AELocalToolkit.returnResult(AELocalToolkit.expressions.applyExpression(expression, overwriteExisting, expectedSelection)); }
 function AELT_removeExpressions(expectedSelection) { return AELocalToolkit.returnResult(AELocalToolkit.expressions.removeExpressions(expectedSelection)); }
-function AELT_selectScriptFolder() {
-  var folder = Folder.selectDialog('选择脚本文件夹');
+function AELT_selectScriptFolder(language) {
+  var folder = Folder.selectDialog(language === 'en' ? 'Choose script folder' : '选择脚本文件夹');
   return AELocalToolkit.returnResult({ ok: true, path: folder ? folder.fsName : '' });
 }
 function AELT_scanScripts(path) { return AELocalToolkit.returnResult(AELocalToolkit.launcher.scanScripts(path)); }
 function AELT_launchScript(path) { return AELocalToolkit.returnResult(AELocalToolkit.launcher.launchScript(path)); }
-function AELT_exportUserData() { return AELocalToolkit.storage.exportData(); }
-function AELT_importUserData() { return AELocalToolkit.storage.importData(); }
+function AELT_exportUserData(language) { return AELocalToolkit.storage.exportData(language); }
+function AELT_importUserData(language) { return AELocalToolkit.storage.importData(language); }

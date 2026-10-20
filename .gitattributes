@@ -1,0 +1,2 @@
+# Preserve pinned upstream distributions and license notices byte for byte.
+extension/client/vendor/** -text -whitespace

@@ -52,8 +52,8 @@ async function main(){
   // Selection stays available in editable controls.
   await page.locator('#scriptSearch').fill('Tool');await page.locator('#scriptSearch').press('ControlOrMeta+A');
   assert.equal(await page.locator('#scriptSearch').evaluate(el=>el.selectionEnd-el.selectionStart),4);await page.locator('#scriptSearch').fill('');
-  await page.locator('[data-view=expressions]').click();await page.locator('#expressionCode').fill('time * 24');await page.locator('#expressionCode').press('ControlOrMeta+A');
-  assert.equal(await page.locator('#expressionCode').evaluate(el=>el.selectionEnd-el.selectionStart),9);
+  await page.locator('[data-view=expressions]').click();await page.evaluate(()=>{const cm=AELT.editor.getInstance();cm.setValue('time * 24');cm.focus();});await page.keyboard.press('ControlOrMeta+A');
+  assert.equal(await page.evaluate(()=>AELT.editor.getInstance().getSelection().length),9);
   await page.locator('[data-view=scripts]').click();await list.evaluate(el=>el.scrollTop=0);await page.mouse.move(2,2);
   const output=process.env.ARTIFACT_DIR||path.join(root,'.artifacts','drag');fs.mkdirSync(output,{recursive:true});await page.screenshot({path:path.join(output,'compact-drag-scripts.png')});
   assert.deepEqual(errors,[]);console.log('Drag passed: text/image/star panning, outside release, no panel selection or accidental execution, threshold clicks, double-click, favorites, wheel, cancellation and editable text selection.');

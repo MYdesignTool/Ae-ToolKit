@@ -4,13 +4,15 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>AE工具箱</title>
+    <link rel="stylesheet" href="./vendor/codemirror.css" />
+    <link rel="stylesheet" href="./vendor/lint.css" />
     <link rel="stylesheet" href="./styles.css" />
   </head>
   <body>
     <main class="app">
       <header class="topbar">
-        <h1 class="brand"><img class="brand-art" src="images/header-brand.webp" alt="AE工具箱" draggable="false" width="216" height="48" /></h1>
-        <button type="button" class="version" id="versionLabel" aria-label="查看更新日志" aria-haspopup="dialog" aria-controls="changelogModal">0.3.1</button>
+        <h1 class="brand"><span class="brand-icon" aria-hidden="true"><img class="brand-art" src="images/header-brand.webp" alt="" draggable="false" width="216" height="48" /></span><span class="brand-name">AE工具箱</span></h1>
+        <button type="button" class="version" id="versionLabel" aria-label="查看更新日志" aria-haspopup="dialog" aria-controls="changelogModal">0.3.2</button>
       </header>
 
       <nav class="tabs" aria-label="功能导航" role="tablist">
@@ -90,7 +92,9 @@
               <button class="ghost" id="updateExpressionBtn" hidden>保存修改</button>
             </div>
           </div>
+          <div class="expression-editor-tools"><span>JavaScript</span><button class="ghost" id="formatExpressionBtn" title="Shift+Alt+F">格式化</button></div>
           <textarea id="expressionCode" spellcheck="false" placeholder="在这里输入或选择一个表达式"></textarea>
+          <button type="button" class="editor-status" id="editorStatus" aria-live="polite" disabled>JavaScript · 输入表达式开始编辑</button>
         </div>
 
         <div class="button-row expression-actions">
@@ -181,6 +185,10 @@
         </div>
         <div class="settings-list">
           <div class="settings-item">
+            <div class="settings-item-info"><strong>界面语言</strong><span class="muted">切换后立即生效</span></div>
+            <select id="languageSelect" class="settings-input" aria-label="界面语言"><option value="zh-CN">简体中文</option><option value="en">English</option></select>
+          </div>
+          <div class="settings-item">
             <div class="settings-item-info">
               <strong>安静模式</strong>
               <span class="muted">启用后操作确认对话框将不再显示</span>
@@ -240,10 +248,21 @@
     <div class="toast-container" id="toastContainer"></div>
     <!-- 按依赖顺序加载前端模块：core 必须先于其它模块，app 入口最后。 -->
     <script src="./js/core.js"></script>
+    <script src="./js/translations.js"></script>
+    <script src="./js/i18n.js"></script>
     <script src="./js/util.js"></script>
     <script src="./js/settings.js"></script>
     <script src="./js/ui.js"></script>
     <script src="./js/organizer.js"></script>
+    <script src="./vendor/codemirror.js"></script>
+    <script src="./vendor/javascript.js"></script>
+    <script src="./vendor/matchbrackets.js"></script>
+    <script src="./vendor/closebrackets.js"></script>
+    <script src="./vendor/lint.js"></script>
+    <script src="./vendor/acorn.js"></script>
+    <script src="./vendor/prettier.js"></script>
+    <script src="./vendor/parser-babel.js"></script>
+    <script src="./js/editor.js"></script>
     <script src="./js/expressions.js"></script>
     <script src="./js/scripts.js"></script>
     <script src="./js/app.js"></script>

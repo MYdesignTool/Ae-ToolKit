@@ -9,7 +9,7 @@ function getScriptPlaceholder(fsName) {
 function getScriptFavorites() { return AELT.settings.get('scriptFavorites', []); }
 function selectScriptFolder() {
   if (state.scriptBusy) return;
-  callHost('AELT_selectScriptFolder', [], function (result) {
+  callHost('AELT_selectScriptFolder', [AELT.i18n.getLanguage()], function (result) {
     if (!result.ok) { showToast(result.messages.join(' '), 'error'); return; }
     if (!result.path) return;
     state.scriptFolder = result.path; AELT.settings.set('scriptFolder', result.path);
@@ -18,15 +18,15 @@ function selectScriptFolder() {
 }
 function scanScripts() {
   if (state.scriptBusy) return;
-  if (!state.scriptFolder) { showToast('请先在设置中选择脚本文件夹', 'error'); return; }
+  if (!state.scriptFolder) { showToast(t('请先在设置中选择脚本文件夹'), 'error'); return; }
   state.scriptBusy = true; els.refreshScriptsBtn.disabled = true;
-  setStatus('正在扫描脚本…');
+  setStatus(t('正在扫描脚本…'));
   callHost('AELT_scanScripts', [state.scriptFolder], function (result) {
     state.scriptBusy = false; els.refreshScriptsBtn.disabled = false;
     state.scripts = result.ok ? result.scripts : []; state.selectedScriptFsName = null;
     renderScripts();
     if ($('scriptsView').classList.contains('active')) animateViewEntrance($('scriptsView'));
-    setStatus(result.ok ? '已加载 ' + result.scripts.length + ' 个脚本' : result.messages.join(' '));
+    setStatus(result.ok ? t('已加载 {count} 个脚本', {count:result.scripts.length}) : result.messages.join(' '));
     if (result.messages && result.messages.length) showToast(result.messages.join(' '), 'error');
   });
 }
@@ -38,8 +38,8 @@ function renderScripts() {
   if (!filtered.some(function (script) { return script.fsName === state.selectedScriptFsName; })) state.selectedScriptFsName = null;
   els.scriptList.innerHTML = filtered.map(function (script) {
     var selected = script.fsName === state.selectedScriptFsName, favorite = favorites.indexOf(script.fsName) >= 0;
-    return '<div title="' + escapeHtml(script.relativePath) + '" class="script-item' + (selected ? ' active' : '') + '" tabindex="0" role="button" aria-pressed="' + selected + '" data-fsname="' + escapeHtml(script.fsName) + '"><span class="script-icon' + (script.iconPath ? '' : ' placeholder') + '"><img class="script-icon-img" draggable="false" loading="lazy" src="' + escapeHtml(script.iconPath || getScriptPlaceholder(script.fsName)) + '" alt="" /></span><span class="script-name">' + escapeHtml(script.name) + '</span><button class="script-fav' + (favorite ? ' favored' : '') + '" aria-label="' + (favorite ? '取消收藏 ' : '收藏 ') + escapeHtml(script.name) + '" aria-pressed="' + favorite + '"><svg class="script-fav-glyph" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M12 3.5l2.63 5.33 5.88.85-4.25 4.14 1 5.86L12 16.91l-5.26 2.77 1-5.86L3.49 9.68l5.88-.85L12 3.5z"/></svg></button></div>';
-  }).join('') || '<div class="empty-state">' + (!state.scriptFolder ? '还没有脚本文件夹。在设置中选择目录开始。' : state.scripts.length ? '没有匹配的脚本，试试其他关键词。' : '目录中没有 .jsx 或 .jsxbin 脚本。') + '</div>';
+    return '<div title="' + escapeHtml(script.relativePath) + '" class="script-item' + (selected ? ' active' : '') + '" tabindex="0" role="button" aria-pressed="' + selected + '" data-fsname="' + escapeHtml(script.fsName) + '"><span class="script-icon' + (script.iconPath ? '' : ' placeholder') + '"><img class="script-icon-img" draggable="false" loading="lazy" src="' + escapeHtml(script.iconPath || getScriptPlaceholder(script.fsName)) + '" alt="" /></span><span class="script-name">' + escapeHtml(script.name) + '</span><button class="script-fav' + (favorite ? ' favored' : '') + '" aria-label="' + (favorite ? t('取消收藏 ') : t('收藏 ')) + escapeHtml(script.name) + '" aria-pressed="' + favorite + '"><svg class="script-fav-glyph" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M12 3.5l2.63 5.33 5.88.85-4.25 4.14 1 5.86L12 16.91l-5.26 2.77 1-5.86L3.49 9.68l5.88-.85L12 3.5z"/></svg></button></div>';
+  }).join('') || '<div class="empty-state">' + (!state.scriptFolder ? t('还没有脚本文件夹。在设置中选择目录开始。') : state.scripts.length ? t('没有匹配的脚本，试试其他关键词。') : t('目录中没有 .jsx 或 .jsxbin 脚本。')) + '</div>';
   syncScriptSelection();
 }
 function syncScriptSelection() {
@@ -85,11 +85,11 @@ function launchScript() {
   if (state.scriptBusy || !state.selectedScriptFsName) return;
   var selected = state.selectedScriptFsName;
   state.scriptBusy = true; syncScriptSelection();
-  setStatus('正在运行脚本…');
+  setStatus(t('正在运行脚本…'));
   callHost('AELT_launchScript', [selected], function (result) {
     state.scriptBusy = false; syncScriptSelection();
-    setStatus(result.ok ? '已运行：' + selected : result.messages.join(' '));
-    showToast(result.ok ? '脚本已运行' : result.messages.join(' '), result.ok ? 'success' : 'error');
+    setStatus(result.ok ? t('已运行：') + selected : result.messages.join(' '));
+    showToast(result.ok ? t('脚本已运行') : result.messages.join(' '), result.ok ? 'success' : 'error');
   });
 }
 // Only a real drag consumes the click; ordinary clicks and keyboard activation stay native.
@@ -150,7 +150,7 @@ function bindScriptEvents() {
       var button = event.target.closest('.script-fav'), enabled = index < 0;
       AELT.settings.set('scriptFavorites', favorites);
       button.classList.toggle('favored', enabled); button.setAttribute('aria-pressed', String(enabled));
-      button.setAttribute('aria-label', (enabled ? '取消收藏 ' : '收藏 ') + row.querySelector('.script-name').textContent);
+      button.setAttribute('aria-label', (enabled ? t('取消收藏 ') : t('收藏 ')) + row.querySelector('.script-name').textContent);
       animateFavorite(button, enabled);
       if (state.favFilterOn && !enabled) renderScripts();
       return;
@@ -174,7 +174,7 @@ function bindScriptEvents() {
 }
 function restoreScriptFolder() {
   state.scriptFolder = AELT.settings.get('scriptFolder', '');
-  els.scriptFolderStatus.textContent = state.scriptFolder || '未选择脚本文件夹';
+  els.scriptFolderStatus.textContent = state.scriptFolder || t('未选择脚本文件夹');
   if (state.scriptFolder) scanScripts(); else renderScripts();
 }
 AELT.scripts = { renderScripts:renderScripts, bindEvents:bindScriptEvents, launchScript:launchScript };

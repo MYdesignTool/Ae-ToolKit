@@ -54,6 +54,16 @@ function renderManifest(xml, version) {
   return xml;
 }
 
+function renderPanel(html, version) {
+  let replacements = 0;
+  const rendered = html.replace(/(<button\b[^>]*\bid="versionLabel"[^>]*>)[^<]*(<\/button>)/g, (_, start, end) => {
+    replacements++;
+    return start + version + end;
+  });
+  if (replacements !== 1) throw Error('Expected one panel version label');
+  return rendered;
+}
+
 function main(args) {
   let tag, siteOnly = false, check = false;
   for (let i = 0; i < args.length; i++) {
@@ -76,6 +86,7 @@ function main(args) {
   if (!siteOnly) {
     const version = data.version;
     update('extension/CSXS/manifest.xml', xml => renderManifest(xml, version));
+    update('extension/client/index.html', html => renderPanel(html, version));
     update('README.md', text => text.replace(/当前版本 \*\*\d+\.\d+\.\d+\*\*/, '当前版本 **' + version + '**'));
     update('extension/README.md', text => text.replace(/版本 \d+\.\d+\.\d+。/, '版本 ' + version + '。'));
   }
@@ -87,4 +98,4 @@ function main(args) {
 if (require.main === module) {
   try { main(process.argv.slice(2)); } catch (e) { console.error(e.message); process.exitCode = 1; }
 }
-module.exports = {selectRelease, renderPage, renderManifest};
+module.exports = {selectRelease, renderPage, renderManifest, renderPanel};

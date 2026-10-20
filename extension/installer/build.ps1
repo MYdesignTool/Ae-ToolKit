@@ -1,8 +1,8 @@
 $ErrorActionPreference = 'Stop'
 $extensionRoot = (Resolve-Path (Join-Path $PSScriptRoot '..')).Path
-$version = (Get-Content -LiteralPath (Join-Path $extensionRoot 'data\changelog.json') -Raw | ConvertFrom-Json).version
+$version = (Get-Content -LiteralPath (Join-Path $extensionRoot 'data\changelog.json') -Raw -Encoding UTF8 | ConvertFrom-Json).version
 if ($version -notmatch '^\d+\.\d+\.\d+$') { throw 'Invalid changelog version' }
-[xml]$manifest = Get-Content -LiteralPath (Join-Path $extensionRoot 'CSXS\manifest.xml') -Raw
+[xml]$manifest = Get-Content -LiteralPath (Join-Path $extensionRoot 'CSXS\manifest.xml') -Raw -Encoding UTF8
 if ($manifest.ExtensionManifest.ExtensionBundleVersion -ne $version) { throw 'Manifest and changelog versions differ' }
 $compiler = Get-Command makensis.exe -ErrorAction SilentlyContinue | Select-Object -ExpandProperty Source -First 1
 if (-not $compiler) {

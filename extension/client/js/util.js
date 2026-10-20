@@ -28,11 +28,11 @@
 function showDialog(options, callback) {
   var modal = $('inputModal'), previous = document.activeElement;
   var ok = $('inputModalOk'), cancel = $('inputModalCancel'), field = $('inputModalField');
-  $('inputModalTitle').textContent = options.title || '确认操作';
+  $('inputModalTitle').textContent = options.title || t('确认操作');
   $('confirmMessage').textContent = options.message || '';
   $('confirmMessage').hidden = !options.message;
   field.hidden = !options.input; field.value = options.value || '';
-  ok.textContent = options.confirmLabel || '确定';
+  ok.textContent = options.confirmLabel || t('确定');
   ok.className = options.destructive ? 'danger' : 'primary';
   modal.style.display = 'flex';
   if (options.input) { field.focus(); field.select(); } else cancel.focus();
@@ -56,7 +56,7 @@ function showDialog(options, callback) {
     }
   };
 }
-function showInputDialog(title, value, callback) { showDialog({title:title,input:true,value:value,confirmLabel:'保存'}, callback); }
+function showInputDialog(title, value, callback) { showDialog({title:title,input:true,value:value,confirmLabel:t('保存')}, callback); }
 function showConfirmDialog(message, callback, options) {
   options = options || {}; options.message = message;
   showDialog(options, callback);
@@ -78,18 +78,18 @@ function addDebug(type, detail, force) {
     if (!els.debugLog) return;
     els.debugLog.innerHTML = state.debugEntries.map(function (entry) {
       return '<div class="debug-item"><strong>[' + entry.time + '] ' + escapeHtml(entry.type) + '</strong>\n' + escapeHtml(entry.detail) + '</div>';
-    }).join("") || '<div class="selection-status">暂无 Debug 信息</div>';
+    }).join("") || "<div class=\"selection-status\">" + escapeHtml(t("暂无 Debug 信息")) + "</div>";
   }
 
   // All bridge arguments use one JSON encoding; paths and percent signs stay literal.
   function callHost(name, args, callback) {
-    if (!/^AELT_[a-zA-Z]+$/.test(name)) throw new Error('无效主机方法');
+    if (!/^AELT_[a-zA-Z]+$/.test(name)) throw new Error(t('无效主机方法'));
     var script = name + '(' + (args || []).map(function (arg) {
       return JSON.stringify(arg).replace(/\u2028/g, '\\u2028').replace(/\u2029/g, '\\u2029');
     }).join(',') + ')';
     addDebug('host', name);
     if (!window.__adobe_cep__) {
-      callback({ ok: false, messages: ['请在 After Effects 的扩展面板中使用此功能。'] }); return;
+      callback({ ok: false, messages: [t('请在 After Effects 的扩展面板中使用此功能。')] }); return;
     }
     function fail(error) { callback({ ok: false, messages: [String(error)] }); }
     try {
@@ -97,9 +97,10 @@ function addDebug(type, detail, force) {
         var data;
         try {
           data = JSON.parse(raw);
-          if (!data || typeof data.ok !== 'boolean') throw new Error('无效主机返回');
-        } catch (e) { fail('无法解析 AE 返回结果：' + String(raw)); return; }
+          if (!data || typeof data.ok !== 'boolean') throw new Error(t('无效主机返回'));
+        } catch (e) { fail(t('无法解析 AE 返回结果：') + String(raw)); return; }
         addDebug('result', data);
+        if (data.messages && AELT.i18n) data.messages = data.messages.map(AELT.i18n.hostMessage);
         callback(data);
       });
     } catch (e) { fail(e); }
@@ -174,7 +175,7 @@ function addDebug(type, detail, force) {
     var scheme = cloneData(raw);
 
     scheme.id = scheme.id || createId("scheme");
-    scheme.name = scheme.name || "整理方案";
+    scheme.name = scheme.name || t("整理方案");
     scheme.fallbackPath = normalizePath(scheme.fallbackPath || "Footage");
     scheme.rules = (scheme.rules || []).map(function (rule) {
       return {
