@@ -13,7 +13,7 @@ async function main(){
  await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));const base='http://127.0.0.1:'+server.address().port;
  const browser=await chromium.launch({channel:'msedge',headless:true});
  try{
- const context=await browser.newContext({viewport:{width:626,height:870},reducedMotion:'reduce'}),page=await context.newPage(),errors=[];
+ const context=await browser.newContext({viewport:{width:626,height:870},reducedMotion:'reduce',locale:'zh-CN'}),page=await context.newPage(),errors=[];
  page.setDefaultTimeout(10000);page.on('pageerror',error=>errors.push(String(error)));
  await page.addInitScript(data=>{
   let settings=data.settings;window.__calls=[];
