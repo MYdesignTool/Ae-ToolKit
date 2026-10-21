@@ -35,7 +35,7 @@ test('language negotiation and switching work when local storage is unavailable'
  const chinese=route({blocked:true,browser:'zh-CN'});assert.ok(chinese.link.href.endsWith('/en/?lang=en'));assert.doesNotThrow(()=>chinese.switchLanguage());
 });
 test('English generation keeps every release field and all section structure in sync',()=>{
- const rendered=renderEnglish(source);assert.equal(fs.readFileSync(path.join(root,'en/index.html'),'utf8'),rendered);
+ const rendered=renderEnglish(source);assert.equal(fs.readFileSync(path.join(root,'en/index.html'),'utf8').replace(/\r\n?/g,'\n'),rendered);
  assert.ok(rendered.includes('<html lang="en"'));assert.ok(rendered.includes('data-language-switch href="../?lang=zh"'));
  assert.equal((rendered.match(/<section\b/g)||[]).length,(source.match(/<section\b/g)||[]).length);
  assert.equal((rendered.match(/<article\b/g)||[]).length,(source.match(/<article\b/g)||[]).length);
@@ -53,4 +53,9 @@ test('English generation keeps every release field and all section structure in 
 test('missing translations fail explicitly and translated text is HTML escaped',()=>{
  assert.throws(()=>renderEnglish('<p>新的未翻译内容</p>'),/Missing English translations/);
  assert.ok(renderEnglish('<p>中文</p>',{strings:{'中文':'<img onerror="unsafe()"> & text'}}).includes('&lt;img onerror=&quot;unsafe()&quot;&gt; &amp; text'));
+});
+
+test('Windows CRLF checkout renders the same multilingual page as LF checkout',()=>{
+ const lf=source.replace(/\r\n?/g,'\n');
+ assert.equal(renderEnglish(lf.replace(/\n/g,'\r\n')),renderEnglish(lf));
 });

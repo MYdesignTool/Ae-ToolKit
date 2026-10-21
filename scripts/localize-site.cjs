@@ -4,6 +4,7 @@ const path = require('node:path');
 const han = /[\u3000-\u303f\u3400-\u9fff\uff00-\uffef]/;
 const escapeHtml = value => String(value).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 function renderEnglish(html, catalog = JSON.parse(fs.readFileSync(path.join(__dirname, '../assets/i18n/en.json'), 'utf8'))) {
+  html = html.replace(/\r\n?/g, '\n');
   const missing = new Set();
   function translate(text) {
     const trimmed = text.trim();
