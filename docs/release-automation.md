@@ -1,9 +1,11 @@
 # GitHub Actions 构建、发布与回滚
 
 本分支新增 `.github/workflows/release.yml`，现有 `jekyll-gh-pages.yml` 保留部署逻辑，仅过滤
-输入资产预发布的 release 事件，避免其触发 Pages 标签保护拒绝。线上核查时
-最新正式 Release 为 v0.3.2；本地 0.5.1 是 Windows 原生版、macOS CEP 的新发布布局。
-本轮完成本地构建和隔离安装测试，没有推送标签、上传输入资产或创建线上 Release。
+输入资产预发布的 release 事件，避免其触发 Pages 标签保护拒绝。
+2026-10-21 已完成首次正式发布 [v0.5.1](https://github.com/MYdesignTool/Ae-ToolKit/releases/tag/v0.5.1)：
+Windows 原生安装器、macOS CEP ZIP、双语说明和 SHA256SUMS 全部由
+[标签流水线](https://github.com/MYdesignTool/Ae-ToolKit/actions/runs/39628784548)生成并验证。
+发布提交为 `d1808de9ea386e93deedcb252d02c8f05d85fb10`；官网刷新成功。
 
 ## 第一阶段与依赖边界
 
@@ -55,7 +57,7 @@ Microsoft Authenticode 签名，避免外部 CDN 的 HTML 或不完整响应影�
    gh release upload native-inputs-v0.5.1 .artifacts/release-dependencies/MicrosoftEdgeWebView2RuntimeInstallerX64.exe .artifacts/release-dependencies/nsis-3.12.zip --repo MYdesignTool/Ae-ToolKit
    ```
 
-   这是维护者一次性的输入交付步骤，当前实现没有代为执行。输入上传后不能随意替换；
+   这是每个新版本的维护者输入交付步骤，0.5.1 已执行完成。输入上传后不能随意替换；
    任意字节变化都会使产品构建失败，避免不知情地发布其他二进制。
 4. Actions > **Build and release Ae-ToolKit** > Run workflow，选择 main，保持 publish=false。
    下载 `verified-release` artifact，核对两个平台包和 SHA256SUMS.txt。这个手动运行
