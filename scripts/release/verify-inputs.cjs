@@ -5,6 +5,7 @@ function sha(file){return crypto.createHash('sha256').update(fs.readFileSync(fil
 function inputs(){const meta=check(),lock=JSON.parse(fs.readFileSync(path.join(repo,'native/release-inputs.json'),'utf8').replace(/^\uFEFF/,''));
  if(lock.format!==1||lock.version!==meta.version||lock.native.releaseTag!=='native-inputs-'+meta.tag||lock.native.assetName!==`aelt-native-${meta.tag}-windows-x64.zip`||lock.native.sourceSha256!==sourceFingerprint())throw Error('Controlled native inputs are missing or stale; prepare a reviewed native bundle for '+meta.tag);
  for(const row of [lock.native,lock.runtime,lock.nsis])if(!/^[a-f0-9]{64}$/.test(row.sha256))throw Error('A pinned SHA-256 is required for every release input');
+ for(const row of [lock.runtime,lock.nsis])if(row.releaseTag!==lock.native.releaseTag||!/^[-\w.]+$/.test(row.assetName))throw Error('Dependencies must be delivered as named assets in the controlled native input release');
  if(!lock.runtime.url.startsWith('https://msedge.sf.dl.delivery.mp.microsoft.com/')||!lock.nsis.url.startsWith('https://downloads.sourceforge.net/project/nsis/'))throw Error('Unexpected dependency download origin');return lock;
 }
 function verifyNative(root){const lock=inputs(),info=JSON.parse(fs.readFileSync(path.join(root,'build-info.json'),'utf8').replace(/^\uFEFF/,''));
