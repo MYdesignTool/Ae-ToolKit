@@ -17,21 +17,31 @@ Unicode true
 !include "StrFunc.nsh"
 !include "x64.nsh"
 ${StrStr}
+!ifndef TEST_ROOT
 ${UnStrStr}
+!endif
 Name "${APPNAME} ${VERSION}"
 OutFile "${OUTPUT_FILE}"
-RequestExecutionLevel admin
-InstallDir "$PROGRAMFILES64\Adobe\Adobe After Effects 2023\Support Files"
+!ifdef TEST_ROOT
+  RequestExecutionLevel user
+  InstallDir "${TEST_ROOT}\AE\Support Files"
+!else
+  RequestExecutionLevel admin
+  InstallDir "$PROGRAMFILES64\Adobe\Adobe After Effects 2023\Support Files"
+!endif
 SetCompressor /SOLID lzma
 VIProductVersion "${VERSION}.0"
 VIAddVersionKey "ProductName" "${APPNAME}"
+VIAddVersionKey "ProductVersion" "${VERSION}"
 VIAddVersionKey "FileDescription" "AE Local Toolkit Windows x64 native panel installer"
 VIAddVersionKey "FileVersion" "${VERSION}.0"
 VIAddVersionKey "LegalCopyright" "GPLv3 contributors; third-party notices included"
 Var AeRoot
 Var AeName
 Var NativeTarget
+!ifndef TEST_ROOT
 Var RuntimeVersion
+!endif
 Var UpgradeStamp
 Var CheckPath
 Var RegistryKey
@@ -42,7 +52,7 @@ Var RegistryKey
 !define MUI_DIRECTORYPAGE_TEXT_TOP "选择包含 AfterFX.exe 的 Support Files 文件夹。每次安装只更新所选 AE 版本。"
 !insertmacro MUI_PAGE_DIRECTORY
 !insertmacro MUI_PAGE_INSTFILES
-!define MUI_FINISHPAGE_TEXT "启动 AE，在「窗口」菜单打开 AE Local Toolkit (WebView2)。$\r$\n$\r$\n在首选项启用「允许脚本写入文件和访问网络」。$\r$\n$\r$\n旧 CEP 不自动卸载；可在两版设置页用 JSON 备份迁移数据，外部脚本路径改变时重新选择目录。"
+!define MUI_FINISHPAGE_TEXT "启动 AE，在「窗口」菜单打开 AE Local Toolkit (WebView2)。$\r$\n$\r$\n在首选项启用「允许脚本写入文件和访问网络」。$\r$\n$\r$\n首次升级会备份迁移旧 CEP 数据，已有原生数据优先。旧 CEP 和脚本保留；也可在设置页导入 JSON 备份。"
 !insertmacro MUI_PAGE_FINISH
 !insertmacro MUI_UNPAGE_CONFIRM
 !insertmacro MUI_UNPAGE_INSTFILES
@@ -54,12 +64,14 @@ Function .onInit
     MessageBox MB_ICONSTOP "此安装器仅支持 Windows x64。" /SD IDOK
     Abort
   ${EndIf}
+  !ifndef TEST_ROOT
   ReadRegStr $0 HKLM "Software\Microsoft\Windows\CurrentVersion\App Paths\AfterFX.exe" ""
   ${If} $0 != ""
     ${GetParent} $0 $1
     IfFileExists "$1\AfterFX.exe" 0 +2
     StrCpy $INSTDIR $1
   ${EndIf}
+  !endif
   ${GetTime} "" "L" $0 $1 $2 $3 $4 $5 $6
   System::Call 'kernel32::GetTickCount() i.r7'
   StrCpy $UpgradeStamp "${VERSION}-$2$1$0-$4$5$6-$7"
@@ -82,6 +94,10 @@ done:
 FunctionEnd
 Function CheckTarget
   GetFullPathName $AeRoot "$INSTDIR"
+  !ifdef TEST_ROOT
+    StrCmp $AeRoot "${TEST_ROOT}\AE\Support Files" +2
+    Abort
+  !endif
   IfFileExists "$AeRoot\AfterFX.exe" 0 invalid
   StrCpy $NativeTarget "$AeRoot\Plug-ins\${PRODUCT_ID}"
   StrCpy $CheckPath $AeRoot
@@ -126,6 +142,9 @@ invalid:
   Abort
 FunctionEnd
 Function RequireAeClosed
+  !ifdef TEST_ROOT
+    Return
+  !endif
   nsExec::ExecToStack /TIMEOUT=5000 '"$SYSDIR\tasklist.exe" /FI "IMAGENAME eq AfterFX*" /NH /FO CSV'
   Pop $0
   Pop $1
@@ -138,6 +157,7 @@ failed:
   Abort
 done:
 FunctionEnd
+!ifndef TEST_ROOT
 Function ReadRuntime
   StrCpy $RuntimeVersion ""
   SetRegView 32
@@ -149,7 +169,11 @@ Function ReadRuntime
   ${EndIf}
   SetRegView 64
 FunctionEnd
+!endif
 Function EnsureRuntime
+  !ifdef TEST_ROOT
+    Return
+  !else
   Call ReadRuntime
   ${If} $RuntimeVersion != ""
   ${AndIf} $RuntimeVersion != "0.0.0.0"
@@ -175,6 +199,7 @@ failed:
   MessageBox MB_ICONSTOP "微软 WebView2 Runtime 安装未完成，工具箱更新已停止。请检查系统或企业安装策略后重试。" /SD IDOK
   SetErrorLevel 1
   Abort
+  !endif
 FunctionEnd
 
 Section "Windows 原生工具箱" SecMain
@@ -183,27 +208,33 @@ Section "Windows 原生工具箱" SecMain
   Call CheckTarget
   Call EnsureRuntime
   StrCpy $INSTDIR $NativeTarget
-  IfFileExists "$INSTDIR\extension\data\*.*" 0 prepare
-  CreateDirectory "$INSTDIR\backups\before-$UpgradeStamp"
-  ClearErrors
-  CopyFiles /SILENT "$INSTDIR\extension\data\*.*" "$INSTDIR\backups\before-$UpgradeStamp"
-  IfErrors 0 prepare
-  MessageBox MB_ICONSTOP "备份失败，已停止更新，原程序和数据尚未覆盖。" /SD IDOK
-  SetErrorLevel 1
-  Abort
-prepare:
+  InitPluginsDir
+  SetOutPath "$PLUGINSDIR"
+  File "Manage-Installation.ps1"
+  File "${STAGE}\AeltToolkitWebView2\installed-files.json"
+  !ifdef TEST_ROOT
+    ExecWait '"$SYSDIR\WindowsPowerShell\v1.0\powershell.exe" -NoProfile -ExecutionPolicy Bypass -File "$PLUGINSDIR\Manage-Installation.ps1" -Action Prepare -InstallRoot "$INSTDIR" -ProductVersion "${VERSION}" -PayloadManifest "$PLUGINSDIR\installed-files.json" -LegacyRoots "${TEST_ROOT}\legacy\AeLocalToolkit"' $0
+  !else
+    ExecWait '"$SYSDIR\WindowsPowerShell\v1.0\powershell.exe" -NoProfile -ExecutionPolicy Bypass -File "$PLUGINSDIR\Manage-Installation.ps1" -Action Prepare -InstallRoot "$INSTDIR" -ProductVersion "${VERSION}" -PayloadManifest "$PLUGINSDIR\installed-files.json"' $0
+  !endif
+  IfErrors failed
+  StrCmp $0 0 0 failed
   CreateDirectory "$INSTDIR\extension\data"
+  !ifndef TEST_ROOT
   System::Call 'secur32::GetUserNameExW(i 2, w .r0, *i ${NSIS_MAX_STRLEN}) i .r1'
   StrCmp $1 0 failed
   ClearErrors
   ExecWait '"$SYSDIR\icacls.exe" "$INSTDIR\extension\data" /grant "$0:(OI)(CI)M" /Q' $1
   IfErrors failed
   StrCmp $1 0 0 failed
+  !endif
   SetOverwrite on
   ClearErrors
   SetOutPath "$INSTDIR"
   File "${STAGE}\AeltToolkitWebView2\AeltToolkitWebView2.aex"
   File "${STAGE}\AeltToolkitWebView2\aelt-native-install.json"
+  File "${STAGE}\AeltToolkitWebView2\installed-files.json"
+  File "${STAGE}\AeltToolkitWebView2\Manage-Installation.ps1"
   File /r "${STAGE}\AeltToolkitWebView2\licenses"
   SetOutPath "$INSTDIR\extension"
   File /r "${STAGE}\AeltToolkitWebView2\extension\client"
@@ -220,10 +251,12 @@ prepare:
   SetOutPath "$INSTDIR"
   WriteUninstaller "$INSTDIR\uninstall.exe"
   IfErrors failed
+  !ifndef TEST_ROOT
   WriteRegStr HKLM "$RegistryKey" "DisplayName" "${APPNAME} ($AeName)"
   WriteRegStr HKLM "$RegistryKey" "DisplayVersion" "${VERSION}"
   WriteRegStr HKLM "$RegistryKey" "InstallLocation" "$INSTDIR"
   WriteRegStr HKLM "$RegistryKey" "UninstallString" '$\"$INSTDIR\uninstall.exe$\"'
+  !endif
   DetailPrint "安装完成：$INSTDIR。未安装或修改 CEP；数据位于 extension\data。"
   Goto done
 failed:
@@ -246,6 +279,10 @@ Section "Uninstall"
   ${GetParent} $1 $AeRoot
   IfFileExists "$AeRoot\AfterFX.exe" 0 unsafe
   IfFileExists "$INSTDIR\aelt-native-install.json" 0 unsafe
+  !ifdef TEST_ROOT
+    StrCmp $INSTDIR "${TEST_ROOT}\AE\Support Files\Plug-ins\${PRODUCT_ID}" +2
+    Goto unsafe
+  !endif
   !macro UninstallNoLink PATH
     System::Call 'kernel32::GetFileAttributesW(w "${PATH}") i.r0'
     IntCmp $0 -1 +4
@@ -261,19 +298,18 @@ Section "Uninstall"
   !insertmacro UninstallNoLink "$INSTDIR\extension\host"
   !insertmacro UninstallNoLink "$INSTDIR\extension\CSXS"
   !insertmacro UninstallNoLink "$INSTDIR\licenses"
+  !ifndef TEST_ROOT
   nsExec::ExecToStack /TIMEOUT=5000 '"$SYSDIR\tasklist.exe" /FI "IMAGENAME eq AfterFX*" /NH /FO CSV'
   Pop $0
   Pop $1
   StrCmp $0 0 0 unsafe
   ${UnStrStr} $2 $1 'AfterFX'
   StrCmp $2 "" 0 unsafe
-  Delete "$INSTDIR\AeltToolkitWebView2.aex"
-  RMDir /r "$INSTDIR\extension\client"
-  RMDir /r "$INSTDIR\extension\host"
-  RMDir /r "$INSTDIR\extension\CSXS"
-  RMDir /r "$INSTDIR\licenses"
-  Delete "$INSTDIR\extension\License.md"
-  Delete "$INSTDIR\extension\README.md"
+  !endif
+  ClearErrors
+  ExecWait '"$SYSDIR\WindowsPowerShell\v1.0\powershell.exe" -NoProfile -ExecutionPolicy Bypass -File "$INSTDIR\Manage-Installation.ps1" -Action Uninstall -InstallRoot "$INSTDIR"' $0
+  IfErrors unsafe
+  StrCmp $0 0 0 unsafe
   ; Keep the identity marker with retained data, so reinstall can recognize it.
   Delete "$INSTDIR\uninstall.exe"
   RMDir "$INSTDIR\extension"
@@ -281,7 +317,9 @@ Section "Uninstall"
   ${GetParent} $AeRoot $0
   ${GetFileName} $0 $AeName
   SetRegView 64
+  !ifndef TEST_ROOT
   DeleteRegKey HKLM "${UNINSTALL_ROOT}\${APPNAME} ($AeName)"
+  !endif
   Goto done
 unsafe:
   MessageBox MB_ICONSTOP "请退出 AE 并确认这是本工具箱的原生安装目录；路径或进程检查失败时不会删除文件。" /SD IDOK

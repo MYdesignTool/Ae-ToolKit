@@ -30,8 +30,12 @@ try{
     & $dependencyNode (Join-Path $PSScriptRoot '..\input-probe\GenerateGeneralPiPL.cjs') (Join-Path $toolkitObjects 'ToolkitPiPL.rr') $toolkitObjects
     if($LASTEXITCODE){throw 'Toolkit PiPL generation failed'}
     & rc.exe /nologo ('/fo'+(Join-Path $toolkitObjects 'ToolkitPiPL.res')) (Join-Path $toolkitObjects 'ProbePiPL.rc');if($LASTEXITCODE){throw 'Toolkit resource compilation failed'}
+    & $dependencyNode (Join-Path $toolkitRepo 'scripts\release\version.cjs') resource (Join-Path $toolkitObjects 'ToolkitVersion.rc')
+    if($LASTEXITCODE){throw 'Product version resource generation failed'}
+    & rc.exe /nologo ('/fo'+(Join-Path $toolkitObjects 'ToolkitVersion.res')) (Join-Path $toolkitObjects 'ToolkitVersion.rc')
+    if($LASTEXITCODE){throw 'Product version resource compilation failed'}
     $toolkitPlugin=Join-Path $toolkitBin 'AeltToolkitWebView2.aex'
-    Invoke-ToolkitCompiler 'toolkit' ($toolkitCommon+@('/LD',('"'+(Join-Path $PSScriptRoot 'ToolkitEntry.cpp')+'"'),('"'+(Join-Path $PSScriptRoot 'ToolkitBridge.cpp')+'"'),('"'+(Join-Path $toolkitRepo 'native\panel-host\PanelHost.cpp')+'"'),('"'+(Join-Path $toolkitObjects 'ToolkitPiPL.res')+'"'),'/link',('/OUT:"'+$toolkitPlugin+'"'),('/IMPLIB:"'+(Join-Path $toolkitObjects 'AeltToolkitWebView2.lib')+'"'),'/DEBUG',('/PDB:"'+(Join-Path $toolkitBin 'AeltToolkitWebView2.pdb')+'"'))+$toolkitLibraries)
+    Invoke-ToolkitCompiler 'toolkit' ($toolkitCommon+@('/LD',('"'+(Join-Path $PSScriptRoot 'ToolkitEntry.cpp')+'"'),('"'+(Join-Path $PSScriptRoot 'ToolkitBridge.cpp')+'"'),('"'+(Join-Path $toolkitRepo 'native\panel-host\PanelHost.cpp')+'"'),('"'+(Join-Path $toolkitObjects 'ToolkitPiPL.res')+'"'),('"'+(Join-Path $toolkitObjects 'ToolkitVersion.res')+'"'),'/link',('/OUT:"'+$toolkitPlugin+'"'),('/IMPLIB:"'+(Join-Path $toolkitObjects 'AeltToolkitWebView2.lib')+'"'),'/DEBUG',('/PDB:"'+(Join-Path $toolkitBin 'AeltToolkitWebView2.pdb')+'"'))+$toolkitLibraries)
     & $dependencyNode (Join-Path $PSScriptRoot 'prepare-runtime.cjs') $toolkitBin $SeedFromCepRoot;if($LASTEXITCODE){throw 'Toolkit runtime preparation failed'}
     $toolkitSourceHash=& $dependencyNode (Join-Path $PSScriptRoot '..\build\source-fingerprint.cjs')
     if($LASTEXITCODE){throw 'Native source fingerprint failed'}

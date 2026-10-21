@@ -3,22 +3,24 @@
   "entries": [
     {
       "version": "0.5.1",
-      "date": "2026-10-20",
+      "date": "2026-10-21",
       "changes": [
         "新增动画耗时倍率：2x 保持原版速度，默认 1x 更快，另有 0.5x 和关闭，并兼容系统减少动态效果。",
         "表达式分类改为可编辑标签，支持多个标签、清空标签及旧分类兼容。",
         "表达式支持分别按名称和标签筛选，也可同时使用两个筛选条件。",
-        "临时关闭 TSF 输入路径以复测微软拼音兼容性；候选窗定位问题仍在排查。",
+        "Windows 新增 AEGP + WebView2 原生面板，微软拼音候选窗跟随光标；macOS 保留 CEP。",
         "工程整理新增可搜索目录树与逐级新建；后缀和忽略合成名称按 Enter 生成可移除标签。",
-        "重做方案保存交互，区分内置预设与个人方案，提示未保存修改，并完善中英文与小面板布局。"
+        "重做方案保存交互，区分内置预设与个人方案，提示未保存修改，并完善中英文与小面板布局。",
+        "新增按平台自动构建与发布流程：Windows 原生安装器支持备份迁移旧 CEP 数据，macOS 提供 CEP ZIP，并校验版本与 SHA-256。"
       ],
       "changesEn": [
         "Add animation duration scales: 2x keeps the original timing, the faster 1x is the default, with 0.5x and Off also available. Respect system reduced motion.",
         "Replace expression categories with editable tags, including multiple tags, untagged presets and legacy category compatibility.",
         "Filter expressions by name, by tag, or by both at once.",
-        "Temporarily disable the TSF input path to retest Microsoft Pinyin compatibility. Candidate window positioning remains under investigation.",
+        "Add a Windows AEGP + WebView2 panel with Microsoft Pinyin candidates following the caret. Retain CEP on macOS.",
         "Add a searchable organizer folder tree with nested folder creation. Press Enter to turn extensions and ignored composition names into removable tags.",
-        "Clarify scheme saving with separate built-in presets and personal schemes, unsaved-change prompts, bilingual copy and compact layouts."
+        "Clarify scheme saving with separate built-in presets and personal schemes, unsaved-change prompts, bilingual copy and compact layouts.",
+        "Add platform build and release automation: the Windows native installer backs up and migrates legacy CEP data, while macOS receives a CEP ZIP. Verify versions and SHA-256 checksums."
       ]
     },
     {

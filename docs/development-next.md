@@ -1,6 +1,6 @@
 # 0.5.1 开发记录（未发布）
 
-本轮仅修改本地源码并验证。在用户确认之前，不发布、不推送发布操作、不生成安装器。按用户要求跳过 0.4，本地开发版本定为 **0.5.1**；更新日志、CEP 清单、面板和说明文档已同步。官网源码仍指向已发布的 0.3.2，未部署。
+此前按用户要求只改源码、不生成安装器，跳过 0.4，本地开发版本定为 **0.5.1**。用户随后确认整体验收，并明确要求建立自动构建与发布流程；本轮已生成本地验证产物并实际做隔离安装测试，没有推送版本标签、触发 Actions 或发布 Release。官网源码仍指向已发布的 0.3.2，未部署。
 
 ## WebView2 移植分支
 
@@ -14,7 +14,15 @@ Windows 安装源码已改为 AEGP AEX，目标为所选 AE 的 Support Files/Pl
 
 Starfield 的参考宿主已是当前仓库内的独立源码。此前需要从其目录读取的 SDK，以及所需 x64 编译工具链、NSIS、Node 和微软签名的离线 WebView2 Runtime 安装程序均已实体复制至当前 worktree 的 .local-deps；锁定版本和 SHA-256，默认构建不再访问 Starfield。构建输入不进入产品包，快照被 Git 忽略、需单独保留，见 [固定依赖](../native/build/README.md)。
 
-新增平台白名单和过期/调试 AEX 拒绝测试后共 64 项 Node 检查通过；本地固定依赖的 AEX 编译、资源核验和两平台暂存/NSIS 预处理通过。默认安装构建入口只校验；实际生成需显式 -CreatePackage 并获得授权。本轮未生成安装器或 ZIP、未运行 Runtime 安装程序、未发布，新安装器的真实安装/升级/卸载和缺失 Runtime 场景尚待后续隔离验收。详见 [安装器说明](../extension/installer/README.md)。
+上一阶段新增平台白名单和过期/调试 AEX 拒绝测试后共 64 项 Node 检查通过，只做了暂存和预处理；随后本轮自动发布实施补足了完整编译和隔离执行，见下节。
+
+## Actions 第一阶段
+
+新增 release.yml：手动默认只构建，v* 标签推送自动发布；Windows NSIS 原生安装器、macOS CEP ZIP、双语 Release Notes 和 SHA256SUMS。第一阶段不在 runner 放私有 SDK，使用同仓库 native-inputs-v* 预发布中的受控 AEX ZIP，固定包哈希、源码指纹、PE 版本和 PiPL 身份。AEX 增加来自 changelog 的 PE 产品/文件版本，与界面、清单、安装器和标签校验一致。输入包已在本地封存，尚未上传。
+
+安装器新增实际执行的数据管理辅助：旧 CEP ID 校验、原始 data 备份、统一文档和旧 settings/方案迁移、有效 .bak 恢复、相对脚本路径重定位；已有原生数据优先，备份失败停止。卸载改为按清单和哈希删除代码，保留新增脚本、修改文件、data、备份和其他插件，不递归删除整个插件目录。
+
+71 项 Node 检查、240 项原生队列检查、12 项桥接检查、现有两种传输浏览器回归及 actionlint 通过。真实 PowerShell 迁移和 NSIS 隔离安装/更新/备份失败/卸载/重装通过；本地 Windows 成品和 macOS ZIP 已生成，PE 版本、ZIP 白名单字节及 SHA-256 均核验。正式 EXE 没有在真实 AE 目录执行，未运行 Runtime 安装、未创建线上 Release。Pages 文件原样保留；发布后用独立 actions:write 作业 dispatch，避免 GITHUB_TOKEN 事件不递归导致官网漏刷新。首次启用、原生输入交付、新版发布和失败回滚见 [自动发布说明](release-automation.md)。
 
 ## 动画设置
 

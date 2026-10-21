@@ -1,0 +1,211 @@
+name: Build and release Ae-ToolKit
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+    inputs:
+      publish:
+        description: 'Publish after all checks (select an existing v* tag; false builds artifacts only)'
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  validate:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      tag: ${{ steps.version.outputs.tag }}
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version: '24.18.0'
+      - name: Validate tag, versions and controlled native inputs
+        id: version
+        env:
+          REQUEST_PUBLISH: ${{ github.event_name == 'push' || inputs.publish }}
+        run: |
+          if [[ "$REQUEST_PUBLISH" == "true" && "$GITHUB_REF_TYPE" != "tag" ]]; then
+            echo 'Publication requires an existing version tag, never a branch.' >&2
+            exit 1
+          fi
+          if [[ "$GITHUB_REF_TYPE" == "tag" ]]; then
+            node scripts/release/version.cjs check "$GITHUB_REF_NAME"
+          else
+            node scripts/release/version.cjs check
+          fi
+          node scripts/release/verify-inputs.cjs
+      - name: Existing logic and release contract tests
+        run: node --test tests/*.test.cjs
+
+  windows:
+    needs: validate
+    runs-on: windows-2022
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version: '24.18.0'
+      - name: Acquire pinned AEX, NSIS and offline WebView2 prerequisite
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: ./scripts/release/Prepare-Ci.ps1
+      - name: Logic and legacy data safety tests
+        shell: pwsh
+        run: |
+          node --test tests/*.test.cjs
+          if ($LASTEXITCODE) { throw 'Logic tests failed' }
+          node tests/installer-migration.cjs
+          if ($LASTEXITCODE) { throw 'Migration tests failed' }
+      - name: Existing browser regressions in both transports
+        shell: pwsh
+        run: |
+          npm install --prefix .artifacts/ci-tools --no-save --package-lock=false --ignore-scripts playwright@1.62.1
+          if ($LASTEXITCODE) { throw 'Browser test dependency failed' }
+          $env:NODE_PATH=Join-Path $PWD '.artifacts/ci-tools/node_modules'
+          $env:AELT_TEST_NATIVE='1'
+          foreach ($test in @('browser','preferences-tags-browser','organizer-tags-browser')) {
+            node "tests/$test.cjs"
+            if ($LASTEXITCODE) { throw "Native UI regression failed: $test" }
+          }
+          Remove-Item Env:AELT_TEST_NATIVE
+          foreach ($test in @('startup','editor-browser','editor-ime-browser','changelog')) {
+            node "tests/$test.cjs"
+            if ($LASTEXITCODE) { throw "CEP regression failed: $test" }
+          }
+      - name: Compile and exercise sandboxed native installer
+        shell: pwsh
+        run: |
+          node tests/installer-cycle.cjs .artifacts/ci-inputs
+          if ($LASTEXITCODE) { throw 'Installer migration/update/uninstall regression failed' }
+      - name: Build production Windows installer
+        shell: pwsh
+        run: ./extension/installer/build.ps1 -Platform windows -CreatePackage -CiInputsRoot .artifacts/ci-inputs
+      - uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
+        with:
+          name: windows-release
+          path: extension/installer/dist/*-windows-x64-installer.exe
+          if-no-files-found: error
+          retention-days: 14
+          compression-level: 0
+          overwrite: true
+
+  macos-cep:
+    needs: validate
+    # CEP is a portable ZIP; no macOS native toolchain is needed for packaging.
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version: '24.18.0'
+      - name: Stage and archive the CEP-only payload
+        env:
+          VERSION: ${{ needs.validate.outputs.version }}
+        run: |
+          node extension/installer/package.cjs macos .artifacts/macos-stage
+          mkdir -p dist
+          (cd .artifacts/macos-stage && zip -q -r "$GITHUB_WORKSPACE/dist/aetoolkit-v$VERSION-macos-cep.zip" AeLocalToolkit)
+          node scripts/release/verify-zip.cjs "dist/aetoolkit-v$VERSION-macos-cep.zip"
+      - uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
+        with:
+          name: macos-release
+          path: dist/*-macos-cep.zip
+          if-no-files-found: error
+          retention-days: 14
+          overwrite: true
+
+  assemble:
+    needs: [validate, windows, macos-cep]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version: '24.18.0'
+      - uses: actions/download-artifact@018cc2cf5baa6db3ef3c5f8a56943fffe632ef53 # v6
+        with:
+          name: windows-release
+          path: dist
+      - uses: actions/download-artifact@018cc2cf5baa6db3ef3c5f8a56943fffe632ef53 # v6
+        with:
+          name: macos-release
+          path: dist
+      - name: Generate bilingual notes and SHA-256 manifest
+        env:
+          RELEASE_TAG: ${{ needs.validate.outputs.tag }}
+        run: |
+          node scripts/release/notes.cjs dist/release-notes.md "$RELEASE_TAG"
+          node scripts/release/checksums.cjs dist
+          node scripts/release/checksums.cjs dist verify
+      - uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
+        with:
+          name: verified-release
+          path: dist/*
+          if-no-files-found: error
+          retention-days: 14
+          compression-level: 0
+          overwrite: true
+
+  publish:
+    needs: [validate, windows, macos-cep, assemble]
+    if: ${{ github.ref_type == 'tag' && (github.event_name == 'push' || inputs.publish) }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    outputs:
+      published: ${{ steps.release.outputs.published }}
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version: '24.18.0'
+      - uses: actions/download-artifact@018cc2cf5baa6db3ef3c5f8a56943fffe632ef53 # v6
+        with:
+          name: verified-release
+          path: dist
+      - name: Upload verified assets to a draft, then publish atomically
+        id: release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ needs.validate.outputs.tag }}
+        run: node scripts/release/publish.cjs dist
+
+  refresh-pages:
+    needs: publish
+    if: ${{ needs.publish.outputs.published == 'true' }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    # GITHUB_TOKEN releases do not trigger another workflow's release event.
+    # This isolated job only dispatches the existing Pages workflow.
+    permissions:
+      actions: write
+    steps:
+      - name: Request the existing Pages workflow without modifying it
+        env:
+          GH_TOKEN: ${{ github.token }}
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+        run: gh workflow run jekyll-gh-pages.yml --repo "$GITHUB_REPOSITORY" --ref "$DEFAULT_BRANCH"

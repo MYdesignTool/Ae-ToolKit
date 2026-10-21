@@ -1,0 +1,4 @@
+const fs=require('node:fs'),path=require('node:path');const {metadata}=require('./version.cjs'),{sha}=require('./verify-inputs.cjs');
+function assetNames(){const {version}=metadata();return [`aetoolkit-v${version}-windows-x64-installer.exe`,`aetoolkit-v${version}-macos-cep.zip`];}
+function checksum(root,verify=false){const names=assetNames();const actual=fs.readdirSync(root).sort();const allowed=[...names,'SHA256SUMS.txt','release-notes.md'];if(actual.some(n=>!allowed.includes(n)))throw Error('Unexpected release asset');const text=names.map(n=>sha(path.join(root,n))+'  '+n).join('\n')+'\n';const file=path.join(root,'SHA256SUMS.txt');if(verify){if(fs.readFileSync(file,'utf8')!==text)throw Error('Release SHA-256 verification failed');}else fs.writeFileSync(file,text);return names;}
+module.exports={assetNames,checksum};if(require.main===module)checksum(path.resolve(process.argv[2]),process.argv[3]==='verify');

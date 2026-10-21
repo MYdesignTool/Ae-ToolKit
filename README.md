@@ -2,7 +2,7 @@
 
 面向 After Effects 2023 及更新版本的离线工具箱：工程整理、脚本启动、批量表达式。当前版本 **0.5.1**（本地开发中，尚未发布）。Windows 使用 AEGP + WebView2，macOS 保持 CEP；两平台共用界面与业务源码。
 
-本试验分支 `codex/webview2-migration` 的完整 Windows 原生面板已获用户验收，未见可见故障；构建、独立数据和回退步骤见 [原生工具箱](native/toolkit/README.md)。CEP 的完整开发基线保存在 `codex/cep-0.5.1-baseline`（`0a631c9`），原工作区与安装保持不变。按平台的安装流程已适配，默认仅校验，不生成安装器或 ZIP；[依赖快照](native/build/README.md) 已固定在工作区，不再引用 Starfield 的开发目录。发布仍需另行授权。
+本试验分支 `codex/webview2-migration` 的完整 Windows 原生面板已获用户验收，未见可见故障；构建、独立数据和回退步骤见 [原生工具箱](native/toolkit/README.md)。CEP 的完整开发基线保存在 `codex/cep-0.5.1-baseline`（`0a631c9`），原工作区与安装保持不变。本地构建入口默认仅校验；新增 [Actions 发布流程](docs/release-automation.md) 支持手动构建和 v* 标签发布，第一阶段使用版本/哈希固定的 AEX 输入。本次已在本地构建验证两平台包，没有触发线上发布。[本地编译依赖](native/build/README.md) 已固定，不再引用 Starfield。
 
 **0.3.2** 加入表达式代码编辑器、一键格式化和中英界面切换。[开发与验收记录](docs/development-0.3.2.md)。
 
@@ -15,6 +15,7 @@
 | [安装与兼容](extension/docs/install.md) | Windows 安装器、更新与备份、换机迁移、旧数据整合 |
 | [架构与维护](extension/docs/architecture.md) | 加载顺序、桥接入口、存储策略与已知限制 |
 | [构建安装器](extension/installer/README.md) | NSIS 构建步骤、产物清单与 SHA256 校验 |
+| [自动构建与发布](docs/release-automation.md) | 首次启用 Actions、受控 AEX 交付、发版与失败回滚 |
 | [审查与回归记录](docs/audit.md) | 已修复问题、验证方式与待宿主验证清单 |
 
 ## 快速开始
@@ -63,7 +64,7 @@
 
 保存先写临时文件再替换，失败保留原数据；主文件缺失时恢复 `.bak`。设置页仍可导入、导出完整 JSON 备份。导入源保留为 `last-import.json`；导入前保存 `before-import.json`，替换设置并合并同 ID 方案，最终单次写入完整数据；损坏原文件保留为 `before-import-corrupt.json`。
 
-新版 Windows 安装逻辑只更新原生程序和内置默认 JSON，保留个人文件；不自动移除或停用 CEP 回退版，两版通过 JSON 显式迁移数据。卸载保留 data、backups 和产品身份标记，方便重装。macOS 手动升级应合并覆盖程序、保留 data，避免先删除旧文件夹。新安装器本轮尚未生成，实际安装/更新/卸载测试仍待后续授权。
+新版 Windows 安装逻辑首次从匹配 ID 的旧 CEP 备份并迁移个人数据，重定位相对脚本路径；已有原生数据优先。旧 CEP 和脚本原地保留。更新只覆盖程序和默认 JSON，先备份数据；卸载按安装清单及哈希删除程序，保留个人文件、data、backups 和产品身份。macOS 手动升级合并覆盖程序、保留 data。隔离 NSIS 安装、升级、备份失败中止、卸载和重装测试已通过，未在真实插件目录执行正式安装器。
 
 ## 发布页
 

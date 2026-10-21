@@ -147,6 +147,8 @@
     "高亮编辑、语法检查、一键格式化，写好表达式再批量应用。设置中可随时切换中英界面。": "Write expressions with syntax highlighting, syntax checks and one-click formatting, then apply them in batches. Switch between Chinese and English in Settings.",
     "语法高亮与错误定位": "Syntax highlighting and error locations",
     "一键格式化与撤销": "One-click formatting and undo",
-    "写表达式更顺手，中英界面随时切换。": "A better expression editor. Chinese and English, ready to switch."
+    "写表达式更顺手，中英界面随时切换。": "A better expression editor. Chinese and English, ready to switch.",
+    "Windows 新增 AEGP + WebView2 原生面板，微软拼音候选窗跟随光标；macOS 保留 CEP。": "Add a Windows AEGP + WebView2 panel with Microsoft Pinyin candidates following the caret. Retain CEP on macOS.",
+    "新增按平台自动构建与发布流程：Windows 原生安装器支持备份迁移旧 CEP 数据，macOS 提供 CEP ZIP，并校验版本与 SHA-256。": "Add platform build and release automation: the Windows native installer backs up and migrates legacy CEP data, while macOS receives a CEP ZIP. Verify versions and SHA-256 checksums."
   }
 }
