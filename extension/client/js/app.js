@@ -148,6 +148,7 @@
   }
 
   function getExtensionRoot() {
+    if (window.AeltNativeBridge) return window.AeltNativeBridge.extensionRoot;
     var url = new URL(window.location.href);
     var path = decodeURIComponent(url.pathname).replace(/\/client\/index\.html$/i, '');
     return url.hostname ? '//' + url.hostname + path : path.replace(/^\/([A-Za-z]:)/, '$1');

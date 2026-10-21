@@ -19,7 +19,7 @@ function bridge(data){
 async function main(){
  const browser=await chromium.launch({channel:'msedge',headless:true});
  try{
-  const page=await browser.newPage({viewport:{width:626,height:900},reducedMotion:'reduce'}),errors=[];page.setDefaultTimeout(10000);page.on('pageerror',e=>errors.push(e.message));await page.addInitScript(bridge,data);await page.goto(pathToFileURL(path.join(root,'extension/client/index.html')).href);
+ const page=await browser.newPage({viewport:{width:626,height:900},reducedMotion:'reduce'}),errors=[];page.setDefaultTimeout(10000);page.on('pageerror',e=>errors.push(e.message));await page.addInitScript(bridge,data);await require('./native-fixture.cjs').install(page);await page.goto(pathToFileURL(path.join(root,'extension/client/index.html')).href);
   const card=(i=0)=>page.locator('[data-rule-index]').nth(i),folder=(i=0)=>card(i).locator('[data-rule-path]'),exts=(i=0)=>card(i).locator('[data-rule-tags=extensions]');
   const draft=()=>page.evaluate(()=>getSchemeFromEditor());
   async function ready(){await page.waitForFunction(()=>AELT.state.ready&&document.getElementById('statusBar').textContent.includes('已加载整理方案'));}

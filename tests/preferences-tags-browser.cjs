@@ -23,7 +23,7 @@ async function main(){
   try{
     const page=await browser.newPage({viewport:{width:626,height:870},reducedMotion:'no-preference'}),errors=[];
     page.on('pageerror',error=>errors.push(error.message));page.setDefaultTimeout(10000);
-    await page.addInitScript(bridge,data);const url=pathToFileURL(path.join(root,'extension/client/index.html')).href;
+    await page.addInitScript(bridge,data);await require('./native-fixture.cjs').install(page);const url=pathToFileURL(path.join(root,'extension/client/index.html')).href;
     await page.goto(url);await page.waitForFunction(()=>AELT.state.ready);
     assert.equal(await page.evaluate(()=>AELT.state.animationScale),1);
     async function view(name){await page.locator('[data-view='+name+']').click();await page.waitForFunction(name=>document.getElementById(name+'View').classList.contains('active'),name);await page.evaluate(()=>document.getAnimations().filter(a=>a._aeltMotionScale).forEach(a=>a.finish()));}

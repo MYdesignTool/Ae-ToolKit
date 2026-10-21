@@ -8,6 +8,7 @@
 #include <windows.h>
 #include <commctrl.h>
 #include <WebView2.h>
+#include <WebView2EnvironmentOptions.h>
 #include <wrl.h>
 #include <algorithm>
 #include <chrono>
@@ -28,7 +29,7 @@ Config config;std::thread::id ui_thread;
 bool initialized{},stopped=true,stepping{},creating_environment{},com_owned{};
 ComPtr<ICoreWebView2Environment> environment;
 struct View;std::vector<std::shared_ptr<View>> views;
-struct Pending {std::weak_ptr<View> view;std::uint64_t epoch{};wire::Message message;std::chrono::steady_clock::time_point expires;};
+struct Pending {std::weak_ptr<View> view;std::uint64_t epoch{};wire::Message message;std::chrono::steady_clock::time_point expires;bool retain{};};
 std::deque<Pending> requests;std::size_t queued_bytes{};
 template<class T> struct Suite {
     const char* name;A_long version;const T* value{};
@@ -47,7 +48,7 @@ LRESULT CALLBACK parent_proc(HWND,UINT,WPARAM,LPARAM,UINT_PTR,DWORD_PTR);
 struct View:std::enable_shared_from_this<View> {
     HWND hwnd{},parent{},status{};bool alive=true,subclassed{};std::uint64_t epoch{},last_request{};
     ComPtr<ICoreWebView2Controller> controller;ComPtr<ICoreWebView2> web;
-    std::wstring url()const{return L"https://"+config.virtual_host+L"/index.html";}
+    std::wstring url()const{return config.document_url.empty()?L"https://"+config.virtual_host+L"/index.html":config.document_url;}
     void error(std::wstring_view message){
         if(!alive||!hwnd)return;
         if(!status)status=CreateWindowExW(0,L"STATIC",L"",WS_CHILD|WS_VISIBLE|SS_LEFT,12,12,450,160,hwnd,nullptr,own_module(),nullptr);
@@ -77,14 +78,15 @@ struct View:std::enable_shared_from_this<View> {
         if(!serial||serial<=last_request)return;last_request=serial;
         const auto size=message.payload.size()*sizeof(wchar_t);
         if(requests.size()>=wire::max_requests||size>wire::max_queued_bytes-queued_bytes){reply(message.id,failure(L"host_busy",L"The native panel queue is full."));return;}
-        requests.push_back({weak_from_this(),epoch,std::move(message),std::chrono::steady_clock::now()+std::chrono::seconds(7)});queued_bytes+=size;
+        const bool retain=config.retain_on_close&&config.retain_on_close(message.method);
+        requests.push_back({weak_from_this(),epoch,std::move(message),std::chrono::steady_clock::now()+std::chrono::seconds(7),retain});queued_bytes+=size;
     }
     void configure(){
         ComPtr<ICoreWebView2Settings> settings;
-        if(SUCCEEDED(web->get_Settings(&settings))&&settings){settings->put_AreDevToolsEnabled(FALSE);settings->put_IsStatusBarEnabled(FALSE);settings->put_IsZoomControlEnabled(FALSE);
+        if(SUCCEEDED(web->get_Settings(&settings))&&settings){settings->put_AreDevToolsEnabled(config.debug_port?TRUE:FALSE);settings->put_IsStatusBarEnabled(FALSE);settings->put_IsZoomControlEnabled(FALSE);
             ComPtr<ICoreWebView2Settings3> newer;if(SUCCEEDED(settings.As(&newer)))newer->put_AreBrowserAcceleratorKeysEnabled(FALSE);}
         ComPtr<ICoreWebView2_3> mapping;
-        if(FAILED(web.As(&mapping))||FAILED(mapping->SetVirtualHostNameToFolderMapping(config.virtual_host.c_str(),config.content_root.c_str(),COREWEBVIEW2_HOST_RESOURCE_ACCESS_KIND_DENY))){error(L"WebView2 local-content mapping is unavailable.");return;}
+        if(config.document_url.empty()&&(FAILED(web.As(&mapping))||FAILED(mapping->SetVirtualHostNameToFolderMapping(config.virtual_host.c_str(),config.content_root.c_str(),COREWEBVIEW2_HOST_RESOURCE_ACCESS_KIND_DENY)))){error(L"WebView2 local-content mapping is unavailable.");return;}
         const auto weak=weak_from_this();EventRegistrationToken token{};
         web->add_NavigationStarting(Callback<ICoreWebView2NavigationStartingEventHandler>([weak](ICoreWebView2*,ICoreWebView2NavigationStartingEventArgs* args)->HRESULT {try{
             const auto view=weak.lock();CoString uri;if(!view||!view->alive||FAILED(args->get_Uri(&uri.value))||!uri.value||uri.value!=view->url())args->put_Cancel(TRUE);else{++view->epoch;view->last_request=0;}return S_OK;
@@ -95,7 +97,7 @@ struct View:std::enable_shared_from_this<View> {
         web->add_WebMessageReceived(Callback<ICoreWebView2WebMessageReceivedEventHandler>([weak](ICoreWebView2*,ICoreWebView2WebMessageReceivedEventArgs* args)->HRESULT{try{if(const auto view=weak.lock())view->receive(args);return S_OK;}catch(...){return E_FAIL;}}).Get(),&token);
         web->add_ProcessFailed(Callback<ICoreWebView2ProcessFailedEventHandler>([weak](ICoreWebView2*,ICoreWebView2ProcessFailedEventArgs*)->HRESULT{try{if(const auto view=weak.lock()){++view->epoch;view->error(L"The browser process stopped. Close and reopen this panel.");}return S_OK;}catch(...){return E_FAIL;}}).Get(),&token);
         web->add_NavigationCompleted(Callback<ICoreWebView2NavigationCompletedEventHandler>([weak](ICoreWebView2*,ICoreWebView2NavigationCompletedEventArgs* args)->HRESULT{try{if(const auto view=weak.lock()){BOOL success{};args->get_IsSuccess(&success);if(success&&view->status)ShowWindow(view->status,SW_HIDE);else if(!success)view->error(L"Unable to load the bundled panel page.");}return S_OK;}catch(...){return E_FAIL;}}).Get(),&token);
-        const auto bootstrap=L"window.__aeltNativeHost=Object.freeze({channel:"+wire::quote(config.channel)+L"});";
+        const auto bootstrap=L"window.__aeltNativeHost=Object.freeze({channel:"+wire::quote(config.channel)+L"});"+config.bootstrap_script;
         const auto result=web->AddScriptToExecuteOnDocumentCreated(bootstrap.c_str(),Callback<ICoreWebView2AddScriptToExecuteOnDocumentCreatedCompletedHandler>([weak](HRESULT code,LPCWSTR)->HRESULT{try{
             if(const auto view=weak.lock();view&&view->alive&&!stopped){if(FAILED(code)||FAILED(view->web->Navigate(view->url().c_str())))view->error(L"The panel bridge could not initialize.");}return S_OK;
         }catch(...){return E_FAIL;}}).Get());
@@ -116,7 +118,9 @@ void ensure_environment(const std::shared_ptr<View>& view){
     if(!com_owned){const auto code=CoInitializeEx(nullptr,COINIT_APARTMENTTHREADED);if(FAILED(code)){view->error(L"The panel thread is not compatible with WebView2 STA.");return;}com_owned=true;}
     if(!fs::is_regular_file(config.content_root/L"index.html")){view->error(L"The configured panel content was not found.");return;}
     fs::create_directories(config.profile_root);creating_environment=true;
-    const auto code=CreateCoreWebView2EnvironmentWithOptions(nullptr,config.profile_root.c_str(),nullptr,Callback<ICoreWebView2CreateCoreWebView2EnvironmentCompletedHandler>([](HRESULT result,ICoreWebView2Environment* value)->HRESULT{try{
+    auto options=Microsoft::WRL::Make<CoreWebView2EnvironmentOptions>();
+    if(config.debug_port){const auto arguments=L"--remote-debugging-port="+std::to_wstring(config.debug_port)+L" --remote-debugging-address=127.0.0.1";options->put_AdditionalBrowserArguments(arguments.c_str());}
+    const auto code=CreateCoreWebView2EnvironmentWithOptions(nullptr,config.profile_root.c_str(),options.Get(),Callback<ICoreWebView2CreateCoreWebView2EnvironmentCompletedHandler>([](HRESULT result,ICoreWebView2Environment* value)->HRESULT{try{
         creating_environment=false;if(stopped)return S_OK;
         if(FAILED(result)||!value){for(const auto& current:views)current->error(L"Microsoft WebView2 Runtime is unavailable.");return S_OK;}
         environment=value;for(const auto& current:views)current->create_controller();return S_OK;
@@ -182,11 +186,12 @@ bool step()noexcept try{
     stepping=true;struct Stepping{~Stepping(){stepping=false;}} scope;
     const auto view=requests.front().view.lock();const bool stale=!view||!view->alive||view->epoch!=requests.front().epoch;
     const bool expired=std::chrono::steady_clock::now()>=requests.front().expires;
-    if(!stale&&!expired&&(!host_available()||(config.can_dispatch&&!config.can_dispatch())))return false;
+    const bool discard=stale&&!requests.front().retain;
+    if(!discard&&!expired&&(!host_available()||(config.can_dispatch&&!config.can_dispatch())))return false;
     auto pending=std::move(requests.front());requests.pop_front();queued_bytes-=pending.message.payload.size()*sizeof(wchar_t);
-    if(stale)return !requests.empty();if(expired){view->reply(pending.message.id,failure(L"host_timeout",L"The request expired without executing."));return !requests.empty();}
+    if(discard)return !requests.empty();if(expired){if(view)view->reply(pending.message.id,failure(L"host_timeout",L"The request expired without executing."));return !requests.empty();}
     std::wstring response;try{response=config.dispatch(pending.message.method,pending.message.payload);}catch(...){response=failure(L"host_failed",L"The request failed. No automatic retry was made.");}
-    if(view->alive&&view->epoch==pending.epoch)view->reply(pending.message.id,response);return !requests.empty();
+    if(view&&view->alive&&view->epoch==pending.epoch)view->reply(pending.message.id,response);return !requests.empty();
 }catch(...){stepping=false;return false;}
 void stop()noexcept{
     stopped=true;requests.clear();queued_bytes=0;for(const auto& view:views){view->close();if(view->hwnd)DestroyWindow(view->hwnd);}views.clear();environment.Reset();

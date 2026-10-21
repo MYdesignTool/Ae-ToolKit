@@ -12,7 +12,7 @@ AELT.settings = (function () {
   }
   function set(key, value) {
     cache[key] = value; revision++;
-    clearTimeout(timer); timer = setTimeout(function () { persist(); }, 300);
+    clearTimeout(timer); timer = setTimeout(function () { persist(); }, typeof window !== 'undefined' && window.AeltNativeBridge ? 0 : 300);
   }
   function persist(callback) {
     clearTimeout(timer);

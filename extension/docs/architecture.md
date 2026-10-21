@@ -1,5 +1,7 @@
 # 架构与维护
 
+`codex/webview2-migration` 试验分支保留以下 CEP 架构，并新增完整原生使用方。`native-bridge.js` 在 core 之前加载，仅在原生配置与 WebView2 同时存在时启用。界面调用仍集中于 `callHost`；CEP 走原 `evalScript`，原生走有界消息队列和 AE idle。17 个业务入口在独立的 JSX 词法闭包中执行，不替换 CEP 的全局对象。原生副本和数据位于隔离 worktree 的 `.artifacts/webview2-toolkit/bin/extension`；完整构建/部署/回退见 [原生工具箱](../../native/toolkit/README.md)。原工作区 CEP 基线分支不受此试验文件修改影响。
+
 前端无框架、无构建步骤，按依赖顺序加载脚本。`callHost(name, args, callback)` 是唯一桥接入口，参数统一用 JSON 字面量编码，不混用 escape、URI 编码和字符串拼接。路径以原生路径传输；图片从 File.fsName 转换为浏览器 file URL，不把 ExtendScript 的 absoluteURI 路径直接当作网页地址。
 
 0.5.1 加载顺序：`core → ime-focus → translations → i18n → util → settings → ui → organizer → organizer-paths → vendor → editor → expressions → scripts → app`。`editor.js` 封装本地 CodeMirror 5，原 `expressionCode` textarea 作为同步的数据入口；选择/保存/删除通过 `AELT.editor.setValue()` 更新编辑器，输入时同步 textarea。输入方式、合成按键保护、提交后滚动及原版焦点重绑定按用户验收逐项对照，当前组合与结果统一记录于 [输入法说明](ime-compatibility.md)。启用时 app 缓存元素后先初始化焦点模块；原版跳过非空标签草稿，其他情况下保留文本选区执行一次延后 blur / focus。Acorn 只解析语法，允许 AE 常见的顶层 return 与宿主全局名称；Prettier standalone + Babel parser 在用户点击或使用快捷键时格式化，不执行表达式，错误不修改原稿。版本和许可见 `client/vendor/README.md`。无运行时 CDN 请求。

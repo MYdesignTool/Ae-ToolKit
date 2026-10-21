@@ -61,6 +61,9 @@ int main(){
     check(requests.size()==64,"queue accepts exact capacity");event->json=message(L"wv-68");view->receive(event.Get());check(requests.size()==64,"queue overflow rejects");
     while(!requests.empty())step();check(executions==65&&dispatched[1]==L"4"&&dispatched.back()==L"67"&&queued_bytes==0,"FIFO order and byte accounting preserved");
     event->json=message(L"wv-69");view->receive(event.Get());view->close();step();check(executions==65&&requests.empty(),"closed view cannot execute queued work");
+    config.retain_on_close=[](std::wstring_view method){return method==L"probe.ping";};
+    auto saving=std::make_shared<View>();saving->epoch=1;views.push_back(saving);event->json=message(L"wv-1",L"admitted save");saving->receive(event.Get());saving->close();saving.reset();step();
+    check(executions==66&&requests.empty()&&dispatched.back()==L"admitted save","explicitly retained immutable save survives closed document");
     check(acquisitions==releases,"all acquired fake suites released");stop();check(views.empty()&&requests.empty()&&!environment,"shutdown clears owned state");DestroyWindow(main_window);
     check(GetForegroundWindow()==foreground,"tests preserve the user's foreground window");
     std::cout<<checks<<" checks, "<<failures<<" failures; extracted production host, no AE or browser\n";return failures?1:0;

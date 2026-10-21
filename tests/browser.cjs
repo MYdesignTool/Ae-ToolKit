@@ -26,6 +26,7 @@ async function main(){
   };
   Object.assign(window,api);window.__adobe_cep__={evalScript(script,callback){window.__calls.push(script);let result;try{result=(0,eval)(script);}catch(error){result={ok:false,messages:[String(error)]};}setTimeout(()=>callback(JSON.stringify(result)),5);}};
  },fixture);
+ await require('./native-fixture.cjs').install(page);
  await page.goto(base+'/extension/client/index.html');await page.waitForFunction(()=>window.AELT&&AELT.state.ready);assert.ok(await page.locator('.rule-item').count()>0);
  async function setCode(code){await page.evaluate(value=>AELT.editor.getInstance().setValue(value),code);}
  await page.locator('[data-view=expressions]').click();

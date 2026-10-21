@@ -9,6 +9,7 @@
   // 在系统默认浏览器中打开外部链接：优先使用 CEP 提供的 API，
   // 非 CEP 环境（如本地浏览器调试）退回 window.open。
   function openExternal(url) {
+    if (window.AeltNativeBridge) { window.AeltNativeBridge.openExternal(url); return; }
     try {
       if (window.cep && window.cep.util && window.cep.util.openURLInDefaultBrowser) {
         window.cep.util.openURLInDefaultBrowser(url);

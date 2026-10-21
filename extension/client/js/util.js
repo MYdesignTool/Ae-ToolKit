@@ -92,6 +92,14 @@ function addDebug(type, detail, force) {
       return JSON.stringify(arg).replace(/\u2028/g, '\\u2028').replace(/\u2029/g, '\\u2029');
     }).join(',') + ')';
     addDebug('host', name);
+    if (window.AeltNativeBridge) {
+      window.AeltNativeBridge.callHost(name, args || [], function (data) {
+        addDebug('result', data);
+        if (data.messages && AELT.i18n) data.messages = data.messages.map(AELT.i18n.hostMessage);
+        callback(data);
+      });
+      return;
+    }
     if (!window.__adobe_cep__) {
       callback({ ok: false, messages: [t('请在 After Effects 的扩展面板中使用此功能。')] }); return;
     }

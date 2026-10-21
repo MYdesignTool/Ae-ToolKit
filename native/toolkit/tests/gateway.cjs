@@ -1,0 +1,30 @@
+// Executes scripts emitted by the compiled C++ bridge against real JSX modules.
+const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path'),vm=require('node:vm');
+const {storage,source}=require('../../../tests/helpers.cjs');
+const root=path.resolve(__dirname,'../../../extension').replaceAll('\\','/');
+const scripts=JSON.parse(fs.readFileSync(path.resolve(__dirname,'../../../.artifacts/webview2-toolkit/generated-scripts.json'),'utf8'));
+const env=storage({root});
+for(const file of ['lib/json.jsx','modules/storage.jsx','modules/organizer.jsx','modules/expressions.jsx','modules/launcher.jsx'])env.files.set(root+'/host/'+file,source('extension/host/'+file));
+env.files.set(root+'/CSXS/manifest.xml','manifest');
+for(const file of ['default-expressions.json','changelog.json'])env.files.set(root+'/data/'+file,source('extension/data/'+file));
+env.context.app={version:'23.5',project:null};env.context.$={global:{},evalFile:()=>{}};
+env.context.Folder.selectDialog=()=>null;env.context.File.saveDialog=()=>null;env.context.File.openDialog=()=>null;
+const cepState={marker:'CEP unchanged'},cepPing=()=> 'CEP ping';env.context.AELocalToolkit=cepState;env.context.AELT_ping=cepPing;
+function run(name){return JSON.parse(vm.runInContext(scripts[name],env.context));}
+assert.equal(run('AELT_setModuleBase').ok,true);
+assert.equal(run('AELT_ping').appVersion,'23.5');
+assert.equal(run('AELT_bootstrap').ok,true);
+assert.equal(run('AELT_loadSettings').ok,true);
+assert.equal(run('AELT_loadOrganizerSchemes').ok,true);
+assert.equal(run('AELT_selectScriptFolder').path,'');
+assert.equal(run('AELT_exportUserData').cancelled,true);
+assert.equal(run('AELT_importUserData').cancelled,true);
+assert.equal(run('invalidArguments').ok,false);
+assert.equal(env.context.AELocalToolkit,cepState);
+assert.equal(env.context.AELT_ping,cepPing);
+for(const name of Object.keys(scripts).filter(name=>name!=='invalidArguments'&&name!=='AELT_ping'))assert.equal(env.context[name],undefined,'Native wrapper leaked '+name);
+assert.equal(Object.keys(env.context.$.global.__AELT_WEBVIEW2_V1).length,1);
+assert.ok(env.files.has(root+'/data/user-data.json'));
+env.context.$.global.__AELT_WEBVIEW2_V1={};env.files.set(root+'/host/lib/json.jsx','throw new Error(\'Bad "quoted" loader\\nline two\');');
+const failed=run('AELT_ping');assert.equal(failed.ok,false);assert.ok(failed.messages[0].includes('quoted'));assert.equal(env.context.AELocalToolkit,cepState);
+console.log('PASS: compiled gateway runs real JSX bootstrap/settings/schemes/dialog cancellation, keeps persistent native state and never replaces CEP globals.');
