@@ -19,7 +19,7 @@ $inputZip=Join-Path $inputRepo ('.artifacts/'+$inputAsset)
 if(Test-Path -LiteralPath $inputZip){throw 'Refused to replace an existing native bundle; archive it explicitly before creating another'}
 Compress-Archive -LiteralPath (Join-Path $inputStage 'bin'),(Join-Path $inputStage 'build-info.json') -DestinationPath $inputZip
 $inputBundleHash=(Get-FileHash -LiteralPath $inputZip).Hash.ToLowerInvariant()
-if($UpdateLock){$inputLockPath=Join-Path $inputRepo 'native/release-inputs.json';$inputLock=Get-Content -LiteralPath $inputLockPath -Raw | ConvertFrom-Json;$inputLock.version=$inputMeta.version;$inputLock.native=[pscustomobject]@{releaseTag=('native-inputs-'+$inputMeta.tag);assetName=$inputAsset;sha256=$inputBundleHash;sourceSha256=$inputSource};[IO.File]::WriteAllText($inputLockPath,($inputLock|ConvertTo-Json -Depth 8).Replace("`r`n","`n")+"`n",[Text.UTF8Encoding]::new($false))}
+if($UpdateLock){$inputLockPath=Join-Path $inputRepo 'native/release-inputs.json';$inputLock=Get-Content -LiteralPath $inputLockPath -Raw | ConvertFrom-Json;$inputLock.version=$inputMeta.version;$inputLock.native=[pscustomobject]@{releaseTag=('native-inputs-'+$inputMeta.tag);assetName=$inputAsset;sha256=$inputBundleHash;sourceSha256=$inputSource};$inputLock.runtime.releaseTag=$inputLock.native.releaseTag;$inputLock.nsis.releaseTag=$inputLock.native.releaseTag;[IO.File]::WriteAllText($inputLockPath,($inputLock|ConvertTo-Json -Depth 8).Replace("`r`n","`n")+"`n",[Text.UTF8Encoding]::new($false))}
 Write-Output "Reviewed native input: $inputZip"
 Write-Output "SHA-256: $inputBundleHash"
 Write-Output 'No upload or release was performed. Review the lock diff, then upload this asset as documented.'

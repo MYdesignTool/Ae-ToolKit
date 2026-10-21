@@ -17,10 +17,11 @@ Actions 不复制本机 1.63 GiB 的 `.local-deps`，也不引用 Starfield。�
 版本、禁用调试端口、二进制哈希、PE FileVersion/ProductVersion、AEGP PiPL 身份。
 资源检查只读 PE，不加载执行插件。原生源文本指纹统一 LF，避免 runner 换行差异。
 
-NSIS 和微软 WebView2 x64 离线安装程序从锁定地址获取并校验 SHA-256；Runtime 另验
-Microsoft Authenticode 签名。NSIS 使用官方公布的
+NSIS 和微软 WebView2 x64 离线安装程序先从锁中记录的原始地址获取、审查，再将相同字节
+上传至受控输入预发布。Actions 从同仓库下载这两份资产并校验原始 SHA-256；Runtime 另验
+Microsoft Authenticode 签名，避免外部 CDN 的 HTML 或不完整响应影响每次构建。NSIS 使用官方公布的
 [3.12 SHA-256](https://sourceforge.net/projects/nsis/files/NSIS%203/3.12/nsis-3.12.zip/download)，
-SourceForge 返回 HTML 或连接失败时可切换锁中的 MIT 镜像，但内容必须是同一个官方哈希。
+首次准备 NSIS 时，SourceForge 返回 HTML 或连接失败可切换锁中的 MIT 镜像，但内容必须是同一个官方哈希。
 没有浮动 latest 下载或自动更新锁。构建 SDK 不会进入产品包。
 
 `native/release-inputs.json` 中的值必须通过维护者审查；哈希保护的是内容与来源选择，
@@ -45,10 +46,13 @@ SourceForge 返回 HTML 或连接失败时可切换锁中的 MIT 镜像，但内
    显式保留/移走旧包后重新封存，审查并提交新的 release-inputs.json。不要手改二进制
    哈希来绕过校验。
 3. 提交并合入输入锁。通过 GitHub Releases 页面创建 **预发布** `native-inputs-v0.5.1`，
-   指向已合并的源码提交，上传上述 ZIP。也可用已登录的 GitHub CLI：
+   指向已合并的源码提交，上传上述 ZIP，以及锁中的 `MicrosoftEdgeWebView2RuntimeInstallerX64.exe`
+   和 `nsis-3.12.zip`。依赖不要重新压缩或重签名，哈希必须与锁一致。也可用已登录的 GitHub CLI：
 
    ```powershell
    gh release create native-inputs-v0.5.1 .artifacts/aelt-native-v0.5.1-windows-x64.zip --repo MYdesignTool/Ae-ToolKit --target main --prerelease --latest=false --title 'Native inputs 0.5.1' --notes 'Reviewed native build inputs; not the public installer.'
+   # 将已校验的依赖放入此目录，并保持以下精确文件名：
+   gh release upload native-inputs-v0.5.1 .artifacts/release-dependencies/MicrosoftEdgeWebView2RuntimeInstallerX64.exe .artifacts/release-dependencies/nsis-3.12.zip --repo MYdesignTool/Ae-ToolKit
    ```
 
    这是维护者一次性的输入交付步骤，当前实现没有代为执行。输入上传后不能随意替换；
@@ -92,6 +96,7 @@ changes 与英文 changesEn。Release Notes 自动由这两组内容生成，缺
 
    为新增中文发布摘要补齐 assets/i18n/en.json，现有测试会检查英文官网可生成。
 2. 重新构建、验收 AEX，生成新的输入 ZIP，审查提交输入锁，再上传对应 native-inputs-v*。
+   同时上传锁定 Runtime 和 NSIS；可以复用上一版本的相同字节，不能缺失依赖资产。
 3. 先手动构建，核查后推送同版本 v* 标签。标签、清单、界面、README、AEX PE 版本和
    NSIS 文件版本都要一致；流水线对不一致直接失败。
 
