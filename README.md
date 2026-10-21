@@ -1,6 +1,6 @@
 # AE Local Toolkit
 
-面向 After Effects 2023 及更新版本的离线工具箱：工程整理、脚本启动、批量表达式。当前版本 **0.5.1**（本地开发中，尚未发布）。Windows 使用 AEGP + WebView2，macOS 保持 CEP；两平台共用界面与业务源码。
+面向 After Effects 2023 及更新版本的离线工具箱：工程整理、脚本启动、批量表达式。当前版本 **0.5.1**。Windows 使用 AEGP + WebView2，macOS 保持 CEP；两平台共用界面与业务源码。
 
 本试验分支 `codex/webview2-migration` 的完整 Windows 原生面板已获用户验收，未见可见故障；构建、独立数据和回退步骤见 [原生工具箱](native/toolkit/README.md)。CEP 的完整开发基线保存在 `codex/cep-0.5.1-baseline`（`0a631c9`），原工作区与安装保持不变。本地构建入口默认仅校验；新增 [Actions 发布流程](docs/release-automation.md) 支持手动构建和 v* 标签发布，第一阶段使用版本/哈希固定的 AEX 输入。本次已在本地构建验证两平台包，没有触发线上发布。[本地编译依赖](native/build/README.md) 已固定，不再引用 Starfield。
 

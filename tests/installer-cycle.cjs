@@ -9,7 +9,7 @@ fs.mkdirSync(sandbox,{recursive:true});
 const put=(file,value)=>{assert.ok(file.startsWith(sandbox+path.sep));fs.mkdirSync(path.dirname(file),{recursive:true});fs.writeFileSync(file,typeof value==='string'?value:JSON.stringify(value));},text=file=>fs.readFileSync(file,'utf8');
 const env={...process.env,PSModulePath:path.join(process.env.SystemRoot||'C:/Windows','System32/WindowsPowerShell/v1.0/Modules')};
 function run(exe,args,ok=true){const r=cp.spawnSync(exe,args,{cwd:root,env,windowsHide:true,windowsVerbatimArguments:path.basename(exe).toLowerCase()==='uninstall.exe',encoding:'utf8',timeout:120000,maxBuffer:8*1024*1024});if(r.error)throw r.error;if(ok)assert.equal(r.status,0,r.stdout+'\n'+r.stderr);else assert.notEqual(r.status,0,'expected installation to stop');return r;}
-const staging=path.join(sandbox,'stage');stage('windows',staging,inputs.nativeRoot,{runtime:inputs.runtime});
+const staging=path.join(sandbox,'stage');stage('windows',staging,inputs.nativeRoot);
 const setup=path.join(sandbox,'aelt-sandbox.exe');run(inputs.nsisCompiler,['/INPUTCHARSET','UTF8','/WX','/DVERSION='+version,'/DSTAGE='+staging,'/DOUTPUT_FILE='+setup,'/DTEST_ROOT='+sandbox,path.join(root,'extension/installer/aetoolkit-native.nsi')]);
 put(path.join(support,'AfterFX.exe'),'fixture executable marker, never run');put(path.join(legacy,'CSXS/manifest.xml'),'<ExtensionManifest ExtensionBundleId="com.local.aetoolkit"/>');
 const original={format:'ae-local-toolkit',version:1,settings:{language:'zh-CN',scriptFolder:'./scripts',scriptFavorites:['./scripts/Tool.jsx'],userExpressions:[]},schemes:[{id:'scheme-old',name:'旧方案',rules:[]}]};

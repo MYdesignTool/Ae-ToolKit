@@ -1,7 +1,7 @@
-# 安装与兼容（0.5.1 未发布分支）
+# 安装与兼容
 
-本分支 Windows 使用 AEGP + WebView2 原生面板；macOS 继续使用 CEP。现有正式发布页
-仍对应旧 CEP 版本。本轮已本地构建两平台包并做隔离安装验证，没有发布或更新下载链接。
+Windows 使用 AEGP + WebView2 原生面板；macOS 继续使用 CEP。0.5.1 已正式发布。
+当前轻量安装器改动仍在开发分支，尚未替换线上 0.5.1 完整离线包。
 
 | 平台 | 程序目录 | 打开方式 |
 | --- | --- | --- |
@@ -13,12 +13,16 @@
 
 ## Windows 原生安装
 
-安装或升级前保存工程并退出 AE。新的安装逻辑请求管理员权限，选择包含 `AfterFX.exe`
-的 Support Files 文件夹，只写入它的 `Plug-ins/AeltToolkitWebView2`。多 AE 版本需要
-分别选择目标。开发用 junction 或其他产品目录会被拒绝覆盖。
+安装或升级前保存工程并退出 AE。安装器请求管理员权限，列出从注册信息和标准安装目录
+发现的 AE 2023+，默认选择最高版本，列表末尾提供「自定义路径」。选择已发现版本后，
+直接使用对应 Support Files；自定义时才浏览目录，要求其中包含 `AfterFX.exe`。
+每次只写入所选 AE 的 `Plug-ins/AeltToolkitWebView2`，其他 AE 版本可再次运行安装器。
+开发用 junction 或其他产品目录会被拒绝覆盖。
 
-安装时检查共享的 WebView2 Runtime，缺失时才运行随包提供、经微软签名验证的离线安装
-程序；不把完整 Edge 当作依赖，也不在每个 AE 目录放一份 WebView2。卸载不删除共享
+安装时检查机器和当前用户的共享 WebView2 Runtime；已有时不联网。缺失时自动从微软
+下载 Evergreen Bootstrapper，验证微软 Authenticode 签名后静默安装，并重新检测结果。
+网络、签名或安装失败时，在覆盖工具箱文件前停止。安装包不再携带完整运行时，缺失时
+需要联网；不把完整 Edge 当作依赖，也不在每个 AE 目录放一份 WebView2。卸载不删除共享
 Runtime。[微软分发说明](https://learn.microsoft.com/en-us/microsoft-edge/webview2/concepts/distribution)
 
 个人数据在插件目录内 `extension/data/user-data.json`；安装逻辑只给 data 授予安装账户

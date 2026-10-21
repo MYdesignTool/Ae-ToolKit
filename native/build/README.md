@@ -31,8 +31,9 @@ version 和 parts（source/destination）。它拒绝覆盖已有锁文件。`fr
 操作系统、自带 Windows PowerShell 5.1（也支持 PowerShell 7）、Windows 系统 API/.NET Framework（资源检查的小工具使用系统
 C# 编译器）和 AE 宿主本身仍是平台环境，不复制 Adobe 安装文件或整个操作系统。
 
-运行时依赖使用共享 Evergreen：离线安装程序从
+此前完整离线包的运行时快照从
 `https://go.microsoft.com/fwlink/?linkid=2124701` 获取，已校验有效 Microsoft Corporation
-Authenticode 签名并锁定内容。下载不等于安装，本次没有运行它。正式安装脚本只在检测
-不到 Runtime 时执行；卸载工具箱不卸载这个共享组件。
+Authenticode 签名并锁定内容。该历史快照仍保留，但轻量安装构建不再需要或打包它。
+新安装器检查共享 Evergreen，缺失时才下载微软 Bootstrapper、验证微软签名并安装；
+已有 Runtime 不联网。卸载工具箱不卸载这个共享组件。
 依据：[微软分发说明](https://learn.microsoft.com/en-us/microsoft-edge/webview2/concepts/distribution)。

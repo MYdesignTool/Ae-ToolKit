@@ -1,4 +1,4 @@
-param([string]$OutputRoot='.artifacts/ci-inputs',[string]$NativeBundle='',[string]$CachedRuntime='',[string]$CachedNsisZip='')
+param([string]$OutputRoot='.artifacts/ci-inputs',[string]$NativeBundle='',[string]$CachedNsisZip='')
 $ErrorActionPreference='Stop'
 $ciRepo=(Resolve-Path (Join-Path $PSScriptRoot '..\..')).Path
 $ciRoot=[IO.Path]::GetFullPath((Join-Path $ciRepo $OutputRoot))
@@ -34,12 +34,8 @@ $ciVersion=(Get-Item -LiteralPath $ciPlugin).VersionInfo
 if($ciVersion.ProductVersion -cne $ciLock.version -or $ciVersion.FileVersion -cne ($ciLock.version+'.0')){throw 'PE product/file version differs from changelog'}
 & (Join-Path $ciRepo 'native/input-probe/VerifyResource.ps1') -Plugin $ciPlugin -ResourceId 16001 -EntryPoint AeltToolkitEntry -ExpectedName 'AE Local Toolkit WebView2'
 if($LASTEXITCODE){throw 'AEX resource validation failed'}
-$ciRuntime=Join-Path $ciRoot 'MicrosoftEdgeWebView2RuntimeInstallerX64.exe'
-Get-VerifiedInput $ciLock.runtime.url $ciRuntime $ciLock.runtime.sha256 $CachedRuntime $ciLock.runtime.releaseTag $ciLock.runtime.assetName
-$ciSignature=Get-AuthenticodeSignature -LiteralPath $ciRuntime
-if($ciSignature.Status -ne 'Valid' -or $ciSignature.SignerCertificate.Subject -notmatch 'O=Microsoft Corporation'){throw 'Runtime must have a valid Microsoft signature'}
 $ciNsisZip=Join-Path $ciRoot 'nsis.zip';Get-VerifiedInput (@($ciLock.nsis.url)+@($ciLock.nsis.fallbackUrls)) $ciNsisZip $ciLock.nsis.sha256 $CachedNsisZip $ciLock.nsis.releaseTag $ciLock.nsis.assetName
 $ciNsisRoot=Join-Path $ciRoot 'nsis';Expand-Archive -LiteralPath $ciNsisZip -DestinationPath $ciNsisRoot
 $ciCompiler=Join-Path $ciNsisRoot 'nsis-3.12/makensis.exe'
 if((& $ciCompiler /VERSION) -cne 'v3.12'){throw 'Unexpected NSIS compiler version'}
-@{nativeRoot=$ciNative;runtime=$ciRuntime;nsisCompiler=$ciCompiler} | ConvertTo-Json | Set-Content -LiteralPath (Join-Path $ciRoot 'paths.json') -Encoding utf8
+@{nativeRoot=$ciNative;nsisCompiler=$ciCompiler} | ConvertTo-Json | Set-Content -LiteralPath (Join-Path $ciRoot 'paths.json') -Encoding utf8

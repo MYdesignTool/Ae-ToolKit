@@ -14,3 +14,13 @@ test('Windows staging rejects debug candidates, changed binaries and stale nativ
  const info={Version:version,DebugPort:8316,PluginSha256:crypto.createHash('sha256').update('test fixture, never distributed').digest('hex'),SourceSha256:require('../native/build/source-fingerprint.cjs').sourceFingerprint()};
  for(const [index,override] of [{},{DebugPort:0,PluginSha256:'bad'},{DebugPort:0,SourceSha256:'stale'}].entries()){fs.writeFileSync(path.join(build,'build-info.json'),JSON.stringify({...info,...override}));assert.throws(()=>stage('windows',path.join(root,'out'+index),build),/Reject debug, stale or mismatched/);}
 }));
+
+test('Windows payload carries only an online bootstrapper policy and discovery helpers',()=>fixture(root=>{
+ const build=path.join(root,'build');fs.mkdirSync(path.join(build,'bin'),{recursive:true});const binary=Buffer.from('test fixture, never distributed');fs.writeFileSync(path.join(build,'bin/AeltToolkitWebView2.aex'),binary);
+ const info={Version:require('../scripts/release/version.cjs').check().version,DebugPort:0,PluginSha256:crypto.createHash('sha256').update(binary).digest('hex'),SourceSha256:require('../native/build/source-fingerprint.cjs').sourceFingerprint()};fs.writeFileSync(path.join(build,'build-info.json'),JSON.stringify(info));
+ const out=path.join(root,'stage'),result=stage('windows',out,build);
+ assert.ok(!result.files.some(file=>/\.exe$/i.test(file)));
+ for(const name of ['Ensure-WebView2.ps1','Discover-Ae.ps1','webview2-bootstrapper.json'])assert.ok(result.files.includes('prerequisites/'+name));
+ assert.equal(JSON.parse(fs.readFileSync(path.join(out,'prerequisites/webview2-bootstrapper.json'))).mode,'evergreen-online');
+ assert.ok(result.files.reduce((sum,file)=>sum+fs.statSync(path.join(out,file)).size,0)<10*1024*1024);
+}));
