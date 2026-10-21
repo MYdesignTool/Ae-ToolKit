@@ -6,7 +6,7 @@ test('selected-root image folder takes precedence, including uppercase image ext
  const second=env.call('AELocalToolkit.launcher.scanScripts("/b")');assert.equal(second.scripts[0].iconPath,'file:///b/image/Other.jpg');
 });
 test('browser image URLs preserve native Chinese, drive, percent and hash characters',()=>{
- const env=storage();const root='Q:/Adobe 2023/素材%20 #1';env.folders.add(root);env.folders.add(root+'/image');env.files.set(root+'/旋转%25 #2.jsxbin','');env.files.set(root+'/image/旋转%25 #2.png','image');
+ const env=storage({decodeFilePaths:true});const root='Q:/Adobe 2023/素材%20 #1';env.folders.add(root);env.folders.add(root+'/image');env.files.set(root+'/旋转%25 #2.jsxbin','');env.files.set(root+'/image/旋转%25 #2.png','image');
  run(env.context,'extension/host/modules/launcher.jsx');env.context.selectedRoot=root;const result=env.call('AELocalToolkit.launcher.scanScripts(selectedRoot)');assert.equal(result.ok,true);assert.equal(result.scripts[0].name,'旋转%25 #2');
  const url=new URL(result.scripts[0].iconPath);assert.equal(url.protocol,'file:');assert.equal(url.hash,'');assert.equal(decodeURIComponent(url.pathname),'/'+root+'/image/旋转%25 #2.png');assert.equal(result.scripts[0].iconPath.startsWith('file:///Q:/'),true);
 });

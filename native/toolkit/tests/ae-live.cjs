@@ -27,12 +27,13 @@ async function main(){
   assert.equal((await call('AELT_saveOrganizerScheme',[scheme])).ok,true);
   assert.equal((await call('AELT_loadOrganizerSchemes')).schemes.find(item=>item.id===schemeId).name,scheme.name);
   assert.equal((await call('AELT_deleteOrganizerScheme',[schemeId])).ok,true);schemeId=null;
-  fs.mkdirSync(fixture,{recursive:true});const script=path.join(fixture,'中文脚本.jsx'),marker=path.join(fixture,'executed.txt');
-  fs.writeFileSync(script,'(function(){var file=new File('+JSON.stringify(marker.replaceAll('\\','/'))+');file.encoding="UTF-8";if(!file.open("w"))throw new Error("fixture write failed");file.write("native bridge executed");file.close();})();');
+  fs.mkdirSync(fixture,{recursive:true});const script=path.join(fixture,'中文脚本.jsx'),marker=path.join(fixture,'executed.txt'),token='native bridge executed '+Date.now();
+  fs.writeFileSync(script,'(function(){var file=new File('+JSON.stringify(marker.replaceAll('\\','/').replaceAll('%','%25'))+');file.encoding="UTF-8";if(!file.open("w"))throw new Error("fixture write failed");file.write('+JSON.stringify(token)+');file.close();})();');
   fs.writeFileSync(path.join(fixture,'中文脚本.png'),Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jRZkAAAAASUVORK5CYII=','base64'));
-  const scan=await call('AELT_scanScripts',[fixture]);assert.equal(scan.ok,true);assert.equal(scan.scripts.length,1);assert.ok(scan.scripts[0].iconPath.includes('%2520'));
-  assert.equal(await evaluate(`new Promise(resolve=>{var image=new Image();image.onload=()=>resolve(image.naturalWidth>0);image.onerror=()=>resolve(false);image.src=${JSON.stringify(pathToFileURL(path.join(fixture,'中文脚本.png')).href)};})`),true,'Local script image must render');
-  assert.equal((await call('AELT_launchScript',[script])).ok,true);assert.equal(fs.readFileSync(marker,'utf8'),'native bridge executed');
+  const scan=await call('AELT_scanScripts',[fixture]);assert.equal(scan.ok,true,JSON.stringify(scan));assert.equal(scan.scripts.length,1);assert.ok(scan.scripts[0].iconPath.includes('%2520'),JSON.stringify(scan.scripts[0]));
+  assert.equal(scan.scripts[0].iconPath,pathToFileURL(path.join(fixture,'中文脚本.png')).href);
+  assert.equal(await evaluate(`new Promise(resolve=>{var image=new Image();image.onload=()=>resolve(image.naturalWidth>0);image.onerror=()=>resolve(false);image.src=${JSON.stringify(scan.scripts[0].iconPath)};})`),true,'Local script image must render');
+  assert.equal((await call('AELT_launchScript',[script])).ok,true);assert.equal(fs.readFileSync(marker,'utf8'),token);
   const summary=await call('AELT_getSelectedPropertySummary');assert.equal(summary.ok,true);
   const rejected=await call('AELT_nonexistentMethod');assert.equal(rejected.ok,false);
   const report={time:new Date().toISOString(),target:target.url,bridge:'real WebView2 + AEGP',checks:['startup','private runtime root','ping','bootstrap','settings save/reload/restore','scheme save/list/delete','Unicode and literal-percent paths','local PNG loading','script scan and harmless fixture launch','selection read','method rejection'],projectModified:false,nativeCandidatePosition:'requires user observation'};

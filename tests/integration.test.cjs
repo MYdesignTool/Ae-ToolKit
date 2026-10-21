@@ -26,7 +26,7 @@ test('organizer matches complete ignored names with spaces, fuzzy mode, old list
  }
 });
 test('launcher accepts uppercase extensions, nested matching images and literal percent paths',()=>{
- const env=storage();env.folders.add('/scripts');env.folders.add('/scripts/Sub');env.folders.add('/scripts/(ignore)');
+ const env=storage({decodeFilePaths:true});env.folders.add('/scripts');env.folders.add('/scripts/Sub');env.folders.add('/scripts/(ignore)');
  env.files.set('/scripts/Sub/Tool.JSX','');env.files.set('/scripts/Sub/Tool.jpg','image');env.files.set('/scripts/percent%20.jsx','');env.files.set('/scripts/(ignore)/hidden.jsx','');
  const launched=[];env.context.$={evalFile:file=>launched.push(file.fsName)};run(env.context,'extension/host/modules/launcher.jsx');
  const result=env.call('AELocalToolkit.launcher.scanScripts("/scripts")');assert.equal(result.ok,true);assert.equal(result.scripts.length,2);assert.ok(result.scripts.find(s=>s.name==='Tool').iconPath.endsWith('/Sub/Tool.jpg'));

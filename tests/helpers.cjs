@@ -11,10 +11,12 @@ exports.storage = (options = {}) => {
   const files = new Map(), folders = new Set(['/user', moduleRoot + '/data', moduleRoot + '/data/organizer-schemes']);
   const fault = {};
   function normalize(p) { return String(p).replace(/\\/g, '/').replace(/\/$/, ''); }
-  function File(p) { if (!(this instanceof File)) return new File(p); this.fullName = normalize(p); }
+  function constructorPath(p) { return options.decodeFilePaths ? decodeURI(String(p)) : p; }
+  function enumerationPath(p) { return options.decodeFilePaths ? encodeURI(String(p)) : p; }
+  function File(p) { if (!(this instanceof File)) return new File(p); this.fullName = normalize(constructorPath(p)); }
   Object.defineProperties(File.prototype, {
     fsName: {get() {return this.fullName;}}, name: {get() {return this.fullName.split('/').pop();}},
-    parent: {get() {return new Folder(this.fullName.slice(0, this.fullName.lastIndexOf('/')));}},
+    parent: {get() {return new Folder(enumerationPath(this.fullName.slice(0, this.fullName.lastIndexOf('/'))));}},
     absoluteURI: {get() {return encodeURI(this.fullName.replace(/^([A-Za-z]):/,function(_,drive){return '/'+drive.toLowerCase();}));}},
     exists: {get() {return files.has(this.fullName);}}
   });
@@ -25,10 +27,10 @@ exports.storage = (options = {}) => {
   File.prototype.remove = function() {return files.delete(this.fullName);};
   File.prototype.copy = function(destination) {if(!this.exists)return false; files.set(normalize(destination),files.get(this.fullName));return true;};
   File.prototype.rename = function(name) {const destination=this.parent.fullName+'/'+name;if(fault.rename && fault.rename(destination))return false;files.set(destination,files.get(this.fullName));files.delete(this.fullName);this.fullName=destination;return true;};
-  function Folder(p) {if(!(this instanceof Folder))return new Folder(p);this.fullName=normalize(p);}
+  function Folder(p) {if(!(this instanceof Folder))return new Folder(p);this.fullName=normalize(constructorPath(p));}
   Object.defineProperties(Folder.prototype,{name:{get(){return this.fullName.split('/').pop();}},fsName:{get(){return this.fullName;}},exists:{get(){return folders.has(this.fullName);}}});
   Folder.prototype.create=function(){folders.add(this.fullName);return true;};
-  Folder.prototype.getFiles=function(pattern){const suffix=pattern?pattern.slice(1):'',prefix=this.fullName+'/';const found=[...files.keys()].filter(p=>p.startsWith(prefix)&&!p.slice(prefix.length).includes('/')&&p.endsWith(suffix)).map(p=>new File(p));return pattern?found:found.concat([...folders].filter(p=>p.startsWith(prefix)&&!p.slice(prefix.length).includes('/')).map(p=>new Folder(p)));};
+  Folder.prototype.getFiles=function(pattern){const suffix=pattern?pattern.slice(1):'',prefix=this.fullName+'/';const found=[...files.keys()].filter(p=>p.startsWith(prefix)&&!p.slice(prefix.length).includes('/')&&p.endsWith(suffix)).map(p=>new File(enumerationPath(p)));return pattern?found:found.concat([...folders].filter(p=>p.startsWith(prefix)&&!p.slice(prefix.length).includes('/')).map(p=>new Folder(enumerationPath(p))));};
   Folder.userData=new Folder('/user');
   const context=exports.context({File,Folder,AELocalToolkit:{moduleBase:moduleRoot}});
   exports.run(context,'extension/host/lib/json.jsx');

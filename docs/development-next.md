@@ -6,7 +6,7 @@
 
 用户授权保留 CEP 并完成独立分支移植。完整 CEP 开发状态保存为 `codex/cep-0.5.1-baseline` 的 `0a631c9`；新宿主在附加 worktree 的 `codex/webview2-migration` 开发。`native/toolkit/` 复用公共宿主，接入完整界面和全部 17 个业务方法，保留原 JSX 逻辑及备份格式。JSX 私有缓存、原生 profile、安装链接和一次性 CEP 数据副本均分离。
 
-当前完整候选已构建并部署为独立 `AeltToolkitWebView2` 插件；原 CEP、已通过输入验收的探针和 Starfield 保留。62 项逻辑检查、240 项原生队列检查、12 项桥接检查及实际生成 JSX 的假宿主检查通过；完整界面在新传输 mock 下通过整理/方案/脚本/表达式/标签/动画/双语/窄面板回归，原有 CEP 输入、编辑器和启动诊断回归通过。完整候选的真实 AE 接口及输入法验收待本轮运行结果，不能用探针通过替代。操作与数据路径见 [移植说明](../native/toolkit/README.md)。
+当前完整候选已构建并部署为独立 `AeltToolkitWebView2` 插件；原 CEP、已通过输入验收的探针和 Starfield 保留。62 项逻辑检查、240 项原生队列检查、12 项桥接检查及实际生成 JSX 的假宿主检查通过；完整界面在新传输 mock 下通过整理/方案/脚本/表达式/标签/动画/双语/窄面板回归，原有 CEP 输入、编辑器和启动诊断回归通过。用户已在完整工具箱确认「完整界面正常，候选窗跟随光标」。真实 AE 回归通过设置保存与恢复、方案增删、中文及字面百分号路径扫描、图片加载、临时脚本运行、选区读取和方法拒绝。实测发现并修正脚本模块的原生路径百分号解码问题，补强测试替身；当前工程没有改动，原 CEP 数据哈希不变。工程写入类操作及更多环境的人工验收边界见 [移植说明](../native/toolkit/README.md)。
 
 ## 动画设置
 
@@ -35,7 +35,7 @@
 
 ## 输入法定位
 
-**2026-10-21 独立 WebView2 原型。** 用户选择先做独立验证，并授权复用 Starfield 已有 AEGP + WebView2 宿主。现已抽取 [`native/panel-host/`](../native/panel-host/README.md)，以及独立使用方 [`native/input-probe/`](../native/input-probe/README.md)。身份、缓存、安装链接和内容目录与 Starfield/CEP 分离；当前 CEP 版本保持原样。用户在 AE 23.5 / 微软拼音确认三个输入区域的首次和连续输入、移动/缩放/浮动/停靠/焦点往返、英文、系统复制粘贴、撤销重做及测试快捷键均正常。完整工具箱尚未接入新宿主；迁移范围见 [评估](webview2-migration-assessment.md)。不发布、不生成安装器的约束继续有效。
+**2026-10-21 独立 WebView2 原型。** 用户选择先做独立验证，并授权复用 Starfield 已有 AEGP + WebView2 宿主。现已抽取 [`native/panel-host/`](../native/panel-host/README.md)，以及独立使用方 [`native/input-probe/`](../native/input-probe/README.md)。身份、缓存、安装链接和内容目录与 Starfield/CEP 分离；当前 CEP 版本保持原样。用户在 AE 23.5 / 微软拼音确认三个输入区域的首次和连续输入、移动/缩放/浮动/停靠/焦点往返、英文、系统复制粘贴、撤销重做及测试快捷键均正常。随后按用户授权在新分支接入完整工具箱，并取得完整界面及候选窗正常的反馈，见本页顶部记录和 [评估](webview2-migration-assessment.md)。不发布、不生成安装器的约束继续有效。
 
 **2026-10-21 逐项与组合复测。** TSF 禁用项继续保留；其余实验按用户反馈逐项切换或组合验收。当前组合、已排除项目及每轮结果统一记录于 [输入法说明](../extension/docs/ime-compatibility.md)，其余 0.5.1 功能保留。
 
@@ -75,4 +75,4 @@ Adobe 已记录同类输入框候选窗左上角问题：[CEP-3029](https://comm
 - 浏览器截图位于 `.artifacts/preferences-tags/`，不参与发布。
 - 新增截图位于 `.artifacts/editor-ime/`、`.artifacts/organizer-tags/`，同样不参与发布。
 
-浏览器使用本机 Edge 和模拟 CEP 桥接，不修改真实 AE 用户数据。用户已报告 AE 内的微软拼音候选窗定位问题仍存在；其余本轮修订仍待宿主人工验收。
+上述浏览器检查使用本机 Edge 和模拟桥接，不修改真实 AE 用户数据。CEP 的微软拼音候选窗问题仍存在；完整 WebView2 分支的输入定位已由用户确认正常，真实 AE 桥接结果与尚未覆盖的人工验收范围见顶部移植记录。

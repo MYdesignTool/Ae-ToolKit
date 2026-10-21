@@ -1,6 +1,9 @@
 /* Local script discovery. The image directory is always relative to the selected root. */
 AELocalToolkit.launcher = (function () {
   var scanned = {};
+  // Inputs are native fsName paths. ExtendScript constructors decode %xx even
+  // in Windows paths; escape literal percentages before crossing that boundary.
+  function nativePath(path) { return String(path).replace(/%/g, '%25'); }
   function identity(file) { return Folder.fs === 'Windows' ? file.fsName.toLowerCase() : file.fsName; }
   function nativeName(file) { return file.fsName.replace(/^.*[\\\/]/, ''); }
   function browserFileUrl(file) {
@@ -34,13 +37,13 @@ AELocalToolkit.launcher = (function () {
       var slash = relative.lastIndexOf('/');
       var directory = slash >= 0 ? relative.slice(0, slash) : '';
       var imageRoot = root.fsName + '/image';
-      var image = find(new Folder(imageRoot + (directory ? '/' + directory : '')), stem) ||
-        (directory ? find(new Folder(imageRoot), stem) : null) || find(file.parent, stem);
+      var image = find(new Folder(nativePath(imageRoot + (directory ? '/' + directory : ''))), stem) ||
+        (directory ? find(new Folder(nativePath(imageRoot)), stem) : null) || find(file.parent, stem);
       return image ? browserFileUrl(image) : '';
     };
   }
   function scanScripts(path) {
-    var result = { ok:true, scripts:[], messages:[] }, root = new Folder(path);
+    var result = { ok:true, scripts:[], messages:[] }, root = new Folder(nativePath(path));
     scanned = {};
     try {
       if (!root.exists) throw new Error('脚本文件夹不存在：' + path);
@@ -73,7 +76,7 @@ AELocalToolkit.launcher = (function () {
   }
   function launchScript(path) {
     try {
-      var file = new File(path);
+      var file = new File(nativePath(path));
       if (!/\.(jsx|jsxbin)$/i.test(nativeName(file)) || !scanned[identity(file)]) throw new Error('请先扫描并选择脚本。');
       if (!file.exists) throw new Error('脚本文件已移动或删除，请刷新列表。');
       $.evalFile(file);

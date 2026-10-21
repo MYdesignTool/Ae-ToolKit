@@ -1,12 +1,12 @@
 # Windows AEGP Panel + WebView2 迁移评估
 
-评估日期：2026-10-21。范围：当前 AeLocalToolkit 的 Windows x64 面板，从 CEP 迁移到 AEGP 可停靠面板内的 WebView2。本文的人日是工程估计，不是交付承诺。完整工具箱尚未迁移；用户授权后已从 Starfield 抽取独立宿主模块并完成输入验证原型。未发布、未生成安装器、未复制或替换 Adobe DLL。
+评估日期：2026-10-21。范围：当前 AeLocalToolkit 的 Windows x64 面板，从 CEP 迁移到 AEGP 可停靠面板内的 WebView2。本文的人日是实施前的工程估计，不是交付承诺。用户随后授权保留 CEP 并开分支完成移植；完整候选已在 `codex/webview2-migration` 构建和独立部署。未发布、未生成安装器、未复制或替换 Adobe DLL。
 
-后续实证：[`native/panel-host/`](../native/panel-host/README.md) 已成为可配置、无 Starfield 业务依赖的独立模块；[`native/input-probe/`](../native/input-probe/README.md) 作为首个使用方构建并通过 AE 23.5 用户实测。普通 input、textarea、CodeMirror 的微软拼音首次/连续输入、窗口状态变化及本轮要求的编辑操作均获用户确认正常。原型沿用原有成熟宿主后，实际搭建成本低于下文从基础集成出发的初始估计；完整业务桥接、资源和数据迁移、产品回归工作仍未完成。
+后续实证：[`native/panel-host/`](../native/panel-host/README.md) 已成为可配置、无 Starfield 业务依赖的独立模块；[`native/input-probe/`](../native/input-probe/README.md) 作为首个使用方构建并通过 AE 23.5 用户实测。普通 input、textarea、CodeMirror 的微软拼音首次/连续输入、窗口状态变化及本轮要求的编辑操作均获用户确认正常。随后 [`native/toolkit/`](../native/toolkit/README.md) 接入全部 17 个业务入口、完整界面、资源和独立数据副本；用户确认完整界面正常、候选窗跟随光标。离线回归及真实 AE 的设置、方案、特殊路径图片、脚本扫描/运行、选区读取回归通过；工程写入、文件对话框和更多环境的验收范围见完整移植说明。复用成熟宿主降低了原型搭建成本，下文估计保留为实施前记录。
 
 ## 结论与证据边界
 
-当前项目适合先做小型宿主验证，再决定迁移。现有 HTML/CSS、CodeMirror 与主要 ExtendScript 业务可以保留，新增成本集中在原生面板壳、WebView2 生命周期、消息桥接与宿主回归。
+实施采用小型宿主验证后移植完整界面的顺序。现有 HTML/CSS、CodeMirror 与主要 ExtendScript 业务得以保留，新增工作集中在原生面板壳、WebView2 生命周期、消息桥接与宿主回归。
 
 用户观察到多个 CEP 扩展有同类微软拼音问题，而其测试的 AEGP Panel + WebView2 面板正常。这支持排查 CEP 宿主与浏览器输入集成，但不能单凭观察证明所有 CEP 均受影响，或 WebView2 必然修复本项目。当前 CEP 组合仍是直接输入错位、删除后恢复；原生焦点顺序原型未改善这一结果。随后直接原生坐标同步原型导致宿主无响应，已停止并卸载。原生 hook 和坐标同步均不应视为已验证的产品方案。
 
@@ -68,7 +68,7 @@ WebView2 的浏览器缓存目录应与业务 JSON 分开，显式放在用户�
 
 完整迁移还需验证工程整理、表达式应用/移除及 AE 撤销组、方案/设置保存、失败保留草稿、备份导入导出、脚本扫描与运行、中文和特殊字符路径、图片、关闭重开、宿主退出、缺失或失败的 Runtime、数据迁移与回退。原生插件代码处于 AE 进程内，错误可影响宿主；不能把浏览器多进程当成整个插件的崩溃隔离保证。
 
-建议 v0.5.1 继续保留现有功能开发与 CEP 受控诊断，把 WebView2 验证原型放在独立目录/目标中。原型通过后再把完整迁移作为后续独立版本决策；当前没有实施迁移或发布授权。任何版本均遵守用户在确认前不发布、不生成安装器的要求。
+v0.5.1 的原 CEP 保存在 `codex/cep-0.5.1-baseline`；原生完整工具箱在 `codex/webview2-migration` 独立开发，原型、原生工具箱与 CEP 安装及数据分离。用户已授权实施迁移，尚未授权发布或生成安装器。不同 AE 版本、多屏 DPI 和正式分发仍属于后续验证范围。
 
 ## 一手来源与本机 SDK 核查索引
 
