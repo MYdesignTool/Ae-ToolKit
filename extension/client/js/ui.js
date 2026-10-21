@@ -46,6 +46,7 @@
   }
 
   function loadSettings() {
+    setAnimationScale(AELT.settings.get('animationScale', 1));
     state.quietMode = AELT.settings.get("quietMode", false) === true;
     if (els.quietModeToggle) els.quietModeToggle.checked = state.quietMode;
     state.debugMode = AELT.settings.get("debugMode", false) === true;
@@ -54,13 +55,12 @@
     state.ignoreMainComp = AELT.settings.get("ignoreMainComp", false) === true;
     if (els.ignoreMainCompToggle) els.ignoreMainCompToggle.checked = state.ignoreMainComp;
     if (els.ignoreMainCompField) els.ignoreMainCompField.style.display = state.ignoreMainComp ? "" : "none";
-    // 名称默认 “Main”（未显式清空时回退到 Main，保证开箱即用）。
+    // 兼容旧版分隔文本；标签数组保留名称中的空格以及明确清空的名单。
     state.ignoreMainCompNames = AELT.settings.get("ignoreMainCompNames", "Main");
-    if (!state.ignoreMainCompNames) state.ignoreMainCompNames = "Main";
     state.ignoreMainCompFuzzy = AELT.settings.get("ignoreMainCompFuzzy", false) === true;
     if (els.ignoreMainCompNames) {
-      els.ignoreMainCompNames.value = state.ignoreMainCompNames;
-      els.ignoreMainCompNames.disabled = !state.ignoreMainComp;
+      AELT.organizer.setIgnoreNames(state.ignoreMainCompNames);
+      AELT.organizer.enableIgnoreNames(state.ignoreMainComp);
     }
     if (els.ignoreMainCompFuzzyToggle) {
       els.ignoreMainCompFuzzyToggle.checked = state.ignoreMainCompFuzzy;
@@ -158,7 +158,27 @@ AELT.ui = {
   pingHost: pingHost
 };
 
-function allowMotion() { return !window.matchMedia('(prefers-reduced-motion: reduce)').matches; }
+function allowMotion() { return state.animationScale !== 0 && !window.matchMedia('(prefers-reduced-motion: reduce)').matches; }
+// Original timings correspond to 2x; 1x halves their duration and delay.
+function motionTime(original) { return original * state.animationScale / 2; }
+function animateMotion(element, frames, options) {
+  options = Object.assign({}, options, {duration:motionTime(options.duration), delay:motionTime(options.delay || 0)});
+  var animation = element.animate(frames, options);
+  animation._aeltMotionScale = state.animationScale;
+  return animation;
+}
+function setAnimationScale(value) {
+  state.animationScale = [0, 0.5, 1, 2].indexOf(value) >= 0 ? value : 1;
+  document.documentElement.style.setProperty('--motion-scale', state.animationScale / 2);
+  document.documentElement.dataset.motion = allowMotion() ? 'on' : 'off';
+  if (els.animationScaleSelect) els.animationScaleSelect.value = String(state.animationScale);
+  document.getAnimations().forEach(function (animation) {
+    if (!animation._aeltMotionScale) return;
+    if (!allowMotion()) animation.finish();
+    else animation.updatePlaybackRate(animation._aeltMotionScale / state.animationScale);
+  });
+  if (!allowMotion()) document.querySelectorAll('.fav-burst').forEach(function (burst) { burst.remove(); });
+}
 function getViewMotionItems(view) {
   var bounds = view.getBoundingClientRect(), items = [];
   Array.from(view.children).forEach(function (child) {
@@ -180,7 +200,7 @@ function animateViewEntrance(view) {
   var animations = view._entranceAnimations = [];
   if (!allowMotion() || view.classList.contains('is-exiting')) return;
   getViewMotionItems(view).forEach(function (item, index) {
-    var animation = item.animate([{ opacity: 0, transform: 'translateY(14px)' }, { opacity: 1, transform: 'translateY(0)' }], {
+    var animation = animateMotion(item, [{ opacity: 0, transform: 'translateY(14px)' }, { opacity: 1, transform: 'translateY(0)' }], {
       duration: 200, delay: Math.min(index * 18, 144), easing: 'cubic-bezier(.22,.68,.22,1)', fill: 'backwards'
     });
     animations.push(animation);
@@ -204,7 +224,7 @@ function animateViewExit(view, direction, complete) {
     view._exitAnimations = []; view.classList.remove('is-exiting'); view.removeAttribute('aria-hidden');
   }
   poses.forEach(function (pose, index) {
-    var animation = pose.item.animate([
+    var animation = animateMotion(pose.item, [
       { opacity: pose.opacity, transform: pose.transform },
       { opacity: 0, transform: 'translateX(' + (-direction * 12) + 'px)' }
     ], { duration: 110, delay: Math.min(Math.floor(index / 3) * 14, 42), easing: 'cubic-bezier(.4,0,1,1)', fill: 'both' });

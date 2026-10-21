@@ -47,9 +47,8 @@ AELT.i18n = (function () {
       AELT.settings.persist();
     }
     if (state.rules) {
-      var scheme = getSelectedScheme();
-      if (scheme.builtin && [scheme.name, dictionary[scheme.name]].indexOf(els.schemeNameInput.value) >= 0) els.schemeNameInput.value = builtin(scheme, 'name');
-      renderSchemeSelect(); renderExpressions();
+      renderSchemeSelect(); renderExpressions(); AELT.organizer.refreshTagLabels();
+      AELT.organizer.syncSaveUI();
     }
     if (state.ready) {
       renderScripts(); renderDebug(); renderChangelog();

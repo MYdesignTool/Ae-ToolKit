@@ -3,7 +3,7 @@ window.AELT = {};
 var state = {
   ready: false, startupError: false, rules: null, organizerSchemes: [], selectedSchemeId: 'preset-default',
   changelog: null, expressions: [], selectedExpressionId: null, selection: null,
-  expressionBusy: false, debugEntries: [], quietMode: false, debugMode: false,
+  expressionBusy: false, debugEntries: [], quietMode: false, debugMode: false, animationScale: 1,
   scriptFolder: '', scripts: [], favFilterOn: false, selectedScriptFsName: null, scriptBusy: false
 };
 var els = {};

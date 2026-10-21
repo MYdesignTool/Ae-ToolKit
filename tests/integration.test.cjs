@@ -16,6 +16,15 @@ test('organizer initializes without duplicated defaults and handles prototype-li
  const result=require('node:vm').runInContext('AELocalToolkit.organizer.organizeProjectWithScheme(JSON.parse(schemeText))',env.ctx);
  assert.equal(result.ok,true);assert.equal(image.parentFolder.name,'__proto__');assert.equal(comp.parentFolder.name,'constructor');assert.equal(solid.parentFolder.name,'hasOwnProperty');assert.equal(result.moved,3);assert.equal(result.folders.length,3);
 });
+
+test('organizer matches complete ignored names with spaces, fuzzy mode, old lists and empty lists',()=>{
+ for(const [names,fuzzy,expected] of [[['main comp'],false,1],[['main comp'],true,2],['Main,Intro',false,1],[[],true,0]]){
+  const env=projectFixture(),comps=['Main Comp','Main Comp v2','Main'].map(name=>new env.CompItem(name));
+  env.ctx.schemeText=JSON.stringify({name:'test',rules:[{path:'Comp',itemTypes:['CompItem'],extensions:[]}],fallbackPath:'Footage',ignoreMainComp:true,ignoreMainCompNames:names,ignoreMainCompFuzzy:fuzzy});
+  const result=require('node:vm').runInContext('AELocalToolkit.organizer.organizeProjectWithScheme(JSON.parse(schemeText))',env.ctx);
+  assert.equal(result.ok,true);assert.equal(result.ignoredMainComp||0,expected);assert.equal(comps.filter(comp=>comp.parentFolder===env.root).length,expected);
+ }
+});
 test('launcher accepts uppercase extensions, nested matching images and literal percent paths',()=>{
  const env=storage();env.folders.add('/scripts');env.folders.add('/scripts/Sub');env.folders.add('/scripts/(ignore)');
  env.files.set('/scripts/Sub/Tool.JSX','');env.files.set('/scripts/Sub/Tool.jpg','image');env.files.set('/scripts/percent%20.jsx','');env.files.set('/scripts/(ignore)/hidden.jsx','');

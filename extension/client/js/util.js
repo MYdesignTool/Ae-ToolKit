@@ -28,6 +28,8 @@
 function showDialog(options, callback) {
   var modal = $('inputModal'), previous = document.activeElement;
   var ok = $('inputModalOk'), cancel = $('inputModalCancel'), field = $('inputModalField');
+  var tagsField = $('inputModalTagsField'), tags = $('inputModalTags');
+  tagsField.hidden = !options.expression; tags.value = options.tags || '';
   $('inputModalTitle').textContent = options.title || t('确认操作');
   $('confirmMessage').textContent = options.message || '';
   $('confirmMessage').hidden = !options.message;
@@ -39,18 +41,20 @@ function showDialog(options, callback) {
   function done(accepted) {
     modal.style.display = 'none';
     ok.onclick = null; cancel.onclick = null; modal.onclick = null; modal.onkeydown = null;
-    callback(options.input ? (accepted ? field.value.trim() || null : null) : accepted);
+    var value = options.input ? (accepted ? field.value.trim() || null : null) : accepted;
     if (previous && previous.isConnected && !previous.disabled) previous.focus();
+    callback(options.expression && value ? {name:value, tags:tags.value} : value);
   }
   ok.onclick = function () { done(true); };
   cancel.onclick = function () { done(false); };
   modal.onclick = function (event) { if (event.target === modal) done(false); };
   modal.onkeydown = function (event) {
+    if (event.isComposing || event.keyCode === 229) return;
     if (event.key === 'Escape') { event.preventDefault(); done(false); }
-    if (event.key === 'Enter' && event.target === field) { event.preventDefault(); done(true); }
+    if (event.key === 'Enter' && (event.target === field || event.target === tags)) { event.preventDefault(); done(true); }
     if (event.key === 'Tab') {
       event.preventDefault();
-      var controls = options.input ? [field, cancel, ok] : [cancel, ok];
+      var controls = options.expression ? [field, tags, cancel, ok] : options.input ? [field, cancel, ok] : [cancel, ok];
       var index = controls.indexOf(document.activeElement);
       controls[(index + (event.shiftKey ? -1 : 1) + controls.length) % controls.length].focus();
     }

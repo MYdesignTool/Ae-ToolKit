@@ -40,7 +40,10 @@ test('English generation keeps every release field and all section structure in 
  assert.equal((rendered.match(/<section\b/g)||[]).length,(source.match(/<section\b/g)||[]).length);
  assert.equal((rendered.match(/<article\b/g)||[]).length,(source.match(/<article\b/g)||[]).length);
  assert.equal((rendered.match(/data-release-link/g)||[]).length,4);
- assert.ok(rendered.includes('Download '+changelog.version));
+ const pageVersion=source.match(/data-release-field="version">([^<]+)/)[1];
+ assert.ok(changelog.entries.some(entry=>entry.version===pageVersion),'published page version is retained in history');
+ assert.ok(rendered.includes('Download '+pageVersion));
+ assert.ok(renderEnglish(renderPage(source,selectRelease(changelog))).includes('Download '+changelog.version),'the development version can also be generated without publishing');
  assert.ok(rendered.includes('href="../assets/css/style.css?v=lang-motion2"'));
  assert.ok(rendered.includes('src="../assets/js/visuals.js?v=particles-half1"'));
  assert.ok(rendered.includes('Window → Extensions → AE Local Toolkit'));

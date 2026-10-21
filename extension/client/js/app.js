@@ -56,47 +56,14 @@
     });
 
     els.organizeBtn.addEventListener("click", organizeProject);
-   els.schemeSelect.addEventListener("change", function () {
-     var newId = els.schemeSelect.value;
-     if (newId === "preset-default") {
-       for (var si = 0; si < state.organizerSchemes.length; si++) {
-         if (state.organizerSchemes[si].id === "preset-default") {
-           state.organizerSchemes[si] = cloneData(state.rules);
-           break;
-         }
-       }
-     }
-     state.selectedSchemeId = newId;
-     renderRules();
-   });
-    els.newSchemeBtn.addEventListener("click", newScheme);
-    els.saveSchemeBtn.addEventListener("click", saveScheme);
-    els.deleteSchemeBtn.addEventListener("click", deleteScheme);
-    els.addRuleBtn.addEventListener("click", addRule);
-    bindGlobalFolderInputs();
-    els.ruleGrid.addEventListener("click", function (event) {
-      var button = event.target.closest("[data-remove-rule]");
-      if (!button) return;
-      var index = parseInt(button.getAttribute("data-remove-rule"), 10);
-     var scheme = getSchemeFromEditor();
-      if (scheme.id === "preset-default") {
-        var newScheme = normalizeScheme({
-          id: createId("scheme"),
-          name: t("新的整理方案"),
-          builtin: false,
-          fallbackPath: scheme.fallbackPath || "Footage",
-          rules: JSON.parse(JSON.stringify(scheme.rules))
-        });
-        newScheme.rules.splice(index, 1);
-        state.organizerSchemes.push(newScheme);
-        state.selectedSchemeId = newScheme.id;
-        renderRules();
-        return;
-      }
-     scheme.rules.splice(index, 1);
-      replaceOrAppendScheme(scheme);
-      renderRules();
+    els.animationScaleSelect.addEventListener('change', function () {
+      setAnimationScale(Number(els.animationScaleSelect.value));
+      AELT.settings.set('animationScale', state.animationScale);
+      AELT.settings.persist();
     });
+    window.matchMedia('(prefers-reduced-motion: reduce)').addEventListener('change', function () { setAnimationScale(state.animationScale); });
+    AELT.organizer.bindEvents();
+    bindGlobalFolderInputs();
     els.pingHostBtn.addEventListener('click', pingHost);
     els.debugModeToggle.addEventListener("change", function () {
       state.debugMode = els.debugModeToggle.checked;
@@ -113,17 +80,14 @@
       AELT.settings.set("ignoreMainComp", state.ignoreMainComp);
       var off = !state.ignoreMainComp;
       if (els.ignoreMainCompField) els.ignoreMainCompField.style.display = off ? "none" : "";
-      if (els.ignoreMainCompNames) els.ignoreMainCompNames.disabled = off;
+      AELT.organizer.enableIgnoreNames(!off);
       if (els.ignoreMainCompFuzzyToggle) {
         els.ignoreMainCompFuzzyToggle.disabled = off;
         var fzLbl = els.ignoreMainCompFuzzyToggle.closest(".inline-check");
         if (fzLbl) fzLbl.classList.toggle("disabled", off);
       }
     });
-    els.ignoreMainCompNames.addEventListener("input", function () {
-      state.ignoreMainCompNames = els.ignoreMainCompNames.value;
-      AELT.settings.set("ignoreMainCompNames", state.ignoreMainCompNames);
-    });
+    AELT.organizer.bindIgnoreNames();
     els.ignoreMainCompFuzzyToggle.addEventListener("change", function () {
       state.ignoreMainCompFuzzy = els.ignoreMainCompFuzzyToggle.checked;
       AELT.settings.set("ignoreMainCompFuzzy", state.ignoreMainCompFuzzy);
@@ -146,7 +110,7 @@
       "newSchemeBtn",
       "saveSchemeBtn",
       "deleteSchemeBtn",
-      "schemeNameInput",
+      "schemeMenuBtn", "schemeMenu", "renameSchemeBtn", "copySchemeBtn", "schemeSaveStatus",
       "compFolderInput",
       "solidFolderInput",
       "fallbackFolderInput",
@@ -154,6 +118,7 @@
       "refreshSelectionBtn",
       "selectionStatus",
       "expressionSearch",
+      "expressionTagFilter", "expressionTags", "editExpressionTagsBtn", "animationScaleSelect",
       "expressionList",
       "expressionCode",
       "formatExpressionBtn", "editorStatus", "languageSelect",
@@ -196,7 +161,7 @@
     document.querySelector('.tab[data-view="debug"]').click();
   }
   function init() {
-    cacheEls(); AELT.i18n.init(); bindEvents(); bindScriptEvents(); bindExpressionEvents(); AELT.editor.init();
+    cacheEls(); AELT.imeFocus.init(); AELT.i18n.init(); bindEvents(); bindScriptEvents(); bindExpressionEvents(); AELT.editor.init();
     positionTabIndicator(false);
     window.addEventListener('resize', function () { positionTabIndicator(false); });
     window.addEventListener('focus', function () { if ($('expressionsView').classList.contains('active')) refreshSelection(); });

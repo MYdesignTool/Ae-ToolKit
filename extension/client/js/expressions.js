@@ -1,5 +1,15 @@
 /* Preserve the original search + dropdown + editor workflow. */
 function selectedExpression() { return state.expressions.find(function (item) { return item.id === state.selectedExpressionId; }); }
+function normalizeExpressionTags(value) {
+  var tags = Array.isArray(value) ? value : String(value || '').split(/[,，\n]+/);
+  return tags.map(function (tag) { return tag.trim(); }).filter(function (tag, index, all) {
+    return tag && all.findIndex(function (other) { return other.toLowerCase() === tag.toLowerCase(); }) === index;
+  });
+}
+function expressionTags(item) {
+  return normalizeExpressionTags((item.tags || []).concat(item.category ? [item.category] : []));
+}
+function expressionTagLabel(item, tag) { return item.builtin ? t(tag) : tag; }
 function expressionDirty() {
   var item = selectedExpression();
   return els.expressionCode.value !== (item ? item.code.replace(/\r\n?/g, '\n') : '');
@@ -12,6 +22,9 @@ function syncExpressionEditor() {
   els.updateExpressionBtn.disabled = busy || !expressionDirty();
   els.deleteExpressionBtn.hidden = !item || item.builtin;
   els.deleteExpressionBtn.disabled = busy;
+  els.editExpressionTagsBtn.hidden = !item || item.builtin;
+  els.editExpressionTagsBtn.disabled = busy;
+  els.expressionTags.textContent = item ? (expressionTags(item).map(function (tag) { return expressionTagLabel(item, tag); }).join(' · ') || t('无标签')) : '';
   els.refreshSelectionBtn.disabled = busy;
   els.applyExpressionBtn.disabled = busy || !els.expressionCode.value.trim();
   els.removeExpressionBtn.disabled = busy || !(state.selection && state.selection.existing);
@@ -21,11 +34,21 @@ function syncExpressionEditor() {
 }
 function renderExpressions() {
   var query = els.expressionSearch.value.trim().toLowerCase();
+  var tagFilter = els.expressionTagFilter.value, tags = new Map();
+  state.expressions.forEach(function (item) {
+    expressionTags(item).forEach(function (tag) { if (!tags.has(tag)) tags.set(tag, expressionTagLabel(item, tag)); });
+  });
+  els.expressionTagFilter.innerHTML = '<option value="">' + escapeHtml(t('全部标签')) + '</option>' + Array.from(tags).sort(function (a, b) { return a[1].localeCompare(b[1]); }).map(function (tag) {
+    return '<option value="' + escapeHtml(tag[0]) + '">' + escapeHtml(tag[1]) + '</option>';
+  }).join('');
+  els.expressionTagFilter.value = tags.has(tagFilter) ? tagFilter : '';
+  tagFilter = els.expressionTagFilter.value;
   var items = state.expressions.filter(function (item) {
-    return [item.name, item.category, item.description, (item.tags || []).join(' '), AELT.i18n.builtin(item, 'name'), AELT.i18n.builtin(item, 'category')].join(' ').toLowerCase().indexOf(query) >= 0;
+    return [item.name, AELT.i18n.builtin(item, 'name')].join(' ').toLowerCase().indexOf(query) >= 0 && (!tagFilter || expressionTags(item).indexOf(tagFilter) >= 0);
   });
   els.expressionList.innerHTML = "<select class=\"expression-select\" aria-label=\"" + escapeHtml(t("选择表达式")) + "\"><option value=\"\">" + (items.length ? t('选择表达式…') : t('没有匹配的表达式')) + '</option>' + items.map(function (item) {
-    return '<option value="' + escapeHtml(item.id) + '"' + (item.id === state.selectedExpressionId ? ' selected' : '') + '>' + escapeHtml(AELT.i18n.builtin(item, 'name') + ' · ' + AELT.i18n.builtin(item, 'category')) + '</option>';
+    var labels = expressionTags(item).map(function (tag) { return expressionTagLabel(item, tag); });
+    return '<option value="' + escapeHtml(item.id) + '"' + (item.id === state.selectedExpressionId ? ' selected' : '') + '>' + escapeHtml(AELT.i18n.builtin(item, 'name') + (labels.length ? ' · ' + labels.join(' / ') : '')) + '</option>';
   }).join('') + '</select>';
   syncExpressionEditor();
 }
@@ -91,9 +114,11 @@ function saveExpression(update) {
   if (state.expressionBusy) return;
   var selected = selectedExpression(), code = els.expressionCode.value.trim();
   if (!code || (update && (!selected || selected.builtin))) return;
-  showInputDialog(update ? t('更新表达式名称') : t('保存为自定义表达式'), update ? selected.name : t('自定义表达式'), function (name) {
-    if (!name) return;
-    var item = {id:update ? selected.id : createId('user'), name:name, code:code, builtin:false, category:'自定义', description:'用户保存的本地表达式。', tags:['自定义']};
+  showDialog({title:update ? t('编辑表达式') : t('保存为自定义表达式'), input:true, expression:true, value:update ? selected.name : t('自定义表达式'), tags:selected ? expressionTags(selected).join(', ') : '', confirmLabel:t('保存')}, function (value) {
+    if (!value) return;
+    var item = update ? cloneData(selected) : {id:createId('user'), description:'用户保存的本地表达式。'};
+    item.name = value.name; item.code = code; item.builtin = false; item.tags = normalizeExpressionTags(value.tags);
+    delete item.category;
     var before = cloneData(getUserExpressions()), items = cloneData(before);
     var index = items.findIndex(function (entry) { return entry.id === item.id; });
     if (index < 0) items.push(item); else items[index] = item;
@@ -125,6 +150,8 @@ function deleteExpression() {
 }
 function bindExpressionEvents() {
   els.expressionSearch.addEventListener('input', renderExpressions);
+  els.expressionTagFilter.addEventListener('change', renderExpressions);
+  els.editExpressionTagsBtn.addEventListener('click', function () { saveExpression(true); });
   els.expressionList.addEventListener('change', function (event) { if (event.target.matches('.expression-select')) selectExpression(event.target.value); });
   els.expressionCode.addEventListener('input', syncExpressionEditor);
   els.expressionCode.addEventListener('keydown', function (event) {

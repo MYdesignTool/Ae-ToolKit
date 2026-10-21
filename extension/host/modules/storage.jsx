@@ -42,15 +42,30 @@ AELocalToolkit.storage = (function () {
   function validateSettings(settings) {
     if (!settings || typeof settings !== 'object' || settings instanceof Array) throw new Error('设置必须是 JSON 对象');
     if (settings.language !== undefined && settings.language !== 'zh-CN' && settings.language !== 'en') throw new Error('不支持的界面语言');
+    if (settings.animationScale !== undefined && settings.animationScale !== 0 && settings.animationScale !== 0.5 && settings.animationScale !== 1 && settings.animationScale !== 2) throw new Error('不支持的动画耗时倍率');
     var arrays = ['scriptFavorites', 'userExpressions'];
     for (var i = 0; i < arrays.length; i++) if (settings[arrays[i]] !== undefined && !(settings[arrays[i]] instanceof Array)) throw new Error('设置列表格式错误：' + arrays[i]);
-    var strings = ['compFolder', 'solidFolder', 'fallbackFolder', 'scriptFolder', 'ignoreMainCompNames'];
+    var strings = ['compFolder', 'solidFolder', 'fallbackFolder', 'scriptFolder'];
     for (i = 0; i < strings.length; i++) if (settings[strings[i]] !== undefined && typeof settings[strings[i]] !== 'string') throw new Error('设置文本格式错误：' + strings[i]);
+    var ignoreNames = settings.ignoreMainCompNames;
+    if (ignoreNames !== undefined && typeof ignoreNames !== 'string') {
+      if (!(ignoreNames instanceof Array)) throw new Error('忽略合成名称格式错误');
+      for (i = 0; i < ignoreNames.length; i++) if (typeof ignoreNames[i] !== 'string') throw new Error('忽略合成名称格式错误');
+    }
     var expressions = settings.userExpressions || [], seen = {};
     for (i = 0; i < expressions.length; i++) {
       var item = expressions[i];
       if (item && item.tags !== undefined && !(item.tags instanceof Array)) throw new Error('表达式标签格式错误');
       if (!item || typeof item.id !== 'string' || item.id.indexOf('user-') !== 0 || seen[item.id] || typeof item.code !== 'string' || typeof item.name !== 'string') throw new Error('自定义表达式格式错误');
+      var tags = item.tags || [], normalized = [], tagNames = {};
+      if (item.category !== undefined && typeof item.category !== 'string') throw new Error('表达式标签格式错误');
+      if (item.category) tags = tags.concat([item.category]);
+      for (var tagIndex = 0; tagIndex < tags.length; tagIndex++) {
+        if (typeof tags[tagIndex] !== 'string') throw new Error('表达式标签格式错误');
+        var tag = tags[tagIndex].replace(/^\s+|\s+$/g, ''), tagKey = '$' + tag.toLowerCase();
+        if (tag && !tagNames[tagKey]) { normalized.push(tag); tagNames[tagKey] = true; }
+      }
+      item.tags = normalized; delete item.category;
       seen[item.id] = true; item.builtin = false;
     }
     var favorites = settings.scriptFavorites || [];

@@ -62,24 +62,29 @@ function animateFavorite(button, enabled) {
     { transform: 'scale(.985)', offset: .8, easing: 'cubic-bezier(.4,0,.2,1)' },
     { transform: 'scale(1)' }
   ] : [{ transform: from }, { transform: 'scale(1)' }];
-  var pulse = glyph.animate(frames, { duration: enabled ? 260 : 140, easing: enabled ? 'linear' : 'ease-out' });
+  var pulse = animateMotion(glyph, frames, { duration: enabled ? 260 : 140, easing: enabled ? 'linear' : 'ease-out' });
   glyph._pulse = pulse;
   pulse.onfinish = function () { if (glyph._pulse === pulse) glyph._pulse = null; };
   if (!enabled) return;
   var burst = document.createElement('span');
   burst.className = 'fav-burst'; burst.setAttribute('aria-hidden', 'true');
   button._burst = burst; button.appendChild(burst);
+  var remaining = 7;
   for (var i = 0; i < 7; i++) {
     var angle = i * Math.PI * 2 / 7 - Math.PI / 2, distance = i % 2 ? 15 : 20;
     var x = Math.cos(angle) * distance, y = Math.sin(angle) * distance;
     var dot = document.createElement('span'); dot.className = 'fav-particle'; burst.appendChild(dot);
-    dot.animate([
+    var particle = animateMotion(dot, [
       { opacity: 0, transform: 'translate(-50%, -50%) translate(' + x * .25 + 'px,' + y * .25 + 'px) scale(.7)' },
       { opacity: .85, offset: .2 },
       { opacity: 0, transform: 'translate(-50%, -50%) translate(' + x + 'px,' + y + 'px) scale(.2)' }
     ], { duration: 240, delay: 35, easing: 'cubic-bezier(.2,.7,.3,1)', fill: 'both' });
+    particle.onfinish = function () {
+      if (--remaining === 0) {
+        burst.remove(); if (button._burst === burst) button._burst = null;
+      }
+    };
   }
-  setTimeout(function () { burst.remove(); if (button._burst === burst) button._burst = null; }, 300);
 }
 function launchScript() {
   if (state.scriptBusy || !state.selectedScriptFsName) return;

@@ -75,7 +75,9 @@ AELT.editor = (function () {
     renderStatus();
   }
   function init() {
+    var composing = false, compositionCommitted = false;
     cm = CodeMirror.fromTextArea(els.expressionCode, {
+      spellcheck:false,
       mode:{name:'javascript', globalVars:true}, theme:'aelt', lineNumbers:true,
       indentUnit:2, tabSize:2, indentWithTabs:false, lineWrapping:false,
       matchBrackets:true, autoCloseBrackets:true, gutters:['CodeMirror-linenumbers', 'CodeMirror-lint-markers'],
@@ -85,6 +87,18 @@ AELT.editor = (function () {
         'Shift-Tab':function (editor) { editor.indentSelection('subtract'); },
         'Shift-Alt-F':format,
         'Ctrl-Enter':function () { applyExpression(); }, 'Cmd-Enter':function () { applyExpression(); }
+      }
+    });
+    var input = cm.getInputField();
+    input.addEventListener('compositionstart', function () { composing = true; compositionCommitted = false; });
+    input.addEventListener('compositionend', function () { composing = false; compositionCommitted = true; });
+    input.addEventListener('blur', function () { composing = false; compositionCommitted = false; });
+    cm.on('cursorActivity', function (editor) {
+      if (compositionCommitted && editor.hasFocus()) {
+        compositionCommitted = false;
+        requestAnimationFrame(function () {
+          if (!composing && editor.hasFocus()) editor.scrollIntoView(editor.getCursor(), 12);
+        });
       }
     });
     cm.on('change', function () { cm.save(); syncExpressionEditor(); });

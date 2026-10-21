@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'none'; frame-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'">
+  <title>工具箱 · 输入验证</title>
+  <link rel="stylesheet" href="vendor/codemirror.css">
+  <link rel="stylesheet" href="probe.css">
+  <script defer src="vendor/codemirror.js"></script>
+  <script defer src="vendor/javascript.js"></script>
+  <script defer src="probe.js"></script>
+</head>
+<body>
+  <main>
+    <header><h1>输入验证</h1><span id="connection" role="status">正在连接宿主…</span></header>
+    <p class="intro">分别输入中文，检查首次输入、连续输入和删除时的候选窗位置；再移动、缩放或停靠面板重复测试。</p>
+    <label for="plain-input">普通输入框</label>
+    <input id="plain-input" type="text" placeholder="在这里使用微软拼音" spellcheck="false" autocomplete="off">
+    <label for="plain-textarea">多行输入框</label>
+    <textarea id="plain-textarea" rows="3" placeholder="测试换行、选区、复制粘贴与撤销重做" spellcheck="false"></textarea>
+    <label for="code-editor">表达式编辑器</label>
+    <textarea id="code-editor">// 在这里输入中文注释
+value;</textarea>
+    <p class="hint">编辑快捷键：Ctrl+A / C / V / Z / Y，Tab / Shift+Tab。Ctrl+Enter 用于测试编辑器快捷键。</p>
+    <div class="actions"><button id="ping" type="button">检查宿主连接</button><span id="shortcut-status" role="status"></span></div>
+    <details><summary>测试环境</summary><pre id="environment"></pre></details>
+  </main>
+</body>
+</html>

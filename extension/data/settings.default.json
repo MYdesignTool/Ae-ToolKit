@@ -1,5 +1,6 @@
 {
   "language": "zh-CN",
+  "animationScale": 1,
   "compFolder": "Comp",
   "solidFolder": "Solids",
   "fallbackFolder": "Footage",

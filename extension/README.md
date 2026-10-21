@@ -1,6 +1,6 @@
 # AE Local Toolkit
 
-离线 After Effects 工具箱，最低支持 AE 2023（23.x）和 CEP 11，兼容新版 CEP 12。版本 0.3.2。
+离线 After Effects 工具箱，最低支持 AE 2023（23.x）和 CEP 11，兼容新版 CEP 12。版本 0.5.1。
 
 本文件随安装包分发。完整的功能说明、数据与备份、安装兼容与开发验证统一维护在[项目主 README](https://github.com/MYdesignTool/Ae-ToolKit/blob/main/README.md)。
 
