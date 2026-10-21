@@ -1,6 +1,7 @@
 # GitHub Actions 构建、发布与回滚
 
-本分支新增 `.github/workflows/release.yml`，现有 `jekyll-gh-pages.yml` 保持原样。线上核查时
+本分支新增 `.github/workflows/release.yml`，现有 `jekyll-gh-pages.yml` 保留部署逻辑，仅过滤
+输入资产预发布的 release 事件，避免其触发 Pages 标签保护拒绝。线上核查时
 最新正式 Release 为 v0.3.2；本地 0.5.1 是 Windows 原生版、macOS CEP 的新发布布局。
 本轮完成本地构建和隔离安装测试，没有推送标签、上传输入资产或创建线上 Release。
 
@@ -135,7 +136,7 @@ JSON；不移动、删除、停用旧 CEP 或个人脚本。每次原生更新�
 
 ## Pages、失败重试与回滚
 
-现有 Pages 工作流文件没有修改。由于
+现有 Pages 工作流继续部署官网，输入资产预发布跳过 deploy 作业。由于
 [GITHUB_TOKEN 不会递归触发 release 工作流](https://docs.github.com/en/actions/concepts/security/github_token)，
 产品发布成功后，单独的 refresh-pages 作业使用 actions:write 请求现有 Pages 的
 workflow_dispatch；这个作业不具备 Release 写权限。无需扩大 publish 的 token 权限或用 PAT。
