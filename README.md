@@ -1,12 +1,12 @@
 # AE Local Toolkit
 
-面向 After Effects 2023 及更新版本的离线 CEP 工具箱：工程整理、脚本启动、批量表达式。当前版本 **0.5.1**（本地开发中，尚未发布）。
+面向 After Effects 2023 及更新版本的离线工具箱：工程整理、脚本启动、批量表达式。当前版本 **0.5.1**（本地开发中，尚未发布）。Windows 使用 AEGP + WebView2，macOS 保持 CEP；两平台共用界面与业务源码。
 
-本试验分支 `codex/webview2-migration` 增加完整的 Windows AEGP + WebView2 使用方，复用现有界面与业务；构建、独立数据和回退步骤见 [原生工具箱](native/toolkit/README.md)。CEP 的完整开发基线保存在 `codex/cep-0.5.1-baseline`（`0a631c9`），原工作区与安装保持不变。新宿主仅用于本地试验，不发布、不生成安装器。
+本试验分支 `codex/webview2-migration` 的完整 Windows 原生面板已获用户验收，未见可见故障；构建、独立数据和回退步骤见 [原生工具箱](native/toolkit/README.md)。CEP 的完整开发基线保存在 `codex/cep-0.5.1-baseline`（`0a631c9`），原工作区与安装保持不变。按平台的安装流程已适配，默认仅校验，不生成安装器或 ZIP；[依赖快照](native/build/README.md) 已固定在工作区，不再引用 Starfield 的开发目录。发布仍需另行授权。
 
 **0.3.2** 加入表达式代码编辑器、一键格式化和中英界面切换。[开发与验收记录](docs/development-0.3.2.md)。
 
-这是项目唯一的主说明文档，覆盖安装、功能使用、数据与开发验证。扩展本体位于 `extension/`，面板最低支持 AE 2023（23.x）与 CEP 11，并兼容新版 CEP 12。
+这是项目唯一的主说明文档，覆盖安装、功能使用、数据与开发验证。共享界面及 JSX 位于 `extension/`，Windows 原生宿主位于 `native/`；macOS CEP 路径最低支持 CEP 11，并兼容新版 CEP 12。
 
 ## 文档
 
@@ -19,11 +19,7 @@
 
 ## 快速开始
 
-1. 从 [GitHub Releases](https://github.com/MYdesignTool/Ae-ToolKit/releases) 下载 Windows 安装器 `aetoolkit-*.exe`，或下载 `aetoolkit-extension.zip` 将其中的 `AeLocalToolkit/` 放入系统级 CEP 目录。
-2. 重启 After Effects，通过「窗口 > 扩展」打开 AE Local Toolkit。
-3. 在首选项「脚本与表达式」中启用「允许脚本写入文件和访问网络」。
-
-系统级 CEP 目录：Windows 为 `C:\Program Files (x86)\Common Files\Adobe\CEP\extensions\`，macOS 为 `/Library/Application Support/Adobe/CEP/extensions/`。安装器只需为 `data` 子目录授予写入权限，无需放开整个程序目录。未签名开发包需在组件页显式启用开发模式，详见[安装与兼容](extension/docs/install.md)。
+0.5.1 尚未发布，现有 [GitHub Releases](https://github.com/MYdesignTool/Ae-ToolKit/releases) 仍是旧 CEP 版本。新安装布局：Windows 选择 AE 的 `Support Files`，安装到 `Plug-ins/AeltToolkitWebView2`，从「窗口」菜单打开；macOS 将 CEP 文件夹放入 `/Library/Application Support/Adobe/CEP/extensions/`，从「窗口 > 扩展」打开。两版都需允许脚本写入文件和访问网络。具体更新、数据和回退见 [安装说明](extension/docs/install.md)。
 
 ## 功能说明
 
@@ -59,7 +55,7 @@
 
 设置、脚本收藏、自定义表达式和全部自定义整理方案，统一保存在扩展文件夹内的 `data/user-data.json`。内置默认规则保持单独分发，更新时不会覆盖个人数据。
 
-换电脑：保存完成并关闭 AE 后，复制整个 `AeLocalToolkit` 文件夹到新电脑的系统级 CEP 目录，并确保 `data` 子目录对当前用户可写，再打开面板即可。Windows 安装器会自动设置 `data` 权限。`user-data.json` 是完整数据，旁边的 `.bak` 是上一次成功保存前的完整快照。安装器更新前还会备份整个 `data` 到 `backups/before-版本-时间/`。
+换电脑：保存完成并关闭 AE 后，Windows 携带整个 `AeltToolkitWebView2` 到目标 AE 的 Plug-ins，macOS 携带整个 `AeLocalToolkit` 到 CEP 目录；也可在新安装中导入 JSON 备份。Windows 的 data 位于插件内 extension 下，macOS 位于 CEP 根下。确保实际 AE 用户可写。`user-data.json` 是完整数据，旁边的 `.bak` 是上一次成功保存前的完整快照；原生安装逻辑更新前还会备份整个 data 到 backups。
 
 脚本目录和收藏如果位于扩展文件夹内，会存为相对路径，移动文件夹后自动对应新位置。例如将脚本放进 `AeLocalToolkit/scripts`，并在设置里选择它；其 `image` 子目录也一并复制。扩展外的脚本、图片和 AE 工程不会被配置文件复制，换电脑时需另行携带，并按实际位置重新选择脚本目录。
 
@@ -67,7 +63,7 @@
 
 保存先写临时文件再替换，失败保留原数据；主文件缺失时恢复 `.bak`。设置页仍可导入、导出完整 JSON 备份。导入源保留为 `last-import.json`；导入前保存 `before-import.json`，替换设置并合并同 ID 方案，最终单次写入完整数据；损坏原文件保留为 `before-import-corrupt.json`。
 
-安装器直接运行即可升级，无需卸载。它只更新程序和内置默认 JSON，保留个人文件；从旧系统级安装迁移时，先复制数据，在新版写入后将旧清单重命名停用，旧目录与数据保留。卸载保留 `data`、`backups` 和扩展根目录额外的个人脚本目录。手动升级应将新包合并覆盖到旧文件夹，保留原 `data`，避免先删除旧文件夹。
+新版 Windows 安装逻辑只更新原生程序和内置默认 JSON，保留个人文件；不自动移除或停用 CEP 回退版，两版通过 JSON 显式迁移数据。卸载保留 data、backups 和产品身份标记，方便重装。macOS 手动升级应合并覆盖程序、保留 data，避免先删除旧文件夹。新安装器本轮尚未生成，实际安装/更新/卸载测试仍待后续授权。
 
 ## 发布页
 
@@ -89,7 +85,7 @@
 
 版本源是 `extension/data/changelog.json`，构建校验其与 manifest 一致。新增版本后执行 `node scripts/sync-release.cjs`，统一生成 CEP 清单、说明文档与发布页中的版本信息。
 
-安装器构建前需显式安装 NSIS（脚本不会下载或安装软件），再执行 `extension/installer/build-installer.cmd`。有本机 AE 时可显式运行 `node tests/ae-host.cjs "完整路径/AfterFX.exe"`，使用独立实例和临时扩展副本验证真实 ExtendScript 加载；浏览器与 Node 模拟不能替代此项兼容性检查。
+安装构建依赖已固定在工作区 `.local-deps/`；`extension/installer/build-installer.cmd` 默认仅校验两平台载荷和 NSIS 预处理，实际生成须显式使用 `-CreatePackage` 并取得生成授权。有本机 AE 时可显式运行 `node tests/ae-host.cjs "完整路径/AfterFX.exe"`，使用独立实例和临时扩展副本验证真实 ExtendScript 加载；浏览器与 Node 模拟不能替代此项兼容性检查。
 
 CEP 内核由宿主 AE 携带，不能通过修改清单单独升级。发布页以原生元素呈现功能示意，不代表 AE 宿主实测结果。`extension/docs/architecture.md` 记录了未在本文件展开的技术约定。
 

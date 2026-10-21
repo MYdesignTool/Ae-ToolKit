@@ -1,13 +1,18 @@
 param(
-    [Parameter(Mandatory=$true)][string]$AeSdkRoot,
-    [Parameter(Mandatory=$true)][string]$WebView2SdkRoot,
-    [string]$CompilerRoot='C:\Program Files (x86)\Microsoft Visual Studio\18\BuildTools\VC\Tools\MSVC\14.51.36231',
-    [string]$WindowsSdkRoot='C:\Program Files (x86)\Windows Kits\10',
+    [string]$AeSdkRoot='',
+    [string]$WebView2SdkRoot='',
+    [string]$CompilerRoot='',
+    [string]$WindowsSdkRoot='',
     [string]$WindowsSdkVersion='10.0.26100.0',
     [switch]$TestsOnly,
     [switch]$UseAdobePiPLTool
 )
 $ErrorActionPreference='Stop'
+. (Join-Path $PSScriptRoot '..\build\LocalDependencies.ps1')
+if(!$AeSdkRoot){$AeSdkRoot=Get-LocalDependency 'adobe-ae-sdk'}
+if(!$WebView2SdkRoot){$WebView2SdkRoot=Get-LocalDependency 'webview2-sdk'}
+if(!$CompilerRoot){$CompilerRoot=Get-LocalDependency 'msvc-x64'}
+if(!$WindowsSdkRoot){$WindowsSdkRoot=Get-LocalDependency 'windows-sdk-x64'}
 $probeRepo=(Resolve-Path -LiteralPath (Join-Path $PSScriptRoot '..\..')).Path
 $probeOutput=Join-Path $probeRepo '.artifacts\webview2-probe'
 $probeObjects=Join-Path $probeOutput 'obj'
@@ -49,7 +54,7 @@ try {
         & cl.exe /nologo /EP /TC /DMSWindows (Join-Path $probeObjects 'ProbePiPL.rrc') | Set-Content -LiteralPath (Join-Path $probeObjects 'ProbePiPL.rc') -Encoding ascii
         if($LASTEXITCODE){throw 'PiPL resource preprocessing failed'}
     }else{
-        & node (Join-Path $PSScriptRoot 'GenerateGeneralPiPL.cjs') (Join-Path $probeObjects 'ProbePiPL.rr') $probeObjects
+        & $dependencyNode (Join-Path $PSScriptRoot 'GenerateGeneralPiPL.cjs') (Join-Path $probeObjects 'ProbePiPL.rr') $probeObjects
         if($LASTEXITCODE){throw 'Limited General AEGP resource encoding failed'}
     }
     $probeResource=Join-Path $probeObjects 'ProbePiPL.res'

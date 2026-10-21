@@ -1,12 +1,16 @@
 # 独立 AEGP + WebView2 输入验证原型
 
+完整工具箱现已获用户验收；按要求已移除探针的 AE 安装链接，后续默认不部署、不打包。
+这里保留验证源码、通用构建辅助与测试证据，供维护宿主模块时复用。
+
 本原型复用抽取后的 `../panel-host/`，与 CEP 工具箱、Starfield 使用独立插件名、
 面板 match name、窗口类、消息 channel、虚拟域名和缓存目录。没有修改源 Starfield
 项目，没有接入工具箱业务，也没有替换 Adobe DLL 或注入其他进程。
 
 ## 构建与验证
 
-使用合法取得的 AE May 2023 SDK 和 WebView2 SDK `1.0.4258.31`，传入本机路径：
+默认使用当前工作区已固定的 AE May 2023 SDK 和 WebView2 SDK `1.0.4258.31`，见
+`../build/README.md`。需要另行验证时可显式传入 SDK 路径：
 
 ```powershell
 & native/input-probe/Build.ps1 -AeSdkRoot '<AE SDK>' -WebView2SdkRoot '<WebView2 SDK>'

@@ -2,7 +2,9 @@
 
 Windows x64, standard HWND WebView2, extracted from Starfield under MIT (see
 `NOTICE.md` and `LICENSE`). This directory has no particle, preset or toolkit
-business dependency. Adobe and WebView2 SDKs are external build inputs.
+business dependency. Private Adobe/WebView2 SDK and x64 toolchain snapshots are
+fixed in this worktree's `.local-deps/`; see `../build/README.md`. They are not
+references to the live Starfield checkout and are excluded from product packages.
 
 Supply `Config` identities, absolute content/cache directories, and a business
 dispatch callback. Call `initialize()` once from a resident General AEGP entry,

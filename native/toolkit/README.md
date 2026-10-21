@@ -26,12 +26,17 @@
 ## 构建与独立数据
 
 ```powershell
-& native/toolkit/Build.ps1 -AeSdkRoot '<AE May 2023 SDK>' -WebView2SdkRoot '<WebView2 SDK>' -SeedFromCepRoot '<现有 CEP 扩展根>'
+& native/toolkit/Build.ps1 -SeedFromCepRoot '<现有 CEP 扩展根>'
+# 安装布局验证使用独立的无调试候选，避免覆盖正在加载的开发面板：
+& native/toolkit/Build.ps1 -OutputRoot .artifacts/installer-native
 ```
 
 构建产物在 `.artifacts/webview2-toolkit/`。`bin/extension` 是运行快照，包含静态界面、
-JSX 与默认数据；用户设置和方案保存在该快照的 `data/user-data.json`。独立 profile
-在同一 artifact 根的 `profile/`。任何缓存或保存都不指向原 CEP 或 Starfield 目录。
+JSX 与默认数据；用户设置和方案保存在该快照的 `data/user-data.json`。SDK 和 x64 工具链
+默认来自当前工作区 `.local-deps/` 并核验锁文件，见 [固定依赖](../build/README.md)。
+新的安装候选把 profile 放在当前用户 `%LOCALAPPDATA%/AE Local Toolkit/WebView2/profile`，
+避免写入受保护的 Plug-ins；早期已验收的开发候选仍保留其 artifact profile，不在加载中
+更换 AEX。数据和缓存均不指向原 CEP 或 Starfield 目录。
 
 `-SeedFromCepRoot` 只在试验数据尚不存在时读取并复制 CEP 状态；包内相对脚本路径会
 依据原根目录转换为绝对路径，以免错误指向运行快照。重新构建保留已存在的试验数据，
@@ -54,8 +59,9 @@ node tests/organizer-tags-browser.cjs
 & native/toolkit/Deploy.ps1 -Apply -Remove # 退出 AE 后只撤销该链接，保留数据
 ```
 
-部署目标为 AE 2023 `Plug-ins/AeltToolkitWebView2`，与已通过输入法验证的探针及现有 CEP、
-Starfield 分离。AE 启动后从 Window 菜单打开 **AE Local Toolkit (WebView2)**。
+部署目标为 AE 2023 `Plug-ins/AeltToolkitWebView2`，与现有 CEP、Starfield 分离。AE 启动后
+从 Window 菜单打开 **AE Local Toolkit (WebView2)**。用户完成整体验收后，输入探针的
+独立安装链接已移除；已加载菜单在下次 AE 启动时消失，不进入任何平台的安装载荷。
 
 当前离线证据：62 项逻辑检查、240 项生产队列检查、12 项桥接检查通过；真实 C++ 包装
 代码执行实际 JSX 的启动/设置/方案读取/对话框取消通过，并证明未泄漏 CEP 全局。
@@ -77,6 +83,7 @@ Starfield 分离。AE 启动后从 Window 菜单打开 **AE Local Toolkit (WebVi
 补充真实解码行为，避免仅用字符串文件系统误判通过。此修正只在迁移分支，CEP 保留分支
 不变。AEX 本体不变，已同步运行快照中的该 JSX 模块并刷新试验宿主的私有缓存。
 
-完整工具箱尚未在其他 AE 版本、多屏 DPI 或缺失 Runtime 的机器上实测。工程整理与
-表达式修改的业务逻辑通过离线测试，本轮真实 AE 回归为避免修改当前工程未执行这两类
-写入；文件对话框实机焦点和备份导入导出仍需后续交互验收。
+用户随后确认整体验收，无可见故障。上述自动检查仍没有主动修改当前工程，也不扩大为
+全部工程写入或文件对话框均已自动测试。其他 AE 版本、多屏 DPI 和缺失 Runtime 的机器
+仍未实测。按平台安装适配及本地依赖冻结见 [安装器说明](../../extension/installer/README.md)，
+新候选仅单独构建、未覆盖当前已加载的验收版本；新安装器的实际安装流程尚未执行。

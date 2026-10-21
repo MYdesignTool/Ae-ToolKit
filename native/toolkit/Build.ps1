@@ -1,7 +1,13 @@
-param([Parameter(Mandatory=$true)][string]$AeSdkRoot,[Parameter(Mandatory=$true)][string]$WebView2SdkRoot,[string]$SeedFromCepRoot='',[string]$CompilerRoot='C:\Program Files (x86)\Microsoft Visual Studio\18\BuildTools\VC\Tools\MSVC\14.51.36231',[int]$DebugPort=0,[switch]$TestsOnly)
+param([string]$AeSdkRoot='',[string]$WebView2SdkRoot='',[string]$SeedFromCepRoot='',[string]$CompilerRoot='',[string]$OutputRoot='',[int]$DebugPort=0,[switch]$TestsOnly)
 $ErrorActionPreference='Stop'
+. (Join-Path $PSScriptRoot '..\build\LocalDependencies.ps1')
+& $dependencyNode (Join-Path $PSScriptRoot '..\build\dependencies.cjs') verify 'adobe-ae-sdk,webview2-sdk,msvc-x64,windows-sdk-x64,node'
+if($LASTEXITCODE){throw 'Dependency snapshot verification failed'}
+if(!$AeSdkRoot){$AeSdkRoot=Get-LocalDependency 'adobe-ae-sdk'}
+if(!$WebView2SdkRoot){$WebView2SdkRoot=Get-LocalDependency 'webview2-sdk'}
+if(!$CompilerRoot){$CompilerRoot=Get-LocalDependency 'msvc-x64'}
 $toolkitRepo=(Resolve-Path -LiteralPath (Join-Path $PSScriptRoot '..\..')).Path
-$toolkitOutput=Join-Path $toolkitRepo '.artifacts\webview2-toolkit'
+$toolkitOutput=if($OutputRoot){[IO.Path]::GetFullPath($OutputRoot)}else{Join-Path $toolkitRepo '.artifacts\webview2-toolkit'}
 $toolkitObjects=Join-Path $toolkitOutput 'obj';$toolkitBin=Join-Path $toolkitOutput 'bin'
 New-Item -ItemType Directory -Force -Path $toolkitObjects,$toolkitBin | Out-Null
 # Reuse the toolchain initialization and extracted-host queue tests.
@@ -21,12 +27,15 @@ try{
     if($TestsOnly){return}
     & cl.exe /nologo /EP /TC /DMSWindows ('/I'+(Join-Path $AeSdkRoot 'Examples\Headers')) (Join-Path $PSScriptRoot 'ToolkitPiPL.r') | Set-Content -LiteralPath (Join-Path $toolkitObjects 'ToolkitPiPL.rr') -Encoding ascii
     if($LASTEXITCODE){throw 'Toolkit PiPL preprocessing failed'}
-    & node (Join-Path $PSScriptRoot '..\input-probe\GenerateGeneralPiPL.cjs') (Join-Path $toolkitObjects 'ToolkitPiPL.rr') $toolkitObjects
+    & $dependencyNode (Join-Path $PSScriptRoot '..\input-probe\GenerateGeneralPiPL.cjs') (Join-Path $toolkitObjects 'ToolkitPiPL.rr') $toolkitObjects
     if($LASTEXITCODE){throw 'Toolkit PiPL generation failed'}
     & rc.exe /nologo ('/fo'+(Join-Path $toolkitObjects 'ToolkitPiPL.res')) (Join-Path $toolkitObjects 'ProbePiPL.rc');if($LASTEXITCODE){throw 'Toolkit resource compilation failed'}
     $toolkitPlugin=Join-Path $toolkitBin 'AeltToolkitWebView2.aex'
     Invoke-ToolkitCompiler 'toolkit' ($toolkitCommon+@('/LD',('"'+(Join-Path $PSScriptRoot 'ToolkitEntry.cpp')+'"'),('"'+(Join-Path $PSScriptRoot 'ToolkitBridge.cpp')+'"'),('"'+(Join-Path $toolkitRepo 'native\panel-host\PanelHost.cpp')+'"'),('"'+(Join-Path $toolkitObjects 'ToolkitPiPL.res')+'"'),'/link',('/OUT:"'+$toolkitPlugin+'"'),('/IMPLIB:"'+(Join-Path $toolkitObjects 'AeltToolkitWebView2.lib')+'"'),'/DEBUG',('/PDB:"'+(Join-Path $toolkitBin 'AeltToolkitWebView2.pdb')+'"'))+$toolkitLibraries)
-    & node (Join-Path $PSScriptRoot 'prepare-runtime.cjs') $toolkitBin $SeedFromCepRoot;if($LASTEXITCODE){throw 'Toolkit runtime preparation failed'}
+    & $dependencyNode (Join-Path $PSScriptRoot 'prepare-runtime.cjs') $toolkitBin $SeedFromCepRoot;if($LASTEXITCODE){throw 'Toolkit runtime preparation failed'}
+    $toolkitSourceHash=& $dependencyNode (Join-Path $PSScriptRoot '..\build\source-fingerprint.cjs')
+    if($LASTEXITCODE){throw 'Native source fingerprint failed'}
+    [ordered]@{Version=(Get-Content (Join-Path $toolkitRepo 'extension\data\changelog.json') -Raw | ConvertFrom-Json).version;DebugPort=$DebugPort;PluginSha256=(Get-FileHash $toolkitPlugin).Hash;SourceSha256=$toolkitSourceHash;Time=[DateTime]::UtcNow.ToString('o')} | ConvertTo-Json | Set-Content (Join-Path $toolkitOutput 'build-info.json') -Encoding utf8
     & (Join-Path $PSScriptRoot '..\input-probe\VerifyResource.ps1') -Plugin $toolkitPlugin -ResourceId 16001 -EntryPoint AeltToolkitEntry -ExpectedName 'AE Local Toolkit WebView2'
     Get-FileHash -LiteralPath $toolkitPlugin -Algorithm SHA256
     Write-Output 'Independent toolkit candidate built; no installer or release generated.'

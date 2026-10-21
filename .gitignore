@@ -1,2 +1,4 @@
 _site/
 .artifacts/
+.local-deps/
+extension/installer/dist/

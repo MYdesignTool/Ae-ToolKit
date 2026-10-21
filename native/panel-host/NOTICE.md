@@ -13,7 +13,12 @@ transactions; and retains standard HWND WebView2, owned asynchronous callbacks,
 navigation epochs, bounded FIFO requests and AE idle-thread dispatch. It makes
 no changes to the source Starfield checkout, its deployment or caches.
 
-Adobe SDK and Microsoft WebView2 SDK are external build inputs with separate
-terms. Their headers, libraries, SDK tools and sample sources are not vendored.
+Adobe SDK and Microsoft WebView2 SDK have separate terms. Private, versioned
+copies now live in this worktree's ignored `.local-deps/`, together with the
+required x64 toolchain. `native/dependencies.lock.json` records their hashes.
+They are not runtime references to Starfield, not committed source dependencies,
+and not included in product payloads. Microsoft WebView2 loader license and
+notices accompany the Windows binary; the offline runtime prerequisite is
+included once in the Windows installer staging area.
 The development probe copies this project's existing CodeMirror runtime and its
 license into an ignored build directory only. No installer is generated.

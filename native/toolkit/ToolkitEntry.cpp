@@ -3,6 +3,7 @@
 #include "../panel-host/Protocol.hpp"
 #include "ToolkitBridge.hpp"
 #include <windows.h>
+#include <shlobj.h>
 #include <memory>
 namespace {
 std::shared_ptr<aelt::toolkit::Bridge> bridge;
@@ -23,7 +24,10 @@ extern "C" __declspec(dllexport) A_Err AeltToolkitEntry(SPBasicSuite* basic,A_lo
 #ifdef AELT_NATIVE_DEBUG_PORT
     options.debug_port=AELT_NATIVE_DEBUG_PORT;
 #endif
-    options.content_root=root/L"client";options.document_url=aelt::toolkit::file_url(options.content_root/L"index.html");options.profile_root=directory.parent_path()/L"profile";
+    options.content_root=root/L"client";options.document_url=aelt::toolkit::file_url(options.content_root/L"index.html");
+    // Installed AEX lives under AE/Plug-ins, which must not receive browser cache.
+    PWSTR local_data{};if(FAILED(SHGetKnownFolderPath(FOLDERID_LocalAppData,KF_FLAG_CREATE,nullptr,&local_data)))return A_Err_NONE;
+    options.profile_root=std::filesystem::path(local_data)/L"AE Local Toolkit"/L"WebView2"/L"profile";CoTaskMemFree(local_data);
     options.bootstrap_script=L"window.__aeltToolkitNative=Object.freeze({channel:"+aelt::native_panel::wire::quote(options.channel)+L",extensionRoot:"+aelt::native_panel::wire::quote(root.generic_wstring())+L"});";
     options.dispatch=[](std::wstring_view method,std::wstring_view payload){return bridge->call(method,payload);};options.retain_on_close=[](std::wstring_view method){return method==L"AELT_saveSettings";};
     (void)aelt::native_panel::initialize(basic,id,std::move(options));return A_Err_NONE;

@@ -17,11 +17,11 @@ if (-not (Get-Command $signtool -ErrorAction SilentlyContinue)) {
 
 $version = (Get-Content -LiteralPath (Join-Path $PSScriptRoot '..\data\changelog.json') -Raw -Encoding UTF8 | ConvertFrom-Json).version
 if ($version -notmatch '^\d+\.\d+\.\d+$') { throw 'Invalid changelog version' }
-$files = @((Join-Path $PSScriptRoot ('dist\aetoolkit-v' + $version + '-installer.exe')))
+$files = @((Join-Path $PSScriptRoot ('dist\aetoolkit-v' + $version + '-windows-x64-installer.exe')))
 foreach ($f in $files) {
   if (-not (Test-Path $f)) { Write-Error "File not found: $f"; exit 1 }
   & $signtool sign /fd SHA256 /td SHA256 /tr $TimestampServer /f $CertPath /p $Password $f
   if ($LASTEXITCODE -ne 0) { Write-Error "Signing failed: $f"; exit 1 }
   Write-Host "Signed: $f"
 }
-Write-Host "Windows installer signing complete. CEP extension signing is a separate step."
+Write-Host "Windows native installer signing complete. macOS CEP extension signing is a separate step."
