@@ -5,7 +5,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Ae-ToolKit — Offline tools for After Effects</title>
-  <meta name="description" content="Ae-ToolKit is a fully offline After Effects CEP panel with project organization, expression management, and a script launcher. Supports AE 2023+. Free and open source, with a local-first approach.">
+  <meta name="description" content="Ae-ToolKit is an offline After Effects toolkit for project organization, expressions and scripts. Windows uses AEGP + WebView2; macOS retains CEP. Supports AE 2023+. Open source and local first.">
   <link rel="canonical" href="https://mydesigntool.github.io/Ae-ToolKit/en/">
   <link rel="alternate" hreflang="zh-CN" href="https://mydesigntool.github.io/Ae-ToolKit/">
   <link rel="alternate" hreflang="en" href="https://mydesigntool.github.io/Ae-ToolKit/en/">
@@ -221,7 +221,7 @@
           <div class="step-body">
             <h4>Run the setup wizard</h4>
             <p class="step-note">The current Windows installer is not code-signed. If Windows displays “Windows protected your PC”, confirm that the installer came from this project’s GitHub Releases, then click “More info” → “Run anyway” to continue.</p>
-            <p>Close AE before updating, then run the new installer without uninstalling first. The wizard backs up data before updating program files, keeping settings and presets in the extension folder. Installation uses the system-wide CEP directory and requires administrator approval. Data from an old user-level installation is migrated and backed up. For an unsigned development package, select development mode on the components page.</p>
+            <p>Starting with 0.5.1, Windows uses AEGP + WebView2. Close AE, run the installer as administrator and select the target AE <code>Support Files</code> folder. The panel is installed under <code>Plug-ins/AeltToolkitWebView2</code>. The installer backs up data before migrating legacy CEP settings and schemes. Existing native data takes priority. Legacy CEP and personal scripts are retained; no prior uninstall is needed.</p>
           </div>
         </div>
         <div class="step glass">
@@ -229,21 +229,21 @@
           <div class="step-body">
             <h4>Open the panel</h4>
             <p>Restart After Effects as prompted, then open the panel from:</p>
-            <p><code>Window → Extensions → AE Local Toolkit</code></p>
+            <p><code>Window → AE Local Toolkit (WebView2)</code></p>
             <p class="step-note">Check the download source and version before installing, and follow your organization’s installation policy when responding to system prompts.</p>
           </div>
         </div>
       </div>
 
       <!-- 方式二：手动安装 -->
-      <h3 class="method-title">Method 2 · Manual installation <span class="method-tag method-tag--ghost">All platforms</span></h3>
+      <h3 class="method-title">Method 2 · Manual installation <span class="method-tag method-tag--ghost">macOS · CEP</span></h3>
       <div class="steps">
         <div class="step glass">
           <span class="step-num">01</span>
           <span class="step-line" aria-hidden="true"></span>
           <div class="step-body">
             <h4>Download and extract</h4>
-            <p>From  <a data-release-link href="https://github.com/MYdesignTool/Ae-ToolKit/releases/tag/v0.3.2" target="_blank" rel="noopener">GitHub Releases</a>, download the clean extension package  <code>aetoolkit-extension.zip</code> and extract the  <code>AeLocalToolkit/</code>  folder.</p>
+            <p>From  <a data-release-link href="https://github.com/MYdesignTool/Ae-ToolKit/releases/tag/v0.3.2" target="_blank" rel="noopener">GitHub Releases</a> download the macOS CEP package <code>aetoolkit-v*-macos-cep.zip</code> and extract the  <code>AeLocalToolkit/</code>  folder.</p>
           </div>
         </div>
         <div class="step glass">
@@ -251,11 +251,8 @@
           <span class="step-line" aria-hidden="true"></span>
           <div class="step-body">
             <h4>Copy to the extensions directory</h4>
-            <p>Copy the entire  <code>AeLocalToolkit/</code>  folder into the CEP extensions directory. Use the system-wide paths below; administrator privileges are required. Avoid keeping multiple copies of the extension with the same ID:</p>
-            <pre><code># Windows — system-wide
-C:\Program Files (x86)\Common Files\Adobe\CEP\extensions\
-
-# macOS — system-wide
+            <p>Copy the entire  <code>AeLocalToolkit/</code> folder into the macOS CEP extensions directory with administrator permission. Avoid duplicate copies with the same extension ID:</p>
+            <pre><code># macOS system-wide
 /Library/Application Support/Adobe/CEP/extensions/</code></pre>
             <p>After copying manually, give the current user Modify permission on the extension’s  <code>data</code>  folder so settings and presets can be saved. The Windows installer handles this permission automatically.</p>
           </div>
@@ -266,10 +263,7 @@ C:\Program Files (x86)\Common Files\Adobe\CEP\extensions\
           <div class="step-body">
             <h4>Enable debug mode (for unsigned packages)</h4>
             <p>Unsigned development packages require debug mode for the matching CEP version. AE 2023/2024 uses CSXS.11; AE 2025 and later uses CSXS.12. Signed CEP extensions do not need this setting:</p>
-            <pre><code># Windows registry (current user, string value)
-HKEY_CURRENT_USER\Software\Adobe\CSXS.11\PlayerDebugMode = 1
-
-# macOS Terminal
+            <pre><code># macOS Terminal
 defaults write com.adobe.CSXS.11 PlayerDebugMode -bool true</code></pre>
           </div>
         </div>

@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Ae-ToolKit — After Effects 离线扩展工具集</title>
-  <meta name="description" content="Ae-ToolKit 是一款完全离线运行的 After Effects CEP 扩展面板，集成项目整理器、表达式管理器、脚本启动器三大核心功能。支持 AE 2023+，开源 · 本地优先，开源免费。">
+  <meta name="description" content="Ae-ToolKit 是一款完全离线运行的 After Effects 工具面板，集成项目整理器、表达式管理器、脚本启动器。Windows 使用 AEGP + WebView2，macOS 保留 CEP。支持 AE 2023+，开源 · 本地优先。">
   <link rel="canonical" href="https://mydesigntool.github.io/Ae-ToolKit/">
   <link rel="alternate" hreflang="zh-CN" href="https://mydesigntool.github.io/Ae-ToolKit/">
   <link rel="alternate" hreflang="en" href="https://mydesigntool.github.io/Ae-ToolKit/en/">
@@ -220,7 +220,7 @@
           <div class="step-body">
             <h4>运行安装向导</h4>
             <p class="step-note">当前 Windows 安装器未进行代码签名。若出现“Windows 已保护你的电脑”，确认安装包来自本项目 GitHub Releases 后，点击“更多信息” → “仍要运行”继续安装。</p>
-            <p>更新前关闭 AE，直接运行新版安装器，无需卸载。向导先备份数据，再更新程序，设置与预设保留在扩展文件夹中。安装到系统级 CEP 目录，需要管理员授权；旧用户级数据会迁移并备份。未签名开发包需在组件页选择开发模式。</p>
+            <p>0.5.1 起，Windows 使用 AEGP + WebView2。关闭 AE，以管理员身份运行安装器，选择目标 AE 的 <code>Support Files</code> 文件夹；程序安装到其 <code>Plug-ins/AeltToolkitWebView2</code>。向导先备份数据，再迁移旧 CEP 设置与方案；已有原生数据优先。旧 CEP 和个人脚本保留，无需先卸载。</p>
           </div>
         </div>
         <div class="step glass">
@@ -228,21 +228,21 @@
           <div class="step-body">
             <h4>打开面板</h4>
             <p>按提示重启 After Effects，通过菜单路径打开面板：</p>
-            <p><code>窗口(W) → 扩展 → AE Local Toolkit</code></p>
+            <p><code>窗口(W) → AE Local Toolkit (WebView2)</code></p>
             <p class="step-note">安装前请核对下载来源与版本，按组织的安装策略处理系统提示。</p>
           </div>
         </div>
       </div>
 
       <!-- 方式二：手动安装 -->
-      <h3 class="method-title">方式二 · 手动安装 <span class="method-tag method-tag--ghost">全平台</span></h3>
+      <h3 class="method-title">方式二 · 手动安装 <span class="method-tag method-tag--ghost">macOS · CEP</span></h3>
       <div class="steps">
         <div class="step glass">
           <span class="step-num">01</span>
           <span class="step-line" aria-hidden="true"></span>
           <div class="step-body">
             <h4>下载解压</h4>
-            <p>从 <a data-release-link href="https://github.com/MYdesignTool/Ae-ToolKit/releases/tag/v0.3.2" target="_blank" rel="noopener">GitHub Releases</a> 下载干净扩展包 <code>aetoolkit-extension.zip</code>，解压得到 <code>AeLocalToolkit/</code> 文件夹。</p>
+            <p>从 <a data-release-link href="https://github.com/MYdesignTool/Ae-ToolKit/releases/tag/v0.3.2" target="_blank" rel="noopener">GitHub Releases</a> 下载 macOS CEP 包 <code>aetoolkit-v*-macos-cep.zip</code>，解压得到 <code>AeLocalToolkit/</code> 文件夹。</p>
           </div>
         </div>
         <div class="step glass">
@@ -250,11 +250,8 @@
           <span class="step-line" aria-hidden="true"></span>
           <div class="step-body">
             <h4>复制到扩展目录</h4>
-            <p>将 <code>AeLocalToolkit/</code> 文件夹整体复制到 CEP 扩展目录。统一使用以下系统级目录，复制时需要管理员权限。避免同时保留多个同 ID 的扩展副本：</p>
-            <pre><code># Windows 系统级
-C:\Program Files (x86)\Common Files\Adobe\CEP\extensions\
-
-# macOS 系统级
+            <p>将 <code>AeLocalToolkit/</code> 文件夹整体复制到 macOS 的 CEP 扩展目录，复制时需要管理员权限。避免同时保留多个同 ID 的扩展副本：</p>
+            <pre><code># macOS 系统级
 /Library/Application Support/Adobe/CEP/extensions/</code></pre>
             <p>手动复制后，给扩展内 <code>data</code> 文件夹设置当前用户的修改权限，供设置与预设保存。Windows 安装器会自动处理此权限。</p>
           </div>
@@ -265,10 +262,7 @@ C:\Program Files (x86)\Common Files\Adobe\CEP\extensions\
           <div class="step-body">
             <h4>开启调试模式（未签名时）</h4>
             <p>未签名开发包需开启对应 CEP 版本的调试模式。AE 2023/2024 使用 CSXS.11，AE 2025 起使用 CSXS.12。已签名 CEP 扩展不需要此设置：</p>
-            <pre><code># Windows 注册表（当前用户，字符串值）
-HKEY_CURRENT_USER\Software\Adobe\CSXS.11\PlayerDebugMode = 1
-
-# macOS 终端
+            <pre><code># macOS 终端
 defaults write com.adobe.CSXS.11 PlayerDebugMode -bool true</code></pre>
           </div>
         </div>

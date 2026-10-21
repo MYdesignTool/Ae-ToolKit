@@ -46,7 +46,9 @@ test('English generation keeps every release field and all section structure in 
  assert.ok(renderEnglish(renderPage(source,selectRelease(changelog))).includes('Download '+changelog.version),'the development version can also be generated without publishing');
  assert.ok(rendered.includes('href="../assets/css/style.css?v=lang-motion2"'));
  assert.ok(rendered.includes('src="../assets/js/visuals.js?v=particles-half1"'));
- assert.ok(rendered.includes('Window → Extensions → AE Local Toolkit'));
+ assert.ok(rendered.includes('Window → AE Local Toolkit (WebView2)'));
+ assert.ok(rendered.includes('Plug-ins/AeltToolkitWebView2'));
+ assert.ok(rendered.includes('aetoolkit-v*-macos-cep.zip'));
  const future={version:'9.8.7',entries:[{version:'9.8.7',date:'2030-01-02',changes:['New release'],highlights:[{title:'New version',description:'New content'}]}]};
  const english=renderEnglish(renderPage(source,selectRelease(future)));assert.ok(english.includes('Download 9.8.7'));assert.ok(english.includes('v9.8.7'));assert.ok(!english.includes('v0.3.1'));assert.ok(english.includes('New content'));
 });

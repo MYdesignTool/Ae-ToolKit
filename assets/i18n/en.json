@@ -1,5 +1,14 @@
 {
   "strings": {
+    "Ae-ToolKit 是一款完全离线运行的 After Effects 工具面板，集成项目整理器、表达式管理器、脚本启动器。Windows 使用 AEGP + WebView2，macOS 保留 CEP。支持 AE 2023+，开源 · 本地优先。": "Ae-ToolKit is an offline After Effects toolkit for project organization, expressions and scripts. Windows uses AEGP + WebView2; macOS retains CEP. Supports AE 2023+. Open source and local first.",
+    "0.5.1 起，Windows 使用 AEGP + WebView2。关闭 AE，以管理员身份运行安装器，选择目标 AE 的": "Starting with 0.5.1, Windows uses AEGP + WebView2. Close AE, run the installer as administrator and select the target AE",
+    "文件夹；程序安装到其": "folder. The panel is installed under",
+    "。向导先备份数据，再迁移旧 CEP 设置与方案；已有原生数据优先。旧 CEP 和个人脚本保留，无需先卸载。": ". The installer backs up data before migrating legacy CEP settings and schemes. Existing native data takes priority. Legacy CEP and personal scripts are retained; no prior uninstall is needed.",
+    "窗口(W) → AE Local Toolkit (WebView2)": "Window → AE Local Toolkit (WebView2)",
+    "下载 macOS CEP 包": "download the macOS CEP package",
+    "文件夹整体复制到 macOS 的 CEP 扩展目录，复制时需要管理员权限。避免同时保留多个同 ID 的扩展副本：": "folder into the macOS CEP extensions directory with administrator permission. Avoid duplicate copies with the same extension ID:",
+    "# macOS 系统级\n/Library/Application Support/Adobe/CEP/extensions/": "# macOS system-wide\n/Library/Application Support/Adobe/CEP/extensions/",
+    "# macOS 终端\ndefaults write com.adobe.CSXS.11 PlayerDebugMode -bool true": "# macOS Terminal\ndefaults write com.adobe.CSXS.11 PlayerDebugMode -bool true",
     "新增动画耗时倍率：2x 保持原版速度，默认 1x 更快，另有 0.5x 和关闭，并兼容系统减少动态效果。": "Add animation duration scales: 2x keeps the original timing, the faster 1x is the default, with 0.5x and Off also available. Respect system reduced motion.",
     "表达式分类改为可编辑标签，支持多个标签、清空标签及旧分类兼容。": "Replace expression categories with editable tags, including multiple tags, untagged presets and legacy category compatibility.",
     "表达式支持分别按名称和标签筛选，也可同时使用两个筛选条件。": "Filter expressions by name, by tag, or by both at once.",
