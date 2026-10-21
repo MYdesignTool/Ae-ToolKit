@@ -48,6 +48,7 @@ Var AeSelectedIndex
 Var UpgradeStamp
 Var CheckPath
 Var RegistryKey
+Var InstallFailureStage
 !define MUI_ABORTWARNING
 !define MUI_WELCOMEPAGE_TEXT "安装 Windows 原生面板（AEGP + WebView2）。$\r$\n$\r$\n请先关闭 AE，再选择自动发现的 AE 版本，或使用自定义路径。程序写入其 Plug-ins\AeltToolkitWebView2。$\r$\n$\r$\n已安装 WebView2 Runtime 时直接使用；缺少时自动从微软下载并安装，需要联网。"
 !insertmacro MUI_PAGE_WELCOME
@@ -261,22 +262,32 @@ Section "Windows 原生工具箱" SecMain
   SetOutPath "$PLUGINSDIR"
   File "Manage-Installation.ps1"
   File "${STAGE}\AeltToolkitWebView2\installed-files.json"
+  StrCpy $InstallFailureStage "准备或迁移用户数据"
   !ifdef TEST_ROOT
-    ExecWait '"$SYSDIR\WindowsPowerShell\v1.0\powershell.exe" -NoProfile -ExecutionPolicy Bypass -File "$PLUGINSDIR\Manage-Installation.ps1" -Action Prepare -InstallRoot "$INSTDIR" -ProductVersion "${VERSION}" -PayloadManifest "$PLUGINSDIR\installed-files.json" -LegacyRoots "${TEST_ROOT}\legacy\AeLocalToolkit"' $0
+    nsExec::ExecToLog /TIMEOUT=120000 '"$SYSDIR\WindowsPowerShell\v1.0\powershell.exe" -NoProfile -NonInteractive -ExecutionPolicy Bypass -File "$PLUGINSDIR\Manage-Installation.ps1" -Action Prepare -InstallRoot "$INSTDIR" -ProductVersion "${VERSION}" -PayloadManifest "$PLUGINSDIR\installed-files.json" -LegacyRoots "${TEST_ROOT}\legacy\AeLocalToolkit"'
   !else
-    ExecWait '"$SYSDIR\WindowsPowerShell\v1.0\powershell.exe" -NoProfile -ExecutionPolicy Bypass -File "$PLUGINSDIR\Manage-Installation.ps1" -Action Prepare -InstallRoot "$INSTDIR" -ProductVersion "${VERSION}" -PayloadManifest "$PLUGINSDIR\installed-files.json"' $0
+    nsExec::ExecToLog /TIMEOUT=120000 '"$SYSDIR\WindowsPowerShell\v1.0\powershell.exe" -NoProfile -NonInteractive -ExecutionPolicy Bypass -File "$PLUGINSDIR\Manage-Installation.ps1" -Action Prepare -InstallRoot "$INSTDIR" -ProductVersion "${VERSION}" -PayloadManifest "$PLUGINSDIR\installed-files.json"'
   !endif
-  IfErrors failed
+  Pop $0
   StrCmp $0 0 0 failed
   CreateDirectory "$INSTDIR\extension\data"
-  !ifndef TEST_ROOT
+  StrCpy $InstallFailureStage "设置 data 目录写入权限"
+  !macro GrantDataAccess
   System::Call 'secur32::GetUserNameExW(i 2, w .r0, *i ${NSIS_MAX_STRLEN}) i .r1'
   StrCmp $1 0 failed
   ClearErrors
   ExecWait '"$SYSDIR\icacls.exe" "$INSTDIR\extension\data" /grant "$0:(OI)(CI)M" /Q' $1
   IfErrors failed
   StrCmp $1 0 0 failed
+  !macroend
+  !ifndef TEST_ROOT
+    !insertmacro GrantDataAccess
+  !else
+    !ifdef TEST_DATA_ACL
+      !insertmacro GrantDataAccess
+    !endif
   !endif
+  StrCpy $InstallFailureStage "写入程序文件"
   SetOverwrite on
   ClearErrors
   SetOutPath "$INSTDIR"
@@ -297,6 +308,7 @@ Section "Windows 原生工具箱" SecMain
   File "${STAGE}\AeltToolkitWebView2\extension\data\default-expressions.json"
   File "${STAGE}\AeltToolkitWebView2\extension\data\changelog.json"
   IfErrors failed
+  StrCpy $InstallFailureStage "生成卸载信息"
   SetOutPath "$INSTDIR"
   WriteUninstaller "$INSTDIR\uninstall.exe"
   IfErrors failed
@@ -309,7 +321,7 @@ Section "Windows 原生工具箱" SecMain
   DetailPrint "安装完成：$INSTDIR。未安装或修改 CEP；数据位于 extension\data。"
   Goto done
 failed:
-  MessageBox MB_ICONSTOP "安装或权限设置失败。原个人数据未覆盖，更新前备份保留在 backups。" /SD IDOK
+  MessageBox MB_ICONSTOP "安装未完成：$InstallFailureStage。$\r$\n请查看安装日志中的具体错误。个人数据与已有备份会保留。" /SD IDOK
   SetErrorLevel 1
   Abort
 done:

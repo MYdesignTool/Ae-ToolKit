@@ -11,6 +11,11 @@
 安装包载荷拒绝 EXE 依赖，生成时增加 10 MiB 上限，避免完整运行时再次混入。
 缺失 Runtime 的真实设备安装与新选择页的人工交互仍待对应环境验收。
 
+用户首次试装在数据准备阶段失败，已隔离复现为旧 CEP 根目录 Junction 被复制保护拒绝。
+修正为仅解析旧扩展根的一层本地 Junction，目标必须是无链接真实目录；扩展 ID、data
+内部链接及原生安装目标保护保持。新增旧根链接迁移和内部数据链接拒绝用例，并将生产
+data ACL 设置加入 NSIS 隔离安装循环。安装日志现在显示 PowerShell 输出及具体失败阶段。
+
 2026-10-21，经用户授权已合并 main 并发布 [v0.5.1](https://github.com/MYdesignTool/Ae-ToolKit/releases/tag/v0.5.1)。
 发布提交 `d1808de`，完整 [Actions 运行](https://github.com/MYdesignTool/Ae-ToolKit/actions/runs/39628784548)
 及官网刷新成功。云端 72 项逻辑测试、两种宿主浏览器回归、迁移安全和 NSIS 隔离安装循环通过。

@@ -95,6 +95,21 @@ function Legacy-Candidates{
     }
     return @($installRoots | Select-Object -Unique)
 }
+function Resolve-LegacyRoot([string]$Source){
+    $installLegacy=[IO.Path]::GetFullPath($Source).TrimEnd('\','/')
+    $installLegacyItem=Get-Item -LiteralPath $installLegacy -Force -ErrorAction SilentlyContinue
+    if(!$installLegacyItem -or !$installLegacyItem.PSIsContainer){return $null}
+    if($installLegacyItem.Attributes -band [IO.FileAttributes]::ReparsePoint){
+        # Old developer installations may link the extension root. Resolve just
+        # this root to a physical local directory; nested data links stay denied.
+        $installTargets=@($installLegacyItem.Target)
+        if($installLegacyItem.LinkType -cne 'Junction' -or $installTargets.Count -ne 1 -or ![IO.Path]::IsPathRooted([string]$installTargets[0])){throw 'Unsupported legacy extension link; export and import its data manually'}
+        $installLegacy=[IO.Path]::GetFullPath([string]$installTargets[0]).TrimEnd('\','/')
+        if($installLegacy.StartsWith('\\') -or !(Test-Path -LiteralPath $installLegacy -PathType Container)){throw 'Legacy extension link must target an existing local directory'}
+    }
+    Assert-NoLinks $installLegacy
+    return $installLegacy
+}
 function Prepare-Installation([string]$Target){
     if($ProductVersion -notmatch '^\d+\.\d+\.\d+$'){throw 'ProductVersion must come from the changelog'}
     $installTarget=Assert-InstallRoot $Target
@@ -115,7 +130,9 @@ function Prepare-Installation([string]$Target){
     if(Test-Path -LiteralPath $installData){Copy-DataTree $installData (Join-Path $installTarget ('backups\before-'+$installStamp))}
     # Even damaged native data is authoritative. Never replace it with old CEP.
     foreach($installOwned in @('user-data.json','user-data.json.bak','settings.json','settings.json.bak','organizer-schemes')){if(Test-Path -LiteralPath (Join-Path $installData $installOwned)){return 'Existing native data retained and backed up'}}
-    foreach($installSource in Legacy-Candidates){
+    foreach($installCandidateRoot in Legacy-Candidates){
+        $installSource=Resolve-LegacyRoot $installCandidateRoot
+        if(!$installSource){continue}
         $installManifest=Join-Path $installSource 'CSXS\manifest.xml'
         if(!(Test-Path -LiteralPath $installManifest)){continue}
         $installXml=New-Object System.Xml.XmlDocument;$installXml.XmlResolver=$null
