@@ -1,5 +1,10 @@
 # 项目内固定依赖
 
+GitHub Actions 使用 `windows-2022` 自带的 Visual Studio 2022 x64 工具链和指定 Windows SDK。
+Adobe SDK 头文件由仓库 Actions Secrets 提供，WebView2 SDK 从固定版本 NuGet 包恢复，均验证
+`native/ci-dependencies.json` 中的 SHA-256。机密片段通过标准输入配置，不作为公开文件上传。
+设置与维护见[自动构建说明](../../docs/release-automation.md)。下文为本机构建路径。
+
 默认构建从工作区 `.local-deps/` 读取私有 SDK 与工具，不依赖其他项目的活动目录。
 具体组件版本见锁文件；这些依赖不进入产品包。模块来源与许可证见相应 NOTICE/LICENSE。
 

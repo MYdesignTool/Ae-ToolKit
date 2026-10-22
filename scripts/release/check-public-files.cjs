@@ -8,6 +8,7 @@ for(const file of files){
  if(privatePath.test(file)){console.error('Private file must not be tracked: '+file);failures++;continue;}
  if(!fs.existsSync(file))continue;
  const data=fs.readFileSync(file);if(data.includes(0))continue;const text=data.toString('utf8');
+ if(text.includes('ADOBE '+'CONFIDENTIAL')){console.error(file+': private SDK content must not be tracked');failures++;}
  for(const [kind,re] of patterns){re.lastIndex=0;let match;while((match=re.exec(text))){if(kind==='Literal credential'&&/process\.env|\$env:|example|placeholder|your[_ -]|<|\$\{|apiKey\b/i.test(match[1]))continue;console.error(`${file}:${text.slice(0,match.index).split('\n').length}: possible ${kind}; value withheld`);failures++;}}
 }
 if(failures)process.exitCode=1;else console.log('Public-file check passed: '+files.length+' tracked files; no private records or recognized credential patterns.');

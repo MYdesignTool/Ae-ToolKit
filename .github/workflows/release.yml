@@ -49,8 +49,60 @@ jobs:
       - name: Existing logic and release contract tests
         run: node --test tests/*.test.cjs
 
-  windows:
+  native-windows:
     needs: validate
+    runs-on: windows-2022
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version: '24.18.0'
+      - name: Restore private Adobe headers and verify pinned WebView2 SDK
+        shell: pwsh
+        env:
+          AELT_AE_SDK_PART_01: ${{ secrets.AELT_AE_SDK_PART_01 }}
+          AELT_AE_SDK_PART_02: ${{ secrets.AELT_AE_SDK_PART_02 }}
+          AELT_AE_SDK_PART_03: ${{ secrets.AELT_AE_SDK_PART_03 }}
+          AELT_AE_SDK_PART_04: ${{ secrets.AELT_AE_SDK_PART_04 }}
+          AELT_AE_SDK_PART_05: ${{ secrets.AELT_AE_SDK_PART_05 }}
+          AELT_AE_SDK_PART_06: ${{ secrets.AELT_AE_SDK_PART_06 }}
+          AELT_AE_SDK_PART_07: ${{ secrets.AELT_AE_SDK_PART_07 }}
+          AELT_AE_SDK_PART_08: ${{ secrets.AELT_AE_SDK_PART_08 }}
+        run: ./scripts/release/Prepare-NativeCi.ps1
+      - name: Compile source AEX and exercise native queue and bridge
+        shell: pwsh
+        run: |
+          $paths=Get-Content .artifacts/ci-compile/paths.json -Raw | ConvertFrom-Json
+          ./native/toolkit/Build.ps1 -UseHostToolchain -AeSdkRoot $paths.adobeRoot -WebView2SdkRoot $paths.webview2Root -CompilerRoot $paths.compilerRoot -WindowsSdkRoot $paths.windowsSdkRoot -WindowsSdkVersion $paths.windowsSdkVersion -OutputRoot .artifacts/ci-native
+          node native/toolkit/tests/gateway.cjs .artifacts/ci-native/generated-scripts.json
+          if ($LASTEXITCODE) { throw 'Generated JSX bridge regression failed' }
+          node scripts/release/verify-inputs.cjs native .artifacts/ci-native
+          if ($LASTEXITCODE) { throw 'Compiled AEX provenance validation failed' }
+      - uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
+        with:
+          name: native-windows
+          path: |
+            .artifacts/ci-native/bin/AeltToolkitWebView2.aex
+            .artifacts/ci-native/build-info.json
+          if-no-files-found: error
+          retention-days: 14
+      - name: Remove private SDK headers
+        if: ${{ always() }}
+        shell: pwsh
+        run: |
+          $scope=[IO.Path]::GetFullPath((Join-Path $env:GITHUB_WORKSPACE '.artifacts/ci-compile'))
+          $target=[IO.Path]::GetFullPath((Join-Path $scope 'adobe-sdk'))
+          if ([IO.Path]::GetDirectoryName($target) -ne $scope) { throw 'Private SDK cleanup escaped scope' }
+          if (Test-Path -LiteralPath $target) {
+            if ((Get-Item -LiteralPath $target).Attributes -band [IO.FileAttributes]::ReparsePoint) { throw 'Private SDK cleanup refused a link' }
+            Remove-Item -LiteralPath $target -Recurse -Force
+          }
+
+  windows:
+    needs: [validate, native-windows]
     runs-on: windows-2022
     timeout-minutes: 30
     steps:
@@ -60,11 +112,15 @@ jobs:
       - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
         with:
           node-version: '24.18.0'
-      - name: Acquire pinned AEX and NSIS; validate online runtime policy
+      - uses: actions/download-artifact@018cc2cf5baa6db3ef3c5f8a56943fffe632ef53 # v6
+        with:
+          name: native-windows
+          path: .artifacts/ci-native
+      - name: Verify same-run AEX and acquire pinned NSIS
         shell: pwsh
         env:
           GH_TOKEN: ${{ github.token }}
-        run: ./scripts/release/Prepare-Ci.ps1
+        run: ./scripts/release/Prepare-Ci.ps1 -NativeBuildRoot .artifacts/ci-native
       - name: Logic and legacy data safety tests
         shell: pwsh
         run: |
