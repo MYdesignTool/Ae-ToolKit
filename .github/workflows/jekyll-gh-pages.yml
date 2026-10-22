@@ -14,9 +14,21 @@ concurrency:
   group: pages
   cancel-in-progress: false
 jobs:
+  refresh-from-release:
+    # Pages environments can allow only main; release runs carry a tag ref.
+    if: ${{ github.event_name == 'release' && !github.event.release.prerelease && startsWith(github.event.release.tag_name, 'v') }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      actions: write
+    steps:
+      - name: Request deployment from the default branch
+        env:
+          GH_TOKEN: ${{ github.token }}
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+        run: gh workflow run jekyll-gh-pages.yml --repo "$GITHUB_REPOSITORY" --ref "$DEFAULT_BRANCH"
   deploy:
-    # Controlled native inputs are prereleases, not website releases.
-    if: ${{ github.event_name != 'release' || (!github.event.release.prerelease && startsWith(github.event.release.tag_name, 'v')) }}
+    if: ${{ github.event_name != 'release' }}
     runs-on: ubuntu-latest
     environment:
       name: github-pages
