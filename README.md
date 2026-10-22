@@ -2,7 +2,7 @@
 
 面向 After Effects 2023 及更新版本的离线工具箱：工程整理、脚本启动、批量表达式。当前版本 **0.5.1**。Windows 使用 AEGP + WebView2，macOS 保持 CEP；两平台共用界面与业务源码。
 
-本试验分支 `codex/webview2-migration` 的完整 Windows 原生面板已获用户验收，未见可见故障；构建、独立数据和回退步骤见 [原生工具箱](native/toolkit/README.md)。CEP 的完整开发基线保存在 `codex/cep-0.5.1-baseline`（`0a631c9`），原工作区与安装保持不变。本地构建入口默认仅校验；新增 [Actions 发布流程](docs/release-automation.md) 支持手动构建和 v* 标签发布，第一阶段使用版本/哈希固定的 AEX 输入。本次已在本地构建验证两平台包，没有触发线上发布。[本地编译依赖](native/build/README.md) 已固定，不再引用 Starfield。
+完整 Windows 原生面板及轻量安装器已获用户验收；构建、独立数据和开发部署步骤见 [原生工具箱](native/toolkit/README.md)。本地 CEP 保留用于免重启 AE 的开发调试，无需为此再复制一份。CEP 开发基线为 `codex/cep-0.5.1-baseline`（`0a631c9`）。[Actions 发布流程](docs/release-automation.md) 支持手动构建和 v* 标签发布，第一阶段使用版本/哈希固定的 AEX 输入。[本地编译依赖](native/build/README.md) 已固定，不再引用 Starfield。
 
 **0.3.2** 加入表达式代码编辑器、一键格式化和中英界面切换。[开发与验收记录](docs/development-0.3.2.md)。
 
@@ -20,7 +20,7 @@
 
 ## 快速开始
 
-0.5.1 尚未发布，现有 [GitHub Releases](https://github.com/MYdesignTool/Ae-ToolKit/releases) 仍是旧 CEP 版本。新安装布局：Windows 选择 AE 的 `Support Files`，安装到 `Plug-ins/AeltToolkitWebView2`，从「窗口」菜单打开；macOS 将 CEP 文件夹放入 `/Library/Application Support/Adobe/CEP/extensions/`，从「窗口 > 扩展」打开。两版都需允许脚本写入文件和访问网络。具体更新、数据和回退见 [安装说明](extension/docs/install.md)。
+[GitHub Releases](https://github.com/MYdesignTool/Ae-ToolKit/releases) 提供 0.5.1：Windows 安装器自动发现 AE，并提供自定义 `Support Files` 路径，安装到 `Plug-ins/AeltToolkitWebView2`，从「窗口」菜单打开；macOS 将 CEP 文件夹放入 `/Library/Application Support/Adobe/CEP/extensions/`，从「窗口 > 扩展」打开。Windows 已有版本可直接运行新安装器覆盖升级，无需先卸载。两版都需允许脚本写入文件和访问网络。具体更新、数据和回退见 [安装说明](extension/docs/install.md)。
 
 ## 功能说明
 
@@ -64,7 +64,7 @@
 
 保存先写临时文件再替换，失败保留原数据；主文件缺失时恢复 `.bak`。设置页仍可导入、导出完整 JSON 备份。导入源保留为 `last-import.json`；导入前保存 `before-import.json`，替换设置并合并同 ID 方案，最终单次写入完整数据；损坏原文件保留为 `before-import-corrupt.json`。
 
-新版 Windows 安装逻辑首次从匹配 ID 的旧 CEP 备份并迁移个人数据，重定位相对脚本路径；已有原生数据优先。旧 CEP 和脚本原地保留。更新只覆盖程序和默认 JSON，先备份数据；卸载按安装清单及哈希删除程序，保留个人文件、data、backups 和产品身份。macOS 手动升级合并覆盖程序、保留 data。隔离 NSIS 安装、升级、备份失败中止、卸载和重装测试已通过，未在真实插件目录执行正式安装器。
+新版 Windows 安装逻辑首次从匹配 ID 的旧 CEP 备份并迁移个人数据，重定位相对脚本路径；已有原生数据优先。旧 CEP 和脚本原地保留。直接运行新安装器并选择原 AE 即可升级，无需先卸载；更新只覆盖程序和默认 JSON，先备份数据。卸载按安装清单及哈希删除程序，保留个人文件、data、backups 和产品身份。macOS 手动升级合并覆盖程序、保留 data。隔离 NSIS 安装、升级、备份失败中止、卸载和重装测试已通过；轻量安装器已由用户在实际 AE 目录安装成功。
 
 ## 发布页
 

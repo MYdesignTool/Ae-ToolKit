@@ -1,7 +1,8 @@
 # 0.5.1 开发与发布记录
 
-2026-10-22，新分支 `codex/lightweight-webview2-installer` 调整 Windows 安装器，尚未替换
-正式 0.5.1。不再打包完整 WebView2，已安装时不联网，缺失时下载微软官方 Bootstrapper、
+2026-10-22，`codex/lightweight-webview2-installer` 的轻量安装器已获用户实际安装验收，
+用户授权更新 GitHub 和安装包。本地 CEP 用于免重启 AE 的开发调试，不为此增加备份副本。
+不再打包完整 WebView2，已安装时不联网，缺失时下载微软官方 Bootstrapper、
 验证微软签名后静默安装并复查结果。增加 AE 自动发现页，从机器/用户注册信息与标准
 目录收集真实 AfterFX.exe，去重并优先显示最高版本，末尾提供自定义路径；已发现版本
 跳过手动目录页。检测到本机非系统盘 AE 23.5 路径正确。
@@ -9,12 +10,14 @@
 73 项逻辑测试、真实 PowerShell 运行时流程/多版本发现测试及 NSIS 隔离安装循环通过。
 实际下载官方 Bootstrapper 并校验微软签名，没有运行它或变更共享 Runtime。
 安装包载荷拒绝 EXE 依赖，生成时增加 10 MiB 上限，避免完整运行时再次混入。
-缺失 Runtime 的真实设备安装与新选择页的人工交互仍待对应环境验收。
+缺失 Runtime 的真实设备安装仍待对应环境验收。
 
 用户首次试装在数据准备阶段失败，已隔离复现为旧 CEP 根目录 Junction 被复制保护拒绝。
 修正为仅解析旧扩展根的一层本地 Junction，目标必须是无链接真实目录；扩展 ID、data
 内部链接及原生安装目标保护保持。新增旧根链接迁移和内部数据链接拒绝用例，并将生产
 data ACL 设置加入 NSIS 隔离安装循环。安装日志现在显示 PowerShell 输出及具体失败阶段。
+用户确认 preview-r2 安装完成。现有安装循环已实际执行不卸载的覆盖升级，检查原生数据、
+个人脚本及其他 AE 插件均保留，备份失败则停止更新；安装说明明确直接运行新安装器升级。
 
 2026-10-21，经用户授权已合并 main 并发布 [v0.5.1](https://github.com/MYdesignTool/Ae-ToolKit/releases/tag/v0.5.1)。
 发布提交 `d1808de`，完整 [Actions 运行](https://github.com/MYdesignTool/Ae-ToolKit/actions/runs/39628784548)
