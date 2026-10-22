@@ -45,9 +45,11 @@ try{
     & $dependencyNode (Join-Path $PSScriptRoot 'prepare-runtime.cjs') $toolkitBin $SeedFromCepRoot;if($LASTEXITCODE){throw 'Toolkit runtime preparation failed'}
     $toolkitSourceHash=& $dependencyNode (Join-Path $PSScriptRoot '..\build\source-fingerprint.cjs')
     if($LASTEXITCODE){throw 'Native source fingerprint failed'}
+    $toolkitBuildHash=& $dependencyNode (Join-Path $toolkitRepo 'scripts/release/verify-inputs.cjs') build-hash
+    if($LASTEXITCODE){throw 'Dependency fingerprint failed'}
     $toolkitCommit=& git -C $toolkitRepo rev-parse HEAD
     if($LASTEXITCODE){throw 'Build commit identity unavailable'}
-    [ordered]@{Version=(Get-Content (Join-Path $toolkitRepo 'extension\data\changelog.json') -Raw | ConvertFrom-Json).version;BuildMode='source';GitCommit=$toolkitCommit;DebugPort=$DebugPort;PluginSha256=(Get-FileHash $toolkitPlugin).Hash;SourceSha256=$toolkitSourceHash;BuildInputsSha256=(Get-FileHash (Join-Path $toolkitRepo 'native/ci-dependencies.json')).Hash.ToLowerInvariant();CompilerVersion=(Get-Item (Join-Path $CompilerRoot 'bin/Hostx64/x64/cl.exe')).VersionInfo.FileVersion;WindowsSdkVersion=$WindowsSdkVersion} | ConvertTo-Json | Set-Content (Join-Path $toolkitOutput 'build-info.json') -Encoding utf8
+    [ordered]@{Version=(Get-Content (Join-Path $toolkitRepo 'extension\data\changelog.json') -Raw | ConvertFrom-Json).version;BuildMode='source';GitCommit=$toolkitCommit;DebugPort=$DebugPort;PluginSha256=(Get-FileHash $toolkitPlugin).Hash;SourceSha256=$toolkitSourceHash;BuildInputsSha256=$toolkitBuildHash;CompilerVersion=(Get-Item (Join-Path $CompilerRoot 'bin/Hostx64/x64/cl.exe')).VersionInfo.FileVersion;WindowsSdkVersion=$WindowsSdkVersion} | ConvertTo-Json | Set-Content (Join-Path $toolkitOutput 'build-info.json') -Encoding utf8
     & (Join-Path $PSScriptRoot '..\input-probe\VerifyResource.ps1') -Plugin $toolkitPlugin -ResourceId 16001 -EntryPoint AeltToolkitEntry -ExpectedName 'AE Local Toolkit WebView2'
     Get-FileHash -LiteralPath $toolkitPlugin -Algorithm SHA256
     Write-Output 'Independent toolkit candidate built; no installer or release generated.'
