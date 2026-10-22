@@ -2,7 +2,7 @@
 const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path'),vm=require('node:vm');
 const {storage,source}=require('../../../tests/helpers.cjs');
 const root=path.resolve(__dirname,'../../../extension').replaceAll('\\','/');
-const scripts=JSON.parse(fs.readFileSync(path.resolve(__dirname,'../../../.artifacts/webview2-toolkit/generated-scripts.json'),'utf8'));
+const scripts=JSON.parse(fs.readFileSync(process.argv[2]||path.resolve(__dirname,'../../../.artifacts/webview2-toolkit/generated-scripts.json'),'utf8'));
 const env=storage({root});
 for(const file of ['lib/json.jsx','modules/storage.jsx','modules/organizer.jsx','modules/expressions.jsx','modules/launcher.jsx'])env.files.set(root+'/host/'+file,source('extension/host/'+file));
 env.files.set(root+'/CSXS/manifest.xml','manifest');

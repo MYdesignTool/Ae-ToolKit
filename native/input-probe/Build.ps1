@@ -5,14 +5,20 @@ param(
     [string]$WindowsSdkRoot='',
     [string]$WindowsSdkVersion='10.0.26100.0',
     [switch]$TestsOnly,
+    [switch]$UseHostToolchain,
     [switch]$UseAdobePiPLTool
 )
 $ErrorActionPreference='Stop'
-. (Join-Path $PSScriptRoot '..\build\LocalDependencies.ps1')
-if(!$AeSdkRoot){$AeSdkRoot=Get-LocalDependency 'adobe-ae-sdk'}
-if(!$WebView2SdkRoot){$WebView2SdkRoot=Get-LocalDependency 'webview2-sdk'}
-if(!$CompilerRoot){$CompilerRoot=Get-LocalDependency 'msvc-x64'}
-if(!$WindowsSdkRoot){$WindowsSdkRoot=Get-LocalDependency 'windows-sdk-x64'}
+if($UseHostToolchain){
+    if(!$AeSdkRoot -or !$WebView2SdkRoot -or !$CompilerRoot -or !$WindowsSdkRoot){throw 'Host toolchain mode requires explicit SDK and compiler roots'}
+    $dependencyNode=(Get-Command node.exe -ErrorAction Stop).Source
+}else{
+    . (Join-Path $PSScriptRoot '..\build\LocalDependencies.ps1')
+    if(!$AeSdkRoot){$AeSdkRoot=Get-LocalDependency 'adobe-ae-sdk'}
+    if(!$WebView2SdkRoot){$WebView2SdkRoot=Get-LocalDependency 'webview2-sdk'}
+    if(!$CompilerRoot){$CompilerRoot=Get-LocalDependency 'msvc-x64'}
+    if(!$WindowsSdkRoot){$WindowsSdkRoot=Get-LocalDependency 'windows-sdk-x64'}
+}
 $probeRepo=(Resolve-Path -LiteralPath (Join-Path $PSScriptRoot '..\..')).Path
 $probeOutput=Join-Path $probeRepo '.artifacts\webview2-probe'
 $probeObjects=Join-Path $probeOutput 'obj'

@@ -1,11 +1,8 @@
 {
-  "format": 1,
-  "version": "0.5.1",
+  "format": 2,
   "native": {
-    "releaseTag": "native-inputs-v0.5.1",
-    "assetName": "aelt-native-v0.5.1-windows-x64.zip",
-    "sha256": "857074e38ba9bde8e5564994e0c422f52a1e4471fb2c9eca5956d145cbe276d4",
-    "sourceSha256": "ba51687b68b6bf6494c2b0c7894349463cf209dfe483b5019873b1116058ec0b"
+    "mode": "source",
+    "dependencies": "native/ci-dependencies.json"
   },
   "runtime": {
     "mode": "evergreen-online",

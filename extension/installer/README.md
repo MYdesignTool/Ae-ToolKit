@@ -26,13 +26,13 @@ node tests/installer.cjs
 目录并执行 NSIS `/PPO` 预处理；**不生成 EXE 安装器或 ZIP，不执行安装、不写注册表**。
 `build-installer.cmd` 也默认进入这条校验流程。`-Platform windows` / `macos` 可分别校验。
 
-显式生成使用 `build.ps1 -CreatePackage`。Windows 需先编译或校验受控原生插件，再
+显式生成使用 `build.ps1 -CreatePackage`。Windows 需先编译当前源码的原生插件，再
 执行 `aetoolkit-native.nsi`；macOS 直接归档 CEP 文件夹，不编译原生 Windows 代码。
 调试端口非 0、版本不匹配、AEX 字节变化或原生源码指纹过期均拒绝进入 Windows 载荷。
 签名脚本 `sign-win.ps1` 定位 Windows x64 新文件名，本地脚本不自动上传或发布。
-Actions 已单独接入，首次 AEX 输入交付、手动构建、标签自动发布与回滚见
+Actions 从源码编译 AEX，私密 SDK 配置、手动构建、标签自动发布与回滚见
 [自动发布说明](../../docs/release-automation.md)。干净 runner 通过 `-CiInputsRoot` 使用
-已校验的 AEX、NSIS 和在线运行时策略，不读取私有 `.local-deps`。
+同次运行编译并校验的 AEX、固定 NSIS 和在线运行时策略，不读取本机私有 `.local-deps`。
 
 ## 安装、更新、卸载边界
 

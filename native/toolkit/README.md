@@ -19,6 +19,10 @@
 
 ## 构建与独立数据
 
+Actions 通过 `-UseHostToolchain` 显式传入经过校验的 SDK 和 runner 编译器目录，跳过本机
+`.local-deps` 绑定；该模式要求同时提供 Adobe、WebView2、MSVC 和 Windows SDK 根目录。
+产物元数据包含源码/依赖指纹、Git 提交、PE 哈希和工具链版本，不记录本机绝对来源路径。
+
 ```powershell
 & native/toolkit/Build.ps1 -SeedFromCepRoot '<现有 CEP 扩展根>'
 # 安装布局验证使用独立的无调试候选，避免覆盖正在加载的开发面板：

@@ -1,4 +1,4 @@
-param([string]$OutputRoot='.artifacts/ci-inputs',[string]$NativeBundle='',[string]$CachedNsisZip='')
+param([string]$OutputRoot='.artifacts/ci-inputs',[Parameter(Mandatory=$true)][string]$NativeBuildRoot,[string]$CachedNsisZip='')
 $ErrorActionPreference='Stop'
 $ciRepo=(Resolve-Path (Join-Path $PSScriptRoot '..\..')).Path
 $ciRoot=[IO.Path]::GetFullPath((Join-Path $ciRepo $OutputRoot))
@@ -17,16 +17,7 @@ function Get-VerifiedInput([string[]]$Uris,[string]$Target,[string]$Hash,[string
     }
     if((Get-FileHash -LiteralPath $Target).Hash.ToLowerInvariant() -cne $Hash){throw "Downloaded input SHA-256 mismatch: $Target"}
 }
-if($NativeBundle){$ciBundle=(Resolve-Path -LiteralPath $NativeBundle).Path}else{
-    & gh release download $ciLock.native.releaseTag --repo $env:GITHUB_REPOSITORY --pattern $ciLock.native.assetName --dir $ciRoot
-    if($LASTEXITCODE){throw 'Upload the reviewed native input prerelease before building this tag'}
-    $ciBundle=Join-Path $ciRoot $ciLock.native.assetName
-}
-if((Get-FileHash -LiteralPath $ciBundle).Hash.ToLowerInvariant() -cne $ciLock.native.sha256){throw 'Controlled native bundle SHA-256 mismatch'}
-Add-Type -AssemblyName System.IO.Compression.FileSystem
-$ciArchive=[IO.Compression.ZipFile]::OpenRead($ciBundle)
-try{$ciNames=@($ciArchive.Entries | ForEach-Object {$_.FullName.Replace('\','/')});$ciExpected=@('bin/AeltToolkitWebView2.aex','build-info.json');if($ciNames.Count -ne 2 -or @($ciNames|Where-Object {$_ -cnotin $ciExpected}).Count){throw 'Native bundle may contain only the AEX and build-info.json'}}finally{$ciArchive.Dispose()}
-$ciNative=Join-Path $ciRoot 'native';Expand-Archive -LiteralPath $ciBundle -DestinationPath $ciNative
+$ciNative=(Resolve-Path -LiteralPath $NativeBuildRoot).Path
 & node (Join-Path $PSScriptRoot 'verify-inputs.cjs') native $ciNative
 if($LASTEXITCODE){throw 'Native metadata verification failed'}
 $ciPlugin=Join-Path $ciNative 'bin/AeltToolkitWebView2.aex'
