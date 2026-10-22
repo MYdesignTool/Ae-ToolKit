@@ -59,7 +59,7 @@ jobs:
       - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
         with:
           node-version: '24.18.0'
-      - name: Acquire pinned AEX, NSIS and offline WebView2 prerequisite
+      - name: Acquire pinned AEX and NSIS; validate online runtime policy
         shell: pwsh
         env:
           GH_TOKEN: ${{ github.token }}
@@ -71,6 +71,8 @@ jobs:
           if ($LASTEXITCODE) { throw 'Logic tests failed' }
           node tests/installer-migration.cjs
           if ($LASTEXITCODE) { throw 'Migration tests failed' }
+          node tests/installer-prerequisites.cjs
+          if ($LASTEXITCODE) { throw 'Runtime and AE discovery tests failed' }
       - name: Existing browser regressions in both transports
         shell: pwsh
         run: |

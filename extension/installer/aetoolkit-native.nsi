@@ -16,6 +16,7 @@ Unicode true
 !include "FileFunc.nsh"
 !include "StrFunc.nsh"
 !include "x64.nsh"
+!include "nsDialogs.nsh"
 ${StrStr}
 !ifndef TEST_ROOT
 ${UnStrStr}
@@ -39,16 +40,21 @@ VIAddVersionKey "LegalCopyright" "GPLv3 contributors; third-party notices includ
 Var AeRoot
 Var AeName
 Var NativeTarget
-!ifndef TEST_ROOT
-Var RuntimeVersion
-!endif
+Var AeCount
+Var AeUseCustom
+Var AeSelect
+Var AeLocation
+Var AeSelectedIndex
 Var UpgradeStamp
 Var CheckPath
 Var RegistryKey
+Var InstallFailureStage
 !define MUI_ABORTWARNING
-!define MUI_WELCOMEPAGE_TEXT "安装 Windows 原生面板（AEGP + WebView2）。$\r$\n$\r$\n请先关闭 AE，并选择目标 AE 的 Support Files 文件夹。程序写入其 Plug-ins\AeltToolkitWebView2。$\r$\n$\r$\n仅在缺少 WebView2 Runtime 时安装随包提供的微软离线依赖。现有 CEP 回退版和数据保持原样。"
+!define MUI_WELCOMEPAGE_TEXT "安装 Windows 原生面板（AEGP + WebView2）。$\r$\n$\r$\n请先关闭 AE，再选择自动发现的 AE 版本，或使用自定义路径。程序写入其 Plug-ins\AeltToolkitWebView2。$\r$\n$\r$\n已安装 WebView2 Runtime 时直接使用；缺少时自动从微软下载并安装，需要联网。"
 !insertmacro MUI_PAGE_WELCOME
 !insertmacro MUI_PAGE_LICENSE "..\License.md"
+Page custom AeSelectionPage AeSelectionLeave
+!define MUI_PAGE_CUSTOMFUNCTION_PRE AeDirectoryPre
 !define MUI_DIRECTORYPAGE_TEXT_TOP "选择包含 AfterFX.exe 的 Support Files 文件夹。每次安装只更新所选 AE 版本。"
 !insertmacro MUI_PAGE_DIRECTORY
 !insertmacro MUI_PAGE_INSTFILES
@@ -72,9 +78,78 @@ Function .onInit
     StrCpy $INSTDIR $1
   ${EndIf}
   !endif
+  Call DiscoverAe
   ${GetTime} "" "L" $0 $1 $2 $3 $4 $5 $6
   System::Call 'kernel32::GetTickCount() i.r7'
   StrCpy $UpgradeStamp "${VERSION}-$2$1$0-$4$5$6-$7"
+FunctionEnd
+Function DiscoverAe
+  StrCpy $AeCount 0
+  StrCpy $AeUseCustom 1
+  StrCpy $AeSelectedIndex 0
+  !ifndef TEST_ROOT
+    InitPluginsDir
+    SetOutPath "$PLUGINSDIR"
+    File "${STAGE}\prerequisites\Discover-Ae.ps1"
+    nsExec::ExecToLog /TIMEOUT=30000 '"$SYSDIR\WindowsPowerShell\v1.0\powershell.exe" -NoProfile -NonInteractive -ExecutionPolicy Bypass -File "$PLUGINSDIR\Discover-Ae.ps1" -OutputFile "$PLUGINSDIR\ae-versions.ini"'
+    Pop $0
+    StrCmp $0 0 0 done
+    ReadINIStr $AeCount "$PLUGINSDIR\ae-versions.ini" "versions" "count"
+    IntCmp $AeCount 0 done done +1
+    ReadINIStr $INSTDIR "$PLUGINSDIR\ae-versions.ini" "ae0" "path"
+    StrCpy $AeUseCustom 0
+done:
+  !endif
+FunctionEnd
+Function AeSelectionPage
+  !insertmacro MUI_HEADER_TEXT "选择 After Effects" "选择一个已安装的 AE 版本，或在列表末尾选择自定义路径。"
+  nsDialogs::Create 1018
+  Pop $0
+  StrCmp $0 error 0 +2
+  Abort
+  ${NSD_CreateLabel} 0 0 100% 16u "安装到哪个 AE 版本？"
+  Pop $0
+  ${NSD_CreateDropList} 0 22u 100% 100u ""
+  Pop $AeSelect
+  StrCpy $1 0
+loop:
+  IntCmp $1 $AeCount custom +1 custom
+  ReadINIStr $2 "$PLUGINSDIR\ae-versions.ini" "ae$1" "name"
+  ${NSD_CB_AddString} $AeSelect "$2"
+  IntOp $1 $1 + 1
+  Goto loop
+custom:
+  ${NSD_CB_AddString} $AeSelect "自定义路径…"
+  SendMessage $AeSelect ${CB_SETCURSEL} $AeSelectedIndex 0
+  ${NSD_CreateLabel} 0 53u 100% 70u ""
+  Pop $AeLocation
+  ${NSD_OnChange} $AeSelect AeSelectionChanged
+  Call UpdateAeSelection
+  nsDialogs::Show
+FunctionEnd
+Function UpdateAeSelection
+  SendMessage $AeSelect ${CB_GETCURSEL} 0 0 $0
+  StrCpy $AeSelectedIndex $0
+  IntCmp $0 $AeCount custom selected custom
+selected:
+  ReadINIStr $INSTDIR "$PLUGINSDIR\ae-versions.ini" "ae$0" "path"
+  StrCpy $AeUseCustom 0
+  ${NSD_SetText} $AeLocation "安装位置：$INSTDIR\Plug-ins\${PRODUCT_ID}$\r$\n$\r$\n本次仅安装到所选 AE；其他版本可再次运行安装器安装。"
+  Return
+custom:
+  StrCpy $AeUseCustom 1
+  ${NSD_SetText} $AeLocation "下一步请选择自定义 AE 的 Support Files 文件夹。该文件夹中应包含 AfterFX.exe。"
+FunctionEnd
+Function AeSelectionChanged
+  Pop $0
+  Call UpdateAeSelection
+FunctionEnd
+Function AeSelectionLeave
+  Call UpdateAeSelection
+FunctionEnd
+Function AeDirectoryPre
+  StrCmp $AeUseCustom 1 +2
+  Abort
 FunctionEnd
 Function .onVerifyInstDir
   IfFileExists "$INSTDIR\AfterFX.exe" done
@@ -157,46 +232,21 @@ failed:
   Abort
 done:
 FunctionEnd
-!ifndef TEST_ROOT
-Function ReadRuntime
-  StrCpy $RuntimeVersion ""
-  SetRegView 32
-  ReadRegStr $RuntimeVersion HKLM "Software\Microsoft\EdgeUpdate\Clients\{F3017226-FE2A-4295-8BDF-00C3A9A7E4C5}" "pv"
-  ${If} $RuntimeVersion == ""
-  ${OrIf} $RuntimeVersion == "0.0.0.0"
-    SetRegView 64
-    ReadRegStr $RuntimeVersion HKCU "Software\Microsoft\EdgeUpdate\Clients\{F3017226-FE2A-4295-8BDF-00C3A9A7E4C5}" "pv"
-  ${EndIf}
-  SetRegView 64
-FunctionEnd
-!endif
 Function EnsureRuntime
   !ifdef TEST_ROOT
     Return
   !else
-  Call ReadRuntime
-  ${If} $RuntimeVersion != ""
-  ${AndIf} $RuntimeVersion != "0.0.0.0"
-    Return
-  ${EndIf}
   InitPluginsDir
   SetOutPath "$PLUGINSDIR"
-  File "${STAGE}\prerequisites\MicrosoftEdgeWebView2RuntimeInstallerX64.exe"
-  ClearErrors
-  ExecWait '"$PLUGINSDIR\MicrosoftEdgeWebView2RuntimeInstallerX64.exe" /silent /install' $0
-  IfErrors failed
-  ${If} $0 != 0
-  ${AndIf} $0 != 3010
-    Goto failed
-  ${EndIf}
-  Call ReadRuntime
-  ${If} $RuntimeVersion == ""
-  ${OrIf} $RuntimeVersion == "0.0.0.0"
-    Goto failed
-  ${EndIf}
+  File "${STAGE}\prerequisites\Ensure-WebView2.ps1"
+  File "${STAGE}\prerequisites\webview2-bootstrapper.json"
+  DetailPrint "检测 WebView2 Runtime；如缺少，将自动从微软下载并安装，请稍候…"
+  nsExec::ExecToLog /TIMEOUT=900000 '"$SYSDIR\WindowsPowerShell\v1.0\powershell.exe" -NoProfile -NonInteractive -ExecutionPolicy Bypass -File "$PLUGINSDIR\Ensure-WebView2.ps1"'
+  Pop $0
+  StrCmp $0 0 0 failed
   Return
 failed:
-  MessageBox MB_ICONSTOP "微软 WebView2 Runtime 安装未完成，工具箱更新已停止。请检查系统或企业安装策略后重试。" /SD IDOK
+  MessageBox MB_ICONSTOP "WebView2 Runtime 准备失败，工具箱更新已停止。缺少运行时需要联网；请检查网络、微软下载服务或企业安装策略后重试。详见安装日志。" /SD IDOK
   SetErrorLevel 1
   Abort
   !endif
@@ -212,22 +262,32 @@ Section "Windows 原生工具箱" SecMain
   SetOutPath "$PLUGINSDIR"
   File "Manage-Installation.ps1"
   File "${STAGE}\AeltToolkitWebView2\installed-files.json"
+  StrCpy $InstallFailureStage "准备或迁移用户数据"
   !ifdef TEST_ROOT
-    ExecWait '"$SYSDIR\WindowsPowerShell\v1.0\powershell.exe" -NoProfile -ExecutionPolicy Bypass -File "$PLUGINSDIR\Manage-Installation.ps1" -Action Prepare -InstallRoot "$INSTDIR" -ProductVersion "${VERSION}" -PayloadManifest "$PLUGINSDIR\installed-files.json" -LegacyRoots "${TEST_ROOT}\legacy\AeLocalToolkit"' $0
+    nsExec::ExecToLog /TIMEOUT=120000 '"$SYSDIR\WindowsPowerShell\v1.0\powershell.exe" -NoProfile -NonInteractive -ExecutionPolicy Bypass -File "$PLUGINSDIR\Manage-Installation.ps1" -Action Prepare -InstallRoot "$INSTDIR" -ProductVersion "${VERSION}" -PayloadManifest "$PLUGINSDIR\installed-files.json" -LegacyRoots "${TEST_ROOT}\legacy\AeLocalToolkit"'
   !else
-    ExecWait '"$SYSDIR\WindowsPowerShell\v1.0\powershell.exe" -NoProfile -ExecutionPolicy Bypass -File "$PLUGINSDIR\Manage-Installation.ps1" -Action Prepare -InstallRoot "$INSTDIR" -ProductVersion "${VERSION}" -PayloadManifest "$PLUGINSDIR\installed-files.json"' $0
+    nsExec::ExecToLog /TIMEOUT=120000 '"$SYSDIR\WindowsPowerShell\v1.0\powershell.exe" -NoProfile -NonInteractive -ExecutionPolicy Bypass -File "$PLUGINSDIR\Manage-Installation.ps1" -Action Prepare -InstallRoot "$INSTDIR" -ProductVersion "${VERSION}" -PayloadManifest "$PLUGINSDIR\installed-files.json"'
   !endif
-  IfErrors failed
+  Pop $0
   StrCmp $0 0 0 failed
   CreateDirectory "$INSTDIR\extension\data"
-  !ifndef TEST_ROOT
+  StrCpy $InstallFailureStage "设置 data 目录写入权限"
+  !macro GrantDataAccess
   System::Call 'secur32::GetUserNameExW(i 2, w .r0, *i ${NSIS_MAX_STRLEN}) i .r1'
   StrCmp $1 0 failed
   ClearErrors
   ExecWait '"$SYSDIR\icacls.exe" "$INSTDIR\extension\data" /grant "$0:(OI)(CI)M" /Q' $1
   IfErrors failed
   StrCmp $1 0 0 failed
+  !macroend
+  !ifndef TEST_ROOT
+    !insertmacro GrantDataAccess
+  !else
+    !ifdef TEST_DATA_ACL
+      !insertmacro GrantDataAccess
+    !endif
   !endif
+  StrCpy $InstallFailureStage "写入程序文件"
   SetOverwrite on
   ClearErrors
   SetOutPath "$INSTDIR"
@@ -248,6 +308,7 @@ Section "Windows 原生工具箱" SecMain
   File "${STAGE}\AeltToolkitWebView2\extension\data\default-expressions.json"
   File "${STAGE}\AeltToolkitWebView2\extension\data\changelog.json"
   IfErrors failed
+  StrCpy $InstallFailureStage "生成卸载信息"
   SetOutPath "$INSTDIR"
   WriteUninstaller "$INSTDIR\uninstall.exe"
   IfErrors failed
@@ -260,7 +321,7 @@ Section "Windows 原生工具箱" SecMain
   DetailPrint "安装完成：$INSTDIR。未安装或修改 CEP；数据位于 extension\data。"
   Goto done
 failed:
-  MessageBox MB_ICONSTOP "安装或权限设置失败。原个人数据未覆盖，更新前备份保留在 backups。" /SD IDOK
+  MessageBox MB_ICONSTOP "安装未完成：$InstallFailureStage。$\r$\n请查看安装日志中的具体错误。个人数据与已有备份会保留。" /SD IDOK
   SetErrorLevel 1
   Abort
 done:

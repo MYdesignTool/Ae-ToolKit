@@ -5,15 +5,13 @@ if($CiInputsRoot){
     $dependencyNode=(Get-Command node.exe -ErrorAction Stop).Source
     $packageCi=Get-Content -LiteralPath (Join-Path $CiInputsRoot 'paths.json') -Raw | ConvertFrom-Json
     $NativeBuildRoot=$packageCi.nativeRoot
-    $packageRuntime=$packageCi.runtime
     $packageCompiler=$packageCi.nsisCompiler
     & $dependencyNode (Join-Path $packageRepo 'scripts/release/verify-inputs.cjs') native $NativeBuildRoot
     if($LASTEXITCODE){throw 'Controlled CI native input verification failed'}
 }else{
     . (Join-Path $packageRepo 'native\build\LocalDependencies.ps1')
-    & $dependencyNode (Join-Path $packageRepo 'native\build\dependencies.cjs') verify
+    & $dependencyNode (Join-Path $packageRepo 'native\build\dependencies.cjs') verify 'node,nsis'
     if($LASTEXITCODE){throw 'Dependency snapshot verification failed'}
-    $packageRuntime=Join-Path (Get-LocalDependency 'webview2-runtime-x64') 'MicrosoftEdgeWebView2RuntimeInstallerX64.exe'
     $packageCompiler=Join-Path (Get-LocalDependency 'nsis') 'makensis.exe'
 }
 $packageVersion=(Get-Content -LiteralPath (Join-Path $packageRepo 'extension\data\changelog.json') -Raw -Encoding UTF8 | ConvertFrom-Json).version
@@ -27,12 +25,10 @@ if($packagePlatforms -contains 'windows'){
     if(!(Test-Path -LiteralPath (Join-Path $NativeBuildRoot 'build-info.json'))){throw 'Build first: native/toolkit/Build.ps1 -OutputRoot .artifacts/installer-native. Do not use the loaded debug candidate.'}
     $packageNativeVersion=(Get-Item -LiteralPath (Join-Path $NativeBuildRoot 'bin/AeltToolkitWebView2.aex')).VersionInfo
     if($packageNativeVersion.ProductVersion -cne $packageVersion -or $packageNativeVersion.FileVersion -cne ($packageVersion+'.0')){throw 'AEX PE version differs from changelog; rebuild the native candidate'}
-    $packageSignature=Get-AuthenticodeSignature -LiteralPath $packageRuntime
-    if($packageSignature.Status -ne 'Valid' -or $packageSignature.SignerCertificate.Subject -notmatch 'O=Microsoft Corporation'){throw 'Runtime installer must have a valid Microsoft Authenticode signature'}
 }
 foreach($packagePlatform in $packagePlatforms){
     $packagePlatformStage=Join-Path $packageStage $packagePlatform
-    & $dependencyNode (Join-Path $PSScriptRoot 'package.cjs') $packagePlatform $packagePlatformStage $NativeBuildRoot $packageRuntime | Out-Null
+    & $dependencyNode (Join-Path $PSScriptRoot 'package.cjs') $packagePlatform $packagePlatformStage $NativeBuildRoot | Out-Null
     if($LASTEXITCODE){throw "$packagePlatform staging failed"}
     if($packagePlatform -eq 'windows'){
         $packageOutput=Join-Path $PSScriptRoot ('dist\aetoolkit-v'+$packageVersion+'-windows-x64-installer.exe')
@@ -41,7 +37,7 @@ foreach($packagePlatform in $packagePlatforms){
         else{New-Item -ItemType Directory -Force -Path (Split-Path $packageOutput -Parent) | Out-Null}
         $packagePreprocessed=& $packageCompiler @packageArguments
         if($LASTEXITCODE){$packagePreprocessed | Write-Output;throw 'Native installer preprocessing/build failed'}
-        if($CreatePackage){$packageExeVersion=(Get-Item -LiteralPath $packageOutput).VersionInfo;if($packageExeVersion.FileVersion -cne ($packageVersion+'.0') -or $packageExeVersion.ProductVersion -cne $packageVersion){throw 'NSIS file/product version resource differs from changelog'}}
+        if($CreatePackage){$packageExe=Get-Item -LiteralPath $packageOutput;$packageExeVersion=$packageExe.VersionInfo;if($packageExeVersion.FileVersion -cne ($packageVersion+'.0') -or $packageExeVersion.ProductVersion -cne $packageVersion){throw 'NSIS file/product version resource differs from changelog'};if($packageExe.Length -gt 10MB){throw 'Lightweight installer exceeded 10 MiB; check for accidentally bundled runtime/development files'}}
         if(!$CreatePackage){$packagePreprocessed | Set-Content (Join-Path $packagePlatformStage 'installer-preprocessed.nsi') -Encoding utf8}
     }elseif($CreatePackage){
         $packageOutput=Join-Path $PSScriptRoot ('dist\aetoolkit-v'+$packageVersion+'-macos-cep.zip')

@@ -3,7 +3,7 @@ const fs=require('node:fs'),path=require('node:path'),crypto=require('node:crypt
 const repo=path.resolve(__dirname,'../..');
 const defaults=['settings.default.json','organizer-rules.json','default-expressions.json','changelog.json'];
 function files(root){const out=[];function walk(dir){for(const row of fs.readdirSync(dir,{withFileTypes:true})){const full=path.join(dir,row.name);if(row.isSymbolicLink())throw Error('Package must not contain links: '+full);if(row.isDirectory())walk(full);else if(row.isFile())out.push(path.relative(root,full).replaceAll('\\','/'));}}walk(root);return out.sort();}
-function stage(platform,output,nativeBuild,options={}){
+function stage(platform,output,nativeBuild){
  if(!['windows','macos'].includes(platform))throw Error('Choose windows or macos');
  output=path.resolve(output);if(fs.existsSync(output))throw Error('Use a new staging directory; existing contents are never merged into a release payload');
  const version=JSON.parse(fs.readFileSync(path.join(repo,'extension/data/changelog.json'),'utf8')).version;
@@ -28,16 +28,18 @@ function stage(platform,output,nativeBuild,options={}){
   fs.mkdirSync(path.join(product,'licenses'));
   for(const name of ['LICENSE','NOTICE.md'])fs.copyFileSync(path.join(repo,'native/panel-host',name),path.join(product,'licenses','panel-host-'+name));
   for(const name of ['WebView2-LICENSE.txt','WebView2-NOTICE.txt'])fs.copyFileSync(path.join(repo,'native/third-party',name),path.join(product,'licenses',name));
-  let runtime=options.runtime;
-  if(!runtime){const {verify,base}=require('../../native/build/dependencies.cjs');const lock=verify(['webview2-runtime-x64']);runtime=path.join(base,lock.components.find(x=>x.id==='webview2-runtime-x64').directory,'MicrosoftEdgeWebView2RuntimeInstallerX64.exe');}
+  const runtime=require('../../scripts/release/verify-inputs.cjs').inputs().runtime;
   const installed=files(product).filter(name=>name!=='aelt-native-install.json'&&!name.startsWith('extension/data/')).map(name=>({path:name,sha256:crypto.createHash('sha256').update(fs.readFileSync(path.join(product,name))).digest('hex')}));
   fs.writeFileSync(path.join(product,'installed-files.json'),JSON.stringify({product:'org.aelocaltoolkit.webview2.toolkit',version,files:installed,writePaths:[...files(product),'installed-files.json','uninstall.exe']},null,2));
-  fs.mkdirSync(path.join(output,'prerequisites'));fs.copyFileSync(runtime,path.join(output,'prerequisites',path.basename(runtime)));
+  fs.mkdirSync(path.join(output,'prerequisites'));
+  for(const name of ['Ensure-WebView2.ps1','Discover-Ae.ps1'])fs.copyFileSync(path.join(repo,'extension/installer',name),path.join(output,'prerequisites',name));
+  fs.writeFileSync(path.join(output,'prerequisites/webview2-bootstrapper.json'),JSON.stringify(runtime,null,2));
  }
  const list=files(output);
+ if(platform==='windows'&&list.some(file=>/\.exe$/i.test(file)))throw Error('Lightweight payload must not contain an offline Runtime or bootstrapper executable');
  for(const file of list){if(/(?:^|\/)(?:user-data\.json(?:\.bak)?|settings\.json|before-import\.json|last-import\.json|backups|profile|fixtures|\.local-deps|\.git)(?:\/|$)/i.test(file)||/AeltInputProbe|\.pdb$|\.lib$|\.exp$/i.test(file))throw Error('Private or development file in package: '+file);}
  if(platform==='macos'&&list.some(file=>/\.aex$|WebView2RuntimeInstaller|panel-host-/i.test(file)))throw Error('Native Windows component in macOS package');
  const manifest={platform,version,product,files:list,installerGenerated:false};fs.writeFileSync(path.join(output,'package-manifest.json'),JSON.stringify(manifest,null,2));return manifest;
 }
 module.exports={stage,files,defaults};
-if(require.main===module){const [platform,output,nativeBuild,runtime]=process.argv.slice(2);console.log(JSON.stringify(stage(platform,output,nativeBuild,{runtime}),null,2));}
+if(require.main===module){const [platform,output,nativeBuild]=process.argv.slice(2);console.log(JSON.stringify(stage(platform,output,nativeBuild),null,2));}
