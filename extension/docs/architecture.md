@@ -4,7 +4,7 @@
 
 前端无框架、无构建步骤，按依赖顺序加载脚本。`callHost(name, args, callback)` 是唯一桥接入口，参数统一用 JSON 字面量编码，不混用 escape、URI 编码和字符串拼接。路径以原生路径传输；图片从 File.fsName 转换为浏览器 file URL，不把 ExtendScript 的 absoluteURI 路径直接当作网页地址。
 
-0.5.1 加载顺序：`core → ime-focus → translations → i18n → util → settings → ui → organizer → organizer-paths → vendor → editor → expressions → scripts → app`。`editor.js` 封装本地 CodeMirror 5，原 `expressionCode` textarea 作为同步的数据入口；选择/保存/删除通过 `AELT.editor.setValue()` 更新编辑器，输入时同步 textarea。输入方式、合成按键保护、提交后滚动及原版焦点重绑定按用户验收逐项对照，当前组合与结果统一记录于 [输入法说明](ime-compatibility.md)。启用时 app 缓存元素后先初始化焦点模块；原版跳过非空标签草稿，其他情况下保留文本选区执行一次延后 blur / focus。Acorn 只解析语法，允许 AE 常见的顶层 return 与宿主全局名称；Prettier standalone + Babel parser 在用户点击或使用快捷键时格式化，不执行表达式，错误不修改原稿。版本和许可见 `client/vendor/README.md`。无运行时 CDN 请求。
+0.5.1 加载顺序：`core → ime-focus → translations → i18n → util → settings → ui → organizer → organizer-paths → vendor → editor → expressions → scripts → app`。`editor.js` 封装本地 CodeMirror 5，原 `expressionCode` textarea 作为同步的数据入口；选择/保存/删除通过 `AELT.editor.setValue()` 更新编辑器，输入时同步 textarea。合成输入期间保护提交快捷键，并保留编辑器滚动和选区。启用时 app 缓存元素后先初始化焦点模块；原版跳过非空标签草稿，其他情况下保留文本选区执行一次延后 blur / focus。Acorn 只解析语法，允许 AE 常见的顶层 return 与宿主全局名称；Prettier standalone + Babel parser 在用户点击或使用快捷键时格式化，不执行表达式，错误不修改原稿。版本和许可见 `client/vendor/README.md`。无运行时 CDN 请求。
 
 工程整理的 `organizer-paths.js` 提供单列可搜索目录树，汇集所有方案、全局目录和当前草稿的路径与父级，支持逐级新建、完整路径粘贴以及取消。选择结果先保存在弹层会话中，确认使用后才写回只读路径框，不访问宿主或实际创建目录。后缀在单一输入框内显示为可移除标签，按 Enter 生成；保存/整理前检查非法值和跨规则后缀冲突。发送给宿主的 `path` 与 `extensions` 数据结构沿用旧版。
 
@@ -13,8 +13,6 @@
 方案以宿主读取/成功写入的数据为基线，规则与名称编辑留在草稿中。内置预设另存为个人方案；个人方案按原 ID 保存修改，重命名、新建、复制和删除收进更多操作。未保存状态下切换方案或新建前会确认，保存失败保留草稿，保存期间禁用方案控件，成功后才更新基线。全局目录和忽略名单独立即时持久化，不参与方案脏状态。语言切换只刷新文案，保留规则和输入草稿。
 
 忽略合成名称复用后缀标签外观，输入完整名称按 Enter 添加，失焦提交；数组形式保留名称中的空格，显式空数组不会补回 Main。旧分隔文本仍可读取、导入，并在首次编辑后存为数组。宿主原本已支持两种形式；设置校验与备份扩展为同时接收字符串和字符串数组，仍拒绝其他类型。匹配时继续忽略大小写，模糊匹配保持包含语义。
-
-2026-10-21 输入法逐项复测：AE 23.5 / CEP 11、Chromium 88.0.4324.150 下，保留 IMM32 配置和 CEP 原有的 CalculateNativeWinOcclusion 禁用项，按用户反馈逐项切换其余实验。当前组合及每轮结果统一记录于 [输入法说明](ime-compatibility.md)。上游 CEF #3306 修改原生焦点顺序，本仓库不含 Adobe CEP 可构建源码；当前未通过完整候选窗验收。
 
 `i18n.js` 负责静态标签与动态文案，中文源键和英文翻译保存在 `translations.js`。用户名称、规则路径、表达式代码不翻译；内置条目名称及标签按语言显示。`language` 设置为 `zh-CN` / `en`，缺省中文，沿用串行持久化及完整备份机制。宿主原生文件选择对话框接收可选语言参数；已知宿主消息在前端翻译，Debug 保留桥接原始结果。切换语言不重建规则输入区或表达式编辑器，保留草稿和撤销历史。
 
@@ -28,8 +26,8 @@ ExtendScript 的 `host/lib/json.jsx` 是 ES3 兼容的严格 JSON 解析器，�
 
 脚本扫描维护本次文件集合，运行入口只接受其中的 JSX/JSXBIN。选择行不重建 DOM，保留双击和焦点。保留横幅列表及单次名称显示，优先匹配所选脚本根目录内 image 文件夹，再回退到脚本旁图片。第三方脚本不是沙箱代码，具有 AE 脚本权限。
 
-Pages 只发布 index.html 与 assets/。安装器和 ZIP 使用程序目录及四个默认 JSON 的白名单，版本来自 changelog.json。安装器使用系统级 CEP 目录，仅 data 子目录授予安装用户的修改权限；更新前备份 data，保留个人文件，旧用户级及其他系统级清单校验扩展 ID 后重命名停用。网页无 CDN 运行时依赖；首屏粒子使用 WebGL，在离屏、隐藏及减少动态效果时停止逐帧渲染。
+Pages 只发布 index.html 与 assets/。安装器和 ZIP 使用程序目录及四个默认 JSON 的白名单，版本来自 changelog.json。Windows 安装器使用所选 AE 的 `Support Files/Plug-ins/AeltToolkitWebView2`，仅 data 授予安装账户修改权限；更新前备份 data，保留个人文件及旧 CEP。macOS 使用 CEP 目录。网页无 CDN 运行时依赖；首屏粒子使用 WebGL，在离屏、隐藏及减少动态效果时停止逐帧渲染。
 
 验证：`node --test tests/*.test.cjs`；浏览器交互测试见 `tests/browser.cjs`，需要 Playwright。模拟测试不替代 AE 2023 / 新版 AE 回归。
 
-Host 启动按 UTF-8 读取已安装的文本模块后执行，不对自身模块使用 `$.evalFile`。真实 AE 中已复现后者对 launcher.jsx 抛出 Cannot convert，而 Node 模拟不会复现。启动失败时 Debug 临时可见并记录完整错误，不依赖尚未读取的 Debug 设置，也不写回用户偏好。
+Host 启动按 UTF-8 读取已安装的文本模块后执行，不对自身模块使用 `$.evalFile`。此入口显式控制编码和启动错误处理。启动失败时 Debug 临时可见并记录完整错误，不依赖尚未读取的 Debug 设置，也不写回用户偏好。

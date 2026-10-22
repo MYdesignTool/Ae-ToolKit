@@ -2,11 +2,7 @@
 
 面向 After Effects 2023 及更新版本的离线工具箱：工程整理、脚本启动、批量表达式。当前版本 **0.5.1**。Windows 使用 AEGP + WebView2，macOS 保持 CEP；两平台共用界面与业务源码。
 
-完整 Windows 原生面板及轻量安装器已获用户验收；构建、独立数据和开发部署步骤见 [原生工具箱](native/toolkit/README.md)。本地 CEP 保留用于免重启 AE 的开发调试，无需为此再复制一份。CEP 开发基线为 `codex/cep-0.5.1-baseline`（`0a631c9`）。[Actions 发布流程](docs/release-automation.md) 支持手动构建和 v* 标签发布，第一阶段使用版本/哈希固定的 AEX 输入。[本地编译依赖](native/build/README.md) 已固定，不再引用 Starfield。
-
-**0.3.2** 加入表达式代码编辑器、一键格式化和中英界面切换。[开发与验收记录](docs/development-0.3.2.md)。
-
-这是项目唯一的主说明文档，覆盖安装、功能使用、数据与开发验证。共享界面及 JSX 位于 `extension/`，Windows 原生宿主位于 `native/`；macOS CEP 路径最低支持 CEP 11，并兼容新版 CEP 12。
+共享界面及 JSX 位于 `extension/`，Windows 原生宿主位于 `native/`；macOS CEP 路径最低支持 CEP 11，并兼容新版 CEP 12。
 
 ## 文档
 
@@ -16,7 +12,7 @@
 | [架构与维护](extension/docs/architecture.md) | 加载顺序、桥接入口、存储策略与已知限制 |
 | [构建安装器](extension/installer/README.md) | NSIS 构建步骤、产物清单与 SHA256 校验 |
 | [自动构建与发布](docs/release-automation.md) | 首次启用 Actions、受控 AEX 交付、发版与失败回滚 |
-| [审查与回归记录](docs/audit.md) | 已修复问题、验证方式与待宿主验证清单 |
+| [原生宿主](native/toolkit/README.md) | Windows 宿主架构、构建与开发部署 |
 
 ## 快速开始
 
@@ -64,7 +60,7 @@
 
 保存先写临时文件再替换，失败保留原数据；主文件缺失时恢复 `.bak`。设置页仍可导入、导出完整 JSON 备份。导入源保留为 `last-import.json`；导入前保存 `before-import.json`，替换设置并合并同 ID 方案，最终单次写入完整数据；损坏原文件保留为 `before-import-corrupt.json`。
 
-新版 Windows 安装逻辑首次从匹配 ID 的旧 CEP 备份并迁移个人数据，重定位相对脚本路径；已有原生数据优先。旧 CEP 和脚本原地保留。直接运行新安装器并选择原 AE 即可升级，无需先卸载；更新只覆盖程序和默认 JSON，先备份数据。卸载按安装清单及哈希删除程序，保留个人文件、data、backups 和产品身份。macOS 手动升级合并覆盖程序、保留 data。隔离 NSIS 安装、升级、备份失败中止、卸载和重装测试已通过；轻量安装器已由用户在实际 AE 目录安装成功。
+Windows 安装器首次从匹配 ID 的旧 CEP 备份并迁移个人数据，重定位相对脚本路径；已有原生数据优先。旧 CEP 和脚本原地保留。直接运行新安装器并选择原 AE 即可升级，无需先卸载；更新只覆盖程序和默认 JSON，先备份数据。卸载按安装清单及哈希删除程序，保留个人文件、data、backups 和产品身份。macOS 手动升级合并覆盖程序、保留 data。
 
 ## 发布页
 
@@ -72,23 +68,11 @@
 
 更新日志条目的 `changes` 同时供扩展使用；可选 `highlights` 是发布页的简短摘要（`title`、`description`），未提供时直接展示该版本的 `changes`。部署找不到已发布版本的对应条目时会报错，不会拼接不同版本的信息。
 
-## 开发与验证
-
-0.5.1 的本地开发内容与验收项见[未发布开发记录](docs/development-next.md)：动画耗时倍率、表达式标签及组合筛选、输入法定位和工程整理标签编辑。用户确认前不发布、不生成安装器。
-
-`extension/client/` 是无框架、无构建步骤的面板，最低 CEP 11 / Chromium 88；`extension/host/` 使用 ES3 兼容 ExtendScript。默认配置在 `extension/data/`，用户数据统一保存在扩展内 `data/user-data.json`。
-
-- 回归测试：`node --test tests/*.test.cjs`
-- 启动诊断：`node tests/startup.cjs`
-- 本地交互预览：`node tests/preview.cjs [可选脚本目录]`
-- 浏览器交互（需 Playwright 与 Microsoft Edge）：`node tests/browser.cjs`，可用 `ARTIFACT_DIR` 指定截图目录
-- 0.3.2 编辑器与双语交互：`node tests/editor-browser.cjs`
+## 项目维护
 
 版本源是 `extension/data/changelog.json`，构建校验其与 manifest 一致。新增版本后执行 `node scripts/sync-release.cjs`，统一生成 CEP 清单、说明文档与发布页中的版本信息。
 
-安装构建依赖已固定在工作区 `.local-deps/`；`extension/installer/build-installer.cmd` 默认仅校验两平台载荷和 NSIS 预处理，实际生成须显式使用 `-CreatePackage` 并取得生成授权。有本机 AE 时可显式运行 `node tests/ae-host.cjs "完整路径/AfterFX.exe"`，使用独立实例和临时扩展副本验证真实 ExtendScript 加载；浏览器与 Node 模拟不能替代此项兼容性检查。
-
-CEP 内核由宿主 AE 携带，不能通过修改清单单独升级。发布页以原生元素呈现功能示意，不代表 AE 宿主实测结果。`extension/docs/architecture.md` 记录了未在本文件展开的技术约定。
+架构与接口见[架构说明](extension/docs/architecture.md)，平台构建及发布操作见上方文档入口。调试输出、现场记录、私有依赖与凭据均不属于公开仓库内容。
 
 ## 许可证
 

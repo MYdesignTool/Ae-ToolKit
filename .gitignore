@@ -4,3 +4,22 @@ _site/
 extension/installer/dist/
 /dist/
 /node_modules/
+
+# Local diagnostics and working notes are never publication inputs.
+/.local-notes/
+/docs/artwork.md
+/docs/audit.md
+/docs/development-*.md
+/docs/webview2-migration-assessment.md
+/extension/docs/ime-compatibility.md
+*.log
+*.trace
+*.dmp
+.env
+.env.*
+*.pem
+*.key
+*.pfx
+*.p12
+credentials.json
+secrets.json

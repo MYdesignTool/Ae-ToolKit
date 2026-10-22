@@ -19,7 +19,7 @@ idle, after host availability and an optional caller transaction guard. The
 caller must whitelist methods and manage AE operations/quiet errors itself.
 No arbitrary script executor is included. A failed operation is not retried.
 
-The migration branch also permits an explicit bundled `document_url` (local
+The host also permits an explicit bundled `document_url` (local
 file loading) and trusted caller `bootstrap_script`. The exact document remains
 the navigation/message boundary. `debug_port` defaults to zero; a development
 consumer may opt into a loopback diagnostic endpoint. `retain_on_close` is an

@@ -7,9 +7,6 @@
       "directory": "ae-sdk-may2023",
       "version": "May2023",
       "scope": "private build input; excluded from product packages",
-      "sources": [
-        "D:\\Project\\Code\\AE星辰粒子插件Stardust  v1.6.0b\\newStardust\\AdobeSDK\\May2023_AfterEffectsSDK"
-      ],
       "files": 1049,
       "bytes": 18661535,
       "sha256": "979beaafa4ea3548c3abab54534a39ba24bfee5a44da9f8cd894028a0aebe439"
@@ -19,9 +16,6 @@
       "directory": "webview2-sdk-1.0.4258.31",
       "version": "1.0.4258.31",
       "scope": "private build input; excluded from product packages",
-      "sources": [
-        "D:\\Project\\Code\\AE星辰粒子插件Stardust  v1.6.0b\\newStardust\\artifacts\\webview2\\dependencies\\sdk-1.0.4258.31"
-      ],
       "files": 90,
       "bytes": 50147970,
       "sha256": "4747bff80278d494dbc04438bc0b3aaa99c74e163be7f456a101ee391a86f136"
@@ -31,11 +25,6 @@
       "directory": "msvc-14.51.36231",
       "version": "14.51.36231",
       "scope": "private build input; excluded from product packages",
-      "sources": [
-        "C:\\Program Files (x86)\\Microsoft Visual Studio\\18\\BuildTools\\VC\\Tools\\MSVC\\14.51.36231\\bin\\Hostx64\\x64",
-        "C:\\Program Files (x86)\\Microsoft Visual Studio\\18\\BuildTools\\VC\\Tools\\MSVC\\14.51.36231\\include",
-        "C:\\Program Files (x86)\\Microsoft Visual Studio\\18\\BuildTools\\VC\\Tools\\MSVC\\14.51.36231\\lib\\x64"
-      ],
       "files": 584,
       "bytes": 731532001,
       "sha256": "326d74984aa31d6bab5c71ec7bb362e3ce1db1259575d8b7b813b3c02580f95f"
@@ -45,13 +34,6 @@
       "directory": "windows-sdk-10.0.26100.0",
       "version": "10.0.26100.0",
       "scope": "private build input; excluded from product packages",
-      "sources": [
-        "C:\\Program Files (x86)\\Windows Kits\\10\\Include\\10.0.26100.0",
-        "C:\\Program Files (x86)\\Windows Kits\\10\\Lib\\10.0.26100.0\\um\\x64",
-        "C:\\Program Files (x86)\\Windows Kits\\10\\Lib\\10.0.26100.0\\ucrt\\x64",
-        "C:\\Program Files (x86)\\Windows Kits\\10\\bin\\10.0.26100.0\\x64",
-        "C:\\Program Files (x86)\\Windows Kits\\10\\Licenses"
-      ],
       "files": 5482,
       "bytes": 636812690,
       "sha256": "f253c8e06ed02dab2f5768fe9caa28df99fe5b221a76971700ec93a5239c5e3d"
@@ -61,9 +43,6 @@
       "directory": "nsis",
       "version": "3.12",
       "scope": "private build input; excluded from product packages",
-      "sources": [
-        "C:/Program Files (x86)/NSIS"
-      ],
       "files": 442,
       "bytes": 7201518,
       "sha256": "0698e5a0183900e20db1c10ef748f79f01c57d9115cdc251e7766775b16928df"
@@ -73,10 +52,6 @@
       "directory": "node",
       "version": "v24.18.0",
       "scope": "private build input; excluded from product packages",
-      "sources": [
-        "C:\\Program Files\\nodejs\\node.exe",
-        "C:\\Users\\MY\\.codex\\worktrees\\webview2-migration\\AeLocalToolkit\\.local-deps\\node\\LICENSE"
-      ],
       "files": 2,
       "bytes": 92691694,
       "sha256": "d6231dd414f5d10a21e7b0d6f729a20c32102d2d0f4606f8008fd76bb6080312",
@@ -87,9 +62,6 @@
       "directory": "webview2-runtime-x64",
       "version": "Evergreen standalone downloaded 2026-10-21; Authenticode Microsoft Corporation",
       "scope": "Offline redistributable runtime installer; bundled once in Windows setup only",
-      "sources": [
-        "C:\\Users\\MY\\.codex\\worktrees\\webview2-migration\\AeLocalToolkit\\.local-deps\\webview2-runtime-x64\\MicrosoftEdgeWebView2RuntimeInstallerX64.exe"
-      ],
       "files": 1,
       "bytes": 214156024,
       "sha256": "3b335c7cc89e2dc783a27e28452f2b8de1c1ae68b04d845fbdd729f71ae9f3f9",

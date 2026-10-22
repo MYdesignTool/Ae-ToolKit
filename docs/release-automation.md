@@ -1,21 +1,8 @@
 # GitHub Actions 构建、发布与回滚
 
-本分支新增 `.github/workflows/release.yml`，现有 `jekyll-gh-pages.yml` 保留部署逻辑，仅过滤
-输入资产预发布的 release 事件，避免其触发 Pages 标签保护拒绝。
-2026-10-21 已完成首次正式发布 [v0.5.1](https://github.com/MYdesignTool/Ae-ToolKit/releases/tag/v0.5.1)：
-Windows 原生安装器、macOS CEP ZIP、双语说明和 SHA256SUMS 全部由
-[标签流水线](https://github.com/MYdesignTool/Ae-ToolKit/actions/runs/39628784548)生成并验证。
-发布提交为 `d1808de9ea386e93deedcb252d02c8f05d85fb10`；官网刷新成功。
+`.github/workflows/release.yml` 支持手动构建及 v* 标签发布；Windows 生成轻量 NSIS 安装器，macOS 生成 CEP ZIP。安装器支持直接覆盖升级，无需先卸载。现有 Pages 工作流独立部署官网。
 
-主线安装器改为轻量包和自动发现 AE，用户已确认实际安装成功，并授权更新 0.5.1 的
-Windows 安装包。以下输入准备步骤采用新模式；历史 v0.5.1 标签保持原提交，按该标签
-重建仍会生成当时的完整离线包。此次仅重打包安装器，程序版本及受控 AEX 保持 0.5.1；
-更新资产须来自 main 上成功的完整 Actions 构建，并在 Release Notes 记录打包提交和运行。
-常规发布脚本继续拒绝覆盖公开 Release；后续新版本须使用新的统一版本及 v* 标签。
-
-用户升级时直接运行新版安装器并选择原 AE，无需先卸载。CI 的 NSIS 循环实际覆盖了
-已有原生数据下再次安装、数据/个人脚本保留及备份失败中止；本地 CEP 保留作开发调试，
-不因此复制新的开发备份。
+常规发布脚本拒绝覆盖公开 Release。新版本使用统一版本源及新的 v* 标签；安装器单独重打包时，须记录构建来源并同步更新校验文件。
 
 ## 第一阶段与依赖边界
 
@@ -23,7 +10,7 @@ Windows 使用标准 `windows-2022` runner；逻辑检查、CEP ZIP 和发布使
 CEP ZIP 不依赖 macOS 原生编译，无需占用 macOS runner。使用标准 GitHub-hosted runners，
 实际计费/额度以仓库公开性及 GitHub 账户规则为准。
 
-Actions 不复制本机 1.63 GiB 的 `.local-deps`，也不引用 Starfield。第一阶段从同仓库的
+Actions 不复制私有 `.local-deps`，也不引用其他项目目录。第一阶段从同仓库的
 `native-inputs-v<版本>` 预发布下载经审查的 AEX ZIP。其 SHA-256、源码指纹和文件名由
 `native/release-inputs.json` 固定；解包只允许 AEX 与 build-info.json 两个文件，再核对
 版本、禁用调试端口、二进制哈希、PE FileVersion/ProductVersion、AEGP PiPL 身份。
@@ -58,10 +45,8 @@ Evergreen 分发，不伪装为固定字节的构建输入。NSIS 和 AEX 的固
    node scripts/release/verify-inputs.cjs
    ```
 
-   本轮已生成 `.artifacts/aelt-native-v0.5.1-windows-x64.zip` 并锁定其哈希。
-   如果该文件仍在，可直接使用，不要重新压缩；ZIP 时间戳也会影响整体哈希。若需重建，
-   显式保留/移走旧包后重新封存，审查并提交新的 release-inputs.json。不要手改二进制
-   哈希来绕过校验。
+   保留封存命令生成的原始 ZIP，不能重新压缩后沿用旧哈希。ZIP 时间戳也影响整体哈希。
+   若需重建，重新封存并审查提交新的 release-inputs.json，不手改哈希绕过校验。
 3. 提交并合入输入锁。通过 GitHub Releases 页面创建 **预发布** `native-inputs-v0.5.1`，
    指向已合并的源码提交，上传上述 ZIP，以及锁中的 `nsis-3.12.zip`。
    依赖不要重新压缩，哈希必须与锁一致。也可用已登录的 GitHub CLI：
@@ -72,7 +57,7 @@ Evergreen 分发，不伪装为固定字节的构建输入。NSIS 和 AEX 的固
    gh release upload native-inputs-v0.5.1 .artifacts/release-dependencies/nsis-3.12.zip --repo MYdesignTool/Ae-ToolKit
    ```
 
-   这是每个新版本的维护者输入交付步骤，0.5.1 已执行完成。输入上传后不能随意替换；
+   这是每个新版本的维护者输入交付步骤。输入上传后不能随意替换；
    任意字节变化都会使产品构建失败，避免不知情地发布其他二进制。
 4. Actions > **Build and release Ae-ToolKit** > Run workflow，选择 main，保持 publish=false。
    下载 `verified-release` artifact，核对两个平台包和 SHA256SUMS.txt。这个手动运行
@@ -144,7 +129,7 @@ publish 重新验证标签仍指向测试的提交和本地校验文件，然后
 
 迁移前在原生 backups 中保存源 data 的原始副本，重定位 `./` 脚本路径后写入新的统一
 JSON；不移动、删除、停用旧 CEP 或个人脚本。每次原生更新先备份原生 data，失败则停止
-覆盖代码。路径中的链接或越界会被拒绝；开发 junction 应使用导出 JSON 等显式迁移方式。
+覆盖代码。新安装目标中的链接、源数据内部链接或路径越界均拒绝；旧 CEP 根 Junction 仅允许解析到无链接的本地真实目录并校验扩展 ID。
 若用另一管理员账户提权，旧用户 AppData 与 data 写权限应单独确认。
 
 卸载验证产品根、身份和清单，只删除**内容仍匹配安装时哈希**的已安装程序文件；新增

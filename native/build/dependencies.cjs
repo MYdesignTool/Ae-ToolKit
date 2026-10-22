@@ -16,7 +16,7 @@ function freeze(plan,resume=false){
  fs.mkdirSync(base,{recursive:true});const components=[];
  for(const item of plan){const target=path.resolve(base,item.directory);if(path.dirname(target)!==base)throw Error('Invalid dependency directory');if(fs.existsSync(target)&&!resume)throw Error('Refused to overwrite dependency snapshot: '+target);fs.mkdirSync(target,{recursive:true});
   for(const part of item.parts){const destination=path.resolve(target,part.destination||'.');if(destination!==target&&!destination.startsWith(target+path.sep))throw Error('Invalid dependency destination');fs.mkdirSync(path.dirname(destination),{recursive:true});if(path.resolve(part.source)!==destination)fs.cpSync(part.source,destination,{recursive:true,dereference:false});}
-  components.push({id:item.id,directory:item.directory,version:item.version,scope:item.scope||'private build input; excluded from product packages',sources:item.parts.map(p=>p.source),...fingerprint(target)});
+  components.push({id:item.id,directory:item.directory,version:item.version,scope:item.scope||'private build input; excluded from product packages',...fingerprint(target)});
  }
  const lock={format:1,created:new Date().toISOString(),components};fs.writeFileSync(lockFile,JSON.stringify(lock,null,2)+'\n');return lock;
 }

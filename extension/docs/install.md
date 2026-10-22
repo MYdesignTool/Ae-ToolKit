@@ -8,8 +8,7 @@ Windows 使用 AEGP + WebView2 原生面板；macOS 继续使用 CEP。0.5.1 已
 | Windows x64 | 所选 AE 的 `Support Files/Plug-ins/AeltToolkitWebView2/` | 窗口 > AE Local Toolkit (WebView2) |
 | macOS CEP | `/Library/Application Support/Adobe/CEP/extensions/AeLocalToolkit/` | 窗口 > 扩展 > AE Local Toolkit |
 
-最低目标为 AE 2023；当前真实原生宿主验证为 Windows AE 23.5。其他 AE 版本和 macOS
-不能仅凭清单支持范围当作已实测。两版都需在 AE 首选项中允许脚本写入文件和访问网络。
+最低目标为 AE 2023。两版都需在 AE 首选项中允许脚本写入文件和访问网络。
 
 ## Windows 原生安装
 
@@ -59,12 +58,8 @@ JSON 备份包含设置、收藏、自定义表达式和整理方案，不包含
 时另外复制这些文件；脚本内相对路径以各版本的 extension 根为基准。原生版与 CEP 不
 同时写同一个数据文件，避免互相覆盖。
 
-本地 CEP 保留用于开发调试：修改前端后可重载扩展，更新 AEX 则需退出并重开 AE。
-无需为保留这个开发入口再建立一份备份或 CEP 副本；正常安装升级的数据备份策略仍适用。
-原 CEP 分支 `codex/cep-0.5.1-baseline`、原工作区及原安装均保留。输入探针安装链接已
-移除，不再随 AE 启动注册菜单；已加载会话中的旧菜单在下次 AE 启动后消失。探针不进入
-任何平台载荷。
+已有 CEP 可继续独立使用。开发时 CEP 可重载前端；更换 AEX 则需退出并重开 AE。
+输入探针不进入任何平台载荷。
 
-开发构建和当前验证边界见 [安装器说明](../installer/README.md)。实际隔离安装/升级/
-卸载和重装已通过；用户已确认轻量安装器在真实 AE 目录安装成功。Actions 启用与发版见
+开发构建见 [安装器说明](../installer/README.md)。Actions 启用与发版见
 [自动发布说明](../../docs/release-automation.md)。
