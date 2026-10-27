@@ -8,6 +8,7 @@
 
 | 文档 | 内容 |
 | --- | --- |
+| [在线使用文档](https://mydesigntool.github.io/Ae-ToolKit/docs/) | [普通用户指南](docs/manual/users/index.md)与[二次开发者指南](docs/manual/developers/index.md) |
 | [安装与兼容](extension/docs/install.md) | Windows 安装器、更新与备份、换机迁移、旧数据整合 |
 | [架构与维护](extension/docs/architecture.md) | 加载顺序、桥接入口、存储策略与已知限制 |
 | [构建安装器](extension/installer/README.md) | NSIS 构建步骤、产物清单与 SHA256 校验 |
@@ -64,9 +65,11 @@ Windows 安装器首次从匹配 ID 的旧 CEP 备份并迁移个人数据，重
 
 ## 发布页
 
-`index.html`、`en/index.html` 和 `assets/` 是 GitHub Pages 发布页；部署只包含这几项。页面版本、日期、下载链接与更新摘要由同一份 `extension/data/changelog.json` 生成；GitHub Pages 部署会根据最新正式 Release 选择对应条目，发布或编辑 Release 时也会自动刷新。中文版在根目录，英文版 `en/index.html` 从中文页面与 `assets/i18n/en.json` 翻译表统一生成。首次访问按浏览器语言选择中文或英文，手动切换会记住选择；两版静态页面均支持禁用 JavaScript。浏览器无需请求 GitHub API，离线与禁用 JavaScript 时显示同一版本。
+`index.html`、`en/index.html` 和 `assets/` 是 GitHub Pages 发布页；部署包含这些静态资源和 VitePress 文档构建产物（`/docs/`）。页面版本、日期、下载链接与更新摘要由同一份 `extension/data/changelog.json` 生成；GitHub Pages 部署会根据最新正式 Release 选择对应条目，发布或编辑 Release 时也会自动刷新。中文版在根目录，英文版 `en/index.html` 从中文页面与 `assets/i18n/en.json` 翻译表统一生成。首次访问按浏览器语言选择中文或英文，手动切换会记住选择；两版静态页面均支持禁用 JavaScript。浏览器无需请求 GitHub API，离线与禁用 JavaScript 时显示同一版本。
 
 更新日志条目的 `changes` 同时供扩展使用；可选 `highlights` 是发布页的简短摘要（`title`、`description`），未提供时直接展示该版本的 `changes`。部署找不到已发布版本的对应条目时会报错，不会拼接不同版本的信息。
+
+文档站使用开源 [VitePress](https://vitepress.dev/)，源文件位于 `docs/manual/`。使用 Node.js 22+，执行 `npm ci` 后通过 `npm run docs:dev` 本地编辑，通过 `npm run docs:build` 构建。详见[文档维护指南](docs/manual/developers/documentation.md)。
 
 ## 项目维护
 

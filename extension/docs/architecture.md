@@ -26,7 +26,7 @@ ExtendScript 的 `host/lib/json.jsx` 是 ES3 兼容的严格 JSON 解析器，�
 
 脚本扫描维护本次文件集合，运行入口只接受其中的 JSX/JSXBIN。选择行不重建 DOM，保留双击和焦点。保留横幅列表及单次名称显示，优先匹配所选脚本根目录内 image 文件夹，再回退到脚本旁图片。第三方脚本不是沙箱代码，具有 AE 脚本权限。
 
-Pages 只发布 index.html 与 assets/。安装器和 ZIP 使用程序目录及四个默认 JSON 的白名单，版本来自 changelog.json。Windows 安装器使用所选 AE 的 `Support Files/Plug-ins/AeltToolkitWebView2`，仅 data 授予安装账户修改权限；更新前备份 data，保留个人文件及旧 CEP。macOS 使用 CEP 目录。网页无 CDN 运行时依赖；首屏粒子使用 WebGL，在离屏、隐藏及减少动态效果时停止逐帧渲染。
+Pages 发布 index.html、en/、assets/ 和 VitePress 使用文档构建产物 docs/；文档源目录为 docs/manual，内部记录不直接发布。安装器和 ZIP 使用程序目录及四个默认 JSON 的白名单，版本来自 changelog.json。Windows 安装器使用所选 AE 的 `Support Files/Plug-ins/AeltToolkitWebView2`，仅 data 授予安装账户修改权限；更新前备份 data，保留个人文件及旧 CEP。macOS 使用 CEP 目录。网页无 CDN 运行时依赖；首屏粒子使用 WebGL，在离屏、隐藏及减少动态效果时停止逐帧渲染。
 
 验证：`node --test tests/*.test.cjs`；浏览器交互测试见 `tests/browser.cjs`，需要 Playwright。模拟测试不替代 AE 2023 / 新版 AE 回归。
 

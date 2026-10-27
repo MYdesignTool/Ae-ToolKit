@@ -332,3 +332,17 @@ html:lang(en) .code-copy { max-width:45%; white-space:normal; }
 /* Language motion uses live elements. Glass never enters a snapshot or blur layer. */
 html[data-language-transition] { overflow-anchor:none; }
 .language-toggle[aria-busy=true] { cursor:progress; }
+
+/* Documentation shares the site's glass surfaces and responsive spacing. */
+.documentation { padding-top:24px; }
+.documentation-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:20px; max-width:990px; margin:0 auto; }
+.documentation-card { display:flex; flex-direction:column; padding:30px; color:var(--fg); }
+.documentation-index { color:var(--accent); font:11px/1.6 Consolas,monospace; letter-spacing:.08em; }
+.documentation-card h3 { font-size:21px; font-weight:620; margin:16px 0 12px; }
+.documentation-card p { color:var(--muted); font-size:13px; line-height:1.9; margin:0 0 24px; }
+.documentation-action { display:flex; justify-content:space-between; align-items:center; gap:16px; margin-top:auto; padding-top:18px; border-top:1px solid var(--glass-border); color:var(--accent); font-size:12px; }
+.documentation-action > span { font-size:20px; }
+.documentation-card:focus-visible { outline:2px solid var(--accent); outline-offset:5px; }
+@media (hover:hover) { .documentation-card:hover { transform:translateY(-3px); } }
+@media (max-width:768px) { .documentation-grid { grid-template-columns:1fr; } .documentation-card { padding:24px; } }
+@media (prefers-reduced-motion:reduce) { .documentation-card:hover { transform:none; } }

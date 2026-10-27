@@ -44,7 +44,7 @@ test('English generation keeps every release field and all section structure in 
  assert.ok(changelog.entries.some(entry=>entry.version===pageVersion),'published page version is retained in history');
  assert.ok(rendered.includes('Download '+pageVersion));
  assert.ok(renderEnglish(renderPage(source,selectRelease(changelog))).includes('Download '+changelog.version),'the development version can also be generated without publishing');
- assert.ok(rendered.includes('href="../assets/css/style.css?v=lang-motion2"'));
+ assert.ok(rendered.includes('href="../assets/css/style.css?v=docs1"'));
  assert.ok(rendered.includes('src="../assets/js/visuals.js?v=particles-half1"'));
  assert.ok(rendered.includes('Window → AE Local Toolkit (WebView2)'));
  assert.ok(rendered.includes('Plug-ins/AeltToolkitWebView2'));
@@ -60,4 +60,18 @@ test('missing translations fail explicitly and translated text is HTML escaped',
 test('Windows CRLF checkout renders the same multilingual page as LF checkout',()=>{
  const lf=source.replace(/\r\n?/g,'\n');
  assert.equal(renderEnglish(lf.replace(/\n/g,'\r\n')),renderEnglish(lf));
+});
+
+test('documentation links resolve to the same published pages from both language roots',()=>{
+ const english=renderEnglish(source);
+ const chineseLinks=[...source.matchAll(/href="(docs\/[^"]*)"[^>]*data-docs-link/g)].map(match=>match[1]);
+ const englishLinks=[...english.matchAll(/href="(\.\.\/docs\/[^"]*)"[^>]*data-docs-link/g)].map(match=>match[1]);
+ assert.equal(chineseLinks.length,5);
+ assert.deepEqual(englishLinks,chineseLinks.map(link=>'../'+link));
+ for(let i=0;i<chineseLinks.length;i++){
+  assert.equal(new URL(chineseLinks[i],'https://example.test/Ae-ToolKit/').href,new URL(englishLinks[i],'https://example.test/Ae-ToolKit/en/').href);
+ }
+ assert.ok(chineseLinks.includes('docs/users/'));
+ assert.ok(chineseLinks.includes('docs/developers/'));
+ assert.ok(chineseLinks.includes('docs/developers/architecture.html'));
 });

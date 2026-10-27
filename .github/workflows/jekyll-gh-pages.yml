@@ -2,7 +2,7 @@ name: Deploy static GitHub Pages
 on:
   push:
     branches: [main]
-    paths: [index.html, 'en/**', 'assets/**', 'scripts/localize-site.cjs', 'tests/localization.test.cjs', 'extension/data/changelog.json', 'scripts/sync-release.cjs', 'tests/release.test.cjs', '.github/workflows/jekyll-gh-pages.yml']
+    paths: ['docs/manual/**', 'docs/.vitepress/**', 'package.json', 'package-lock.json', index.html, 'en/**', 'assets/**', 'scripts/localize-site.cjs', 'tests/localization.test.cjs', 'extension/data/changelog.json', 'scripts/sync-release.cjs', 'tests/release.test.cjs', '.github/workflows/jekyll-gh-pages.yml']
   release:
     types: [published, edited]
   workflow_dispatch:
@@ -37,6 +37,14 @@ jobs:
       - uses: actions/checkout@v4
         with:
           ref: ${{ github.event_name == 'release' && github.event.repository.default_branch || github.sha }}
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version: 22
+          cache: npm
+      - name: Verify publication inputs
+        run: node scripts/release/check-public-files.cjs
+      - name: Install documentation dependencies
+        run: npm ci
       - name: Verify release rendering
         run: node --test tests/release.test.cjs tests/localization.test.cjs
       - name: Render the latest published stable release
@@ -45,6 +53,8 @@ jobs:
         run: |
           release_tag=$(gh api "repos/$GITHUB_REPOSITORY/releases/latest" --jq '.tag_name')
           node scripts/sync-release.cjs --site-only --release-tag "$release_tag"
+      - name: Build documentation
+        run: npm run docs:build
       - uses: actions/configure-pages@v5
       - name: Stage public files only
         run: |
@@ -52,6 +62,7 @@ jobs:
           cp index.html _site/
           cp -R assets _site/assets
           cp -R en _site/en
+          cp -R docs/.vitepress/dist _site/docs
           touch _site/.nojekyll
       - uses: actions/upload-pages-artifact@v3
         with:

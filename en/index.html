@@ -16,7 +16,7 @@
   <meta name="theme-color" content="#f1f5fb">
   <script>try{if(localStorage.getItem('theme')==='dark')document.documentElement.dataset.theme='dark';}catch(e){}</script>
   <link rel="icon" type="image/svg+xml" href="../assets/img/logo.svg?v=glass4">
-  <link rel="stylesheet" href="../assets/css/style.css?v=lang-motion2">
+  <link rel="stylesheet" href="../assets/css/style.css?v=docs1">
   <link rel="stylesheet" href="../assets/css/theme-light.css?v=lang1">
 </head>
 <body>
@@ -39,6 +39,7 @@
         <li><a href="#features">Features</a></li>
         <li><a href="#updates">Updates</a></li>
         <li><a href="#install">Install</a></li>
+        <li><a href="../docs/" data-docs-link>Documentation</a></li>
         <li><a href="https://github.com/MYdesignTool/Ae-ToolKit" target="_blank" rel="noopener">GitHub ↗</a></li>
       </ul>
       <a class="language-toggle" data-language-switch href="../?lang=zh" hreflang="zh-CN" lang="zh-CN" aria-label="切换中文" title="中文">中文</a>
@@ -55,11 +56,11 @@
   <section id="hero" class="hero">
     <div class="hero-layout container">
       <div class="hero-content">
-        <div class="hero-badge"><span class="status-dot"></span><span id="app-version" data-release-field="tag">v0.3.2</span><span class="badge-divider"></span>After Effects 2023+</div>
+        <div class="hero-badge"><span class="status-dot"></span><span id="app-version" data-release-field="tag">v0.5.1</span><span class="badge-divider"></span>After Effects 2023+</div>
         <h1 class="hero-title" id="hero-title" tabindex="-1"><span class="title-line">Make time</span><br><span class="title-line gradient-text">for creativity.</span></h1>
         <p class="hero-desc">Organize projects, reuse expressions, and launch your go-to scripts.<br>Your familiar workflow, together in one offline panel.</p>
         <div class="hero-actions">
-          <a data-release-link href="https://github.com/MYdesignTool/Ae-ToolKit/releases/tag/v0.3.2" class="btn btn-primary" data-download target="_blank" rel="noopener"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M12 3v12m-5-5l5 5 5-5M5 16v4h14v-4"/></svg><span data-download-label data-release-field="download">Download 0.3.2</span></a>
+          <a data-release-link href="https://github.com/MYdesignTool/Ae-ToolKit/releases/tag/v0.5.1" class="btn btn-primary" data-download target="_blank" rel="noopener"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M12 3v12m-5-5l5 5 5-5M5 16v4h14v-4"/></svg><span data-download-label data-release-field="download">Download 0.5.1</span></a>
           <a href="#features" class="btn btn-ghost">Explore features<span aria-hidden="true">↗</span></a>
         </div>
         <p class="hero-note">Free &amp; open source<span>·</span>Runs locally<span>·</span>Settings stay in the folder</p>
@@ -71,6 +72,28 @@
           <img class="particle-fallback" src="../assets/img/logo.svg?v=glass4" alt="" width="256" height="224">
         </button>
         <div class="particle-caption"><strong>AE TOOLKIT</strong></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== Documentation ===== -->
+  <section id="documentation" class="documentation section" aria-labelledby="documentation-title">
+    <div class="container">
+      <h2 class="section-title" id="documentation-title"><span class="eyebrow">Documentation</span>Start using. Keep building.</h2>
+      <p class="section-subtitle">Choose the guide that fits what you want to do.</p>
+      <div class="documentation-grid">
+        <a class="documentation-card glass" href="../docs/users/" data-docs-link>
+          <span class="documentation-index" aria-hidden="true">01 / GUIDE</span>
+          <h3>For users</h3>
+          <p>Installation, updates, project organization, batch expressions, local scripts, backups, and common questions.</p>
+          <span class="documentation-action">Start here<span aria-hidden="true">↗</span></span>
+        </a>
+        <a class="documentation-card glass" href="../docs/developers/" data-docs-link>
+          <span class="documentation-index" aria-hidden="true">02 / DEVELOP</span>
+          <h3>For developers</h3>
+          <p>Explore the architecture, Host bridge, data conventions, tests, and builds to extend the toolkit.</p>
+          <span class="documentation-action">Read the developer guide<span aria-hidden="true">↗</span></span>
+        </a>
       </div>
     </div>
   </section>
@@ -138,13 +161,13 @@
 
   <section id="updates" class="updates section">
     <div class="container">
-      <h2 class="section-title"><span class="eyebrow">Continually refining the details</span><span data-release-field="version">0.3.2</span> — what’s new.</h2>
+      <h2 class="section-title"><span class="eyebrow">Continually refining the details</span><span data-release-field="version">0.5.1</span> — what’s new.</h2>
       <p class="section-subtitle">A better expression editor. Chinese and English, ready to switch.</p>
       <article class="release-card glass">
-        <div class="release-banner"><img src="../assets/img/team-peek.webp" alt="The team’s cat-eared mascot holding onto the update card" width="1200" height="400" loading="lazy"><div class="release-banner-copy"><span>AE Toolkit</span><h3 data-release-field="tag">v0.3.2</h3><time data-release-date datetime="2026-10-20">2026.10.20</time></div></div>
-        <!-- release:notes:start --><div class="release-notes"><div><span class="feature-index">01</span><h3>A better place to write expressions</h3><p>Syntax highlighting, line numbers and error locations, with bracket completion and automatic indentation, make code easier to read.</p></div><div><span class="feature-index">02</span><h3>Format in one click. Undo in one step.</h3><p>Click Format or press Shift+Alt+F to tidy indentation, spacing and line breaks. Undo once to restore your draft.</p></div><div><span class="feature-index">03</span><h3>Switch languages instantly</h3><p>Choose Simplified Chinese or English in Settings. Keep drafts and undo history when switching, and remember your choice after reopening.</p></div></div>
+        <div class="release-banner"><img src="../assets/img/team-peek.webp" alt="The team’s cat-eared mascot holding onto the update card" width="1200" height="400" loading="lazy"><div class="release-banner-copy"><span>AE Toolkit</span><h3 data-release-field="tag">v0.5.1</h3><time data-release-date datetime="2026-10-21">2026.10.21</time></div></div>
+        <!-- release:notes:start --><div class="release-notes"><div><span class="feature-index">01</span><p>Add animation duration scales: 2x keeps the original timing, the faster 1x is the default, with 0.5x and Off also available. Respect system reduced motion.</p></div><div><span class="feature-index">02</span><p>Replace expression categories with editable tags, including multiple tags, untagged presets and legacy category compatibility.</p></div><div><span class="feature-index">03</span><p>Filter expressions by name, by tag, or by both at once.</p></div><div><span class="feature-index">04</span><p>Add a Windows AEGP + WebView2 panel with Microsoft Pinyin candidates following the caret. Retain CEP on macOS.</p></div><div><span class="feature-index">05</span><p>Add a searchable organizer folder tree with nested folder creation. Press Enter to turn extensions and ignored composition names into removable tags.</p></div><div><span class="feature-index">06</span><p>Clarify scheme saving with separate built-in presets and personal schemes, unsaved-change prompts, bilingual copy and compact layouts.</p></div><div><span class="feature-index">07</span><p>Add platform build and release automation: the Windows native installer backs up and migrates legacy CEP data, while macOS receives a CEP ZIP. Verify versions and SHA-256 checksums.</p></div></div>
         <!-- release:notes:end -->
-        <a class="release-link" data-release-link href="https://github.com/MYdesignTool/Ae-ToolKit/releases/tag/v0.3.2" target="_blank" rel="noopener">Full release notes and downloads<span aria-hidden="true">↗</span></a>
+        <a class="release-link" data-release-link href="https://github.com/MYdesignTool/Ae-ToolKit/releases/tag/v0.5.1" target="_blank" rel="noopener">Full release notes and downloads<span aria-hidden="true">↗</span></a>
       </article>
     </div>
   </section>
@@ -178,7 +201,7 @@
   </section>
 
   <!-- ===== Project Structure ===== -->
-  <section id="structure" class="structure"><div class="container"><details class="developer-details glass"><summary>Project structure and development<span aria-hidden="true">+</span></summary><div class="developer-content"><p><code>client/</code>  panel UI ·  <code>host/</code>  AE host logic ·  <code>data/</code>  default data and personal settings</p><p>Personal data is saved in  <code>data/user-data.json</code>; the package contains only program files and built-in defaults.</p><a href="https://github.com/MYdesignTool/Ae-ToolKit/blob/main/extension/docs/architecture.md" target="_blank" rel="noopener">Read the architecture and maintenance guide ↗</a></div></details></div></section>
+  <section id="structure" class="structure"><div class="container"><details class="developer-details glass"><summary>Project structure and development<span aria-hidden="true">+</span></summary><div class="developer-content"><p><code>client/</code>  panel UI ·  <code>host/</code>  AE host logic ·  <code>data/</code>  default data and personal settings</p><p>Personal data is saved in  <code>data/user-data.json</code>; the package contains only program files and built-in defaults.</p><a href="../docs/developers/architecture.html" data-docs-link>Read the architecture and maintenance guide ↗</a></div></details></div></section>
 
   <!-- ===== Install ===== -->
   <section id="install" class="install section">
@@ -212,7 +235,7 @@
           <span class="step-line" aria-hidden="true"></span>
           <div class="step-body">
             <h4>Download the installer</h4>
-            <p>From  <a data-release-link href="https://github.com/MYdesignTool/Ae-ToolKit/releases/tag/v0.3.2" target="_blank" rel="noopener">GitHub Releases</a>, download the Windows installer  <code>aetoolkit-*.exe</code>.</p>
+            <p>From  <a data-release-link href="https://github.com/MYdesignTool/Ae-ToolKit/releases/tag/v0.5.1" target="_blank" rel="noopener">GitHub Releases</a>, download the Windows installer  <code>aetoolkit-*.exe</code>.</p>
           </div>
         </div>
         <div class="step glass">
@@ -243,7 +266,7 @@
           <span class="step-line" aria-hidden="true"></span>
           <div class="step-body">
             <h4>Download and extract</h4>
-            <p>From  <a data-release-link href="https://github.com/MYdesignTool/Ae-ToolKit/releases/tag/v0.3.2" target="_blank" rel="noopener">GitHub Releases</a> download the macOS CEP package <code>aetoolkit-v*-macos-cep.zip</code> and extract the  <code>AeLocalToolkit/</code>  folder.</p>
+            <p>From  <a data-release-link href="https://github.com/MYdesignTool/Ae-ToolKit/releases/tag/v0.5.1" target="_blank" rel="noopener">GitHub Releases</a> download the macOS CEP package <code>aetoolkit-v*-macos-cep.zip</code> and extract the  <code>AeLocalToolkit/</code>  folder.</p>
           </div>
         </div>
         <div class="step glass">
@@ -294,6 +317,7 @@ defaults write com.adobe.CSXS.11 PlayerDebugMode -bool true</code></pre>
       </div>
       <div class="footer-bottom">
         <div class="footer-links">
+          <a href="../docs/" data-docs-link>Documentation</a>
           <a href="https://github.com/MYdesignTool/Ae-ToolKit" target="_blank" rel="noopener">GitHub repository</a>
           <a href="https://github.com/MYdesignTool/Ae-ToolKit/issues" target="_blank" rel="noopener">Report an issue</a>
           <a href="https://github.com/MYdesignTool/Ae-ToolKit/blob/main/extension/License.md" target="_blank" rel="noopener">GPL v3.0 license</a>

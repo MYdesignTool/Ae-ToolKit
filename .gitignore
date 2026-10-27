@@ -23,3 +23,6 @@ extension/installer/dist/
 *.p12
 credentials.json
 secrets.json
+
+/docs/.vitepress/cache/
+/docs/.vitepress/dist/

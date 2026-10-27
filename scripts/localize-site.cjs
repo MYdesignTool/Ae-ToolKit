@@ -27,6 +27,7 @@ function renderEnglish(html, catalog = JSON.parse(fs.readFileSync(path.join(__di
   if (missing.size) throw Error('Missing English translations in assets/i18n/en.json:\n' + [...missing].join('\n'));
   result = result.replace('<html lang="zh-CN"', '<html lang="en"')
     .replace(/\b(src|href)="assets\//g, '$1="../assets/')
+    .replace(/\bhref="docs\//g, 'href="../docs/')
     .replace('<link rel="canonical" href="https://mydesigntool.github.io/Ae-ToolKit/">', '<link rel="canonical" href="https://mydesigntool.github.io/Ae-ToolKit/en/">')
     .replace(/<a class="language-toggle"[^>]*>[\s\S]*?<\/a>/, '<a class="language-toggle" data-language-switch href="../?lang=zh" hreflang="zh-CN" lang="zh-CN" aria-label="切换中文" title="中文">中文</a>');
   return '<!-- Generated from index.html and assets/i18n/en.json by scripts/sync-release.cjs. -->\n' + result;

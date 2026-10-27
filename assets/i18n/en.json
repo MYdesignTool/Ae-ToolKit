@@ -158,6 +158,15 @@
     "一键格式化与撤销": "One-click formatting and undo",
     "写表达式更顺手，中英界面随时切换。": "A better expression editor. Chinese and English, ready to switch.",
     "Windows 新增 AEGP + WebView2 原生面板，微软拼音候选窗跟随光标；macOS 保留 CEP。": "Add a Windows AEGP + WebView2 panel with Microsoft Pinyin candidates following the caret. Retain CEP on macOS.",
-    "新增按平台自动构建与发布流程：Windows 原生安装器支持备份迁移旧 CEP 数据，macOS 提供 CEP ZIP，并校验版本与 SHA-256。": "Add platform build and release automation: the Windows native installer backs up and migrates legacy CEP data, while macOS receives a CEP ZIP. Verify versions and SHA-256 checksums."
+    "新增按平台自动构建与发布流程：Windows 原生安装器支持备份迁移旧 CEP 数据，macOS 提供 CEP ZIP，并校验版本与 SHA-256。": "Add platform build and release automation: the Windows native installer backs up and migrates legacy CEP data, while macOS receives a CEP ZIP. Verify versions and SHA-256 checksums.",
+    "使用文档": "Documentation",
+    "从上手，到接着开发。": "Start using. Keep building.",
+    "按你的需要，选择一条清楚的阅读路线。": "Choose the guide that fits what you want to do.",
+    "面向普通用户": "For users",
+    "安装与更新、工程整理、批量表达式、本地脚本集，以及数据备份与常见问题。": "Installation, updates, project organization, batch expressions, local scripts, backups, and common questions.",
+    "开始使用": "Start here",
+    "面向二次开发者": "For developers",
+    "了解项目架构、Host 桥接接口、数据约定和测试构建，在现有工具上继续开发。": "Explore the architecture, Host bridge, data conventions, tests, and builds to extend the toolkit.",
+    "阅读开发指南": "Read the developer guide"
   }
 }
