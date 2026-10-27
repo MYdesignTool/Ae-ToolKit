@@ -137,12 +137,12 @@ jobs:
           if ($LASTEXITCODE) { throw 'Browser test dependency failed' }
           $env:NODE_PATH=Join-Path $PWD '.artifacts/ci-tools/node_modules'
           $env:AELT_TEST_NATIVE='1'
-          foreach ($test in @('browser','preferences-tags-browser','organizer-tags-browser')) {
+          foreach ($test in @('browser','preferences-tags-browser','organizer-tags-browser','completion-browser','expression-transform-browser','selects-browser')) {
             node "tests/$test.cjs"
             if ($LASTEXITCODE) { throw "Native UI regression failed: $test" }
           }
           Remove-Item Env:AELT_TEST_NATIVE
-          foreach ($test in @('startup','editor-browser','editor-ime-browser','changelog')) {
+          foreach ($test in @('startup','editor-browser','editor-ime-browser','changelog','completion-browser','expression-transform-browser','selects-browser','popup-motion-browser')) {
             node "tests/$test.cjs"
             if ($LASTEXITCODE) { throw "CEP regression failed: $test" }
           }

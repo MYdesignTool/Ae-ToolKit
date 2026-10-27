@@ -12,7 +12,7 @@ const userSidebar = [
     { text: '本地脚本集', link: '/users/scripts' }
   ] },
   { text: '维护与排查', items: [
-    { text: '通用设置', link: '/users/settings' },
+    { text: '设置与偏好', link: '/users/settings' },
     { text: '数据与备份', link: '/users/backup' },
     { text: '常见问题', link: '/users/faq' }
   ] }

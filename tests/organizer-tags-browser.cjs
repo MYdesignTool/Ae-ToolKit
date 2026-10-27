@@ -30,6 +30,16 @@ async function main(){
   async function shot(file){await page.locator('#toastContainer').evaluate(el=>el.textContent='');await page.screenshot({path:path.join(output,file),animations:'disabled'});}
   async function composing(input,assertPending){await input.evaluate(el=>{el.dispatchEvent(new CompositionEvent('compositionstart',{bubbles:true}));el.dispatchEvent(new KeyboardEvent('keydown',{key:'Enter',keyCode:229,isComposing:true,bubbles:true}));});await assertPending();await input.evaluate(el=>el.dispatchEvent(new CompositionEvent('compositionend',{bubbles:true})));await input.press('Enter');}
   await ready();const original=await draft();assert.equal(await page.locator('#schemeNameInput').count(),0);assert.equal(await page.locator('#saveSchemeBtn').textContent(),'另存为我的方案');
+  const save=page.locator('#saveSchemeBtn'),discard=page.locator('#discardSchemeBtn');
+  assert.equal(await save.isVisible(),false);assert.equal(await discard.isVisible(),false);
+  await page.locator('#addRuleBtn').click();assert.equal(await save.isVisible(),true);assert.equal(await discard.isVisible(),true);
+  await discard.click();await page.locator('#inputModal').waitFor({state:'visible'});assert.equal(await page.locator('#inputModalTitle').textContent(),'放弃修改并还原');
+  await page.locator('#inputModalCancel').click();assert.equal((await draft()).rules.length,original.rules.length+1,'cancel retains edits');
+  await discard.click();await page.locator('#inputModalOk').click();assert.deepEqual((await draft()).rules,original.rules);
+  assert.equal(await save.isVisible(),false);assert.equal(await discard.isVisible(),false);assert.equal(await page.evaluate(()=>__saveCalls.length),0,'restore never writes to the host');
+  await page.locator('[data-view=settings]').click();await page.locator('.switch').filter({has:page.locator('#quietModeToggle')}).click();await page.locator('[data-view=organizer]').click();
+  await page.locator('#addRuleBtn').click();await discard.click();assert.equal(await page.locator('#inputModal').isVisible(),false,'quiet mode skips confirmation');assert.deepEqual((await draft()).rules,original.rules);
+  await page.locator('[data-view=settings]').click();await page.locator('.switch').filter({has:page.locator('#quietModeToggle')}).click();await page.locator('[data-view=organizer]').click();
   // Long lists stay at the selected folder; selection preserves DOM and scroll position.
   await page.evaluate(()=>AELT.state.organizerSchemes.push({id:'test-paths',rules:Array.from({length:80},(_,i)=>({path:'Library/Shot '+String(i).padStart(3,'0')+'/Render'}))}));
   await direct('Library/Shot 079/Render');await folder().click();
@@ -57,7 +67,13 @@ async function main(){
   await exts(1).locator('input').fill('PNG');await exts(1).locator('input').press('Enter');await page.locator('#saveSchemeBtn').click();assert.equal(await page.locator('#inputModal').isVisible(),false);await exts(1).getByRole('button',{name:'移除标签 PNG',exact:true}).click();
   assert.equal(await page.evaluate(()=>AELT.state.organizerSchemes[0].rules.find(r=>r.path==='Image').path),'Image');await page.locator('#saveSchemeBtn').click();await page.locator('#inputModalCancel').click();assert.equal((await draft()).rules[0].path,'素材库/角色/立绘');
   await page.locator('#saveSchemeBtn').click();await name('精简整理方案');await saved();const personal=await draft();assert.notEqual(personal.id,'preset-default');assert.equal(await page.locator('#saveSchemeBtn').isDisabled(),true);
+  assert.equal(await save.isVisible(),false);assert.equal(await discard.isVisible(),false);
+  await menu('renameSchemeBtn');await name('临时改名');await page.locator('#addRuleBtn').click();
+  const writesBeforeRestore=await page.evaluate(()=>__saveCalls.length);await discard.click();await page.locator('#inputModalOk').click();
+  assert.equal((await draft()).id,personal.id);assert.equal((await draft()).name,personal.name);assert.deepEqual((await draft()).rules,personal.rules);
+  assert.equal(await page.evaluate(()=>__saveCalls.length),writesBeforeRestore);assert.equal(await save.isVisible(),false);assert.equal(await discard.isVisible(),false);
   await ext.fill('heic');await ext.press('Enter');await page.evaluate(()=>window.__failSave=true);await page.locator('#saveSchemeBtn').click();await page.waitForFunction(()=>document.getElementById('schemeSaveStatus').textContent==='保存失败，修改仍保留');assert.ok((await draft()).rules[0].extensions.includes('HEIC'));
+  assert.equal(await save.isVisible(),true);assert.equal(await discard.isVisible(),true);assert.equal(await discard.isEnabled(),true);
   await page.evaluate(()=>{window.__failSave=false;window.__saveDelay=300;});await page.locator('#saveSchemeBtn').click();assert.equal(await folder().isDisabled(),true);assert.equal(await page.locator('#schemeSelect').isDisabled(),true);await saved();await page.evaluate(()=>window.__saveDelay=0);assert.equal((await draft()).id,personal.id);
   await menu('renameSchemeBtn');await name('我的素材方案');await page.locator('#saveSchemeBtn').click();await saved();await ext.fill('apng');await ext.press('Enter');await page.locator('#schemeSelect').selectOption('preset-default');await page.locator('#inputModalCancel').click();assert.ok((await draft()).rules[0].extensions.includes('APNG'));assert.equal((await draft()).id,personal.id);
   await page.locator('#schemeSelect').selectOption('preset-default');await page.locator('#inputModalOk').click();assert.deepEqual((await draft()).rules,original.rules);await page.locator('#schemeSelect').selectOption(personal.id);assert.ok(!(await draft()).rules[0].extensions.includes('APNG'));
@@ -69,6 +85,15 @@ async function main(){
   await page.setViewportSize({width:360,height:520});await folder().click();await page.locator('#pathPickerNewBtn').click();await page.locator('#pathPickerNewName').fill('新目录');await shot('folder-picker-360.png');const b=await page.locator('#pathPicker').boundingBox();assert.ok(b.x>=0&&b.x+b.width<=360&&b.y>=0&&b.y+b.height<=520,JSON.stringify(b));await page.keyboard.press('Escape');await page.keyboard.press('Escape');assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false);
   await page.setViewportSize({width:626,height:900});await page.locator('[data-view=settings]').click();await page.locator('#languageSelect').selectOption('zh-CN');await page.locator('[data-view=organizer]').click();await shot('organizer-saved-626.png');await card().screenshot({path:path.join(output,'organizer-rule-zh.png')});await page.reload();await ready();await page.locator('#schemeSelect').selectOption(personal.id);assert.equal((await draft()).name,'我的素材方案');assert.equal((await draft()).rules[0].path,'素材库/角色/立绘');assert.ok((await draft()).rules[0].extensions.includes('HEIC'));
   await page.locator('[data-view=settings]').click();assert.deepEqual(await names.locator('.rule-tag-name').allTextContents(),['Main','主合成','Main Comp','总合成']);while(await names.locator('.rule-tag-remove').count())await names.locator('.rule-tag-remove').first().click();await page.evaluate(()=>AELT.settings.persist());await page.waitForFunction(()=>JSON.parse(localStorage.getItem('test-settings')).ignoreMainCompNames.length===0);await page.reload();await ready();await page.locator('[data-view=settings]').click();assert.equal(await names.locator('.rule-tag').count(),0,'explicit empty list never restores Main');
+  await page.locator('[data-view=organizer]').click();await page.locator('#schemeSelect').selectOption(personal.id);
+  const clean=await draft();await page.locator('#addRuleBtn').click();
+  await page.locator('[data-view=settings]').click();await page.locator('#languageSelect').selectOption('en');await page.locator('[data-view=organizer]').click();
+  await page.setViewportSize({width:360,height:520});assert.equal(await discard.textContent(),'Discard & restore');
+  for(const button of [save,discard]){const rect=await button.boundingBox();assert.ok(rect.x>=0&&rect.x+rect.width<=360,'draft actions fit the narrow panel');}
+  await shot('organizer-dirty-actions-360.png');await discard.click();assert.equal(await page.locator('#inputModalTitle').textContent(),'Discard & restore');await page.locator('#inputModalOk').click();
+  assert.deepEqual((await draft()).rules,clean.rules);assert.equal(await save.isVisible(),false);assert.equal(await discard.isVisible(),false);
+  await menu('newSchemeBtn');await name('Discarded new draft');assert.equal(await discard.isVisible(),true);await discard.click();await page.locator('#inputModalOk').click();
+  assert.equal(await page.locator('#schemeSelect option').filter({hasText:'Discarded new draft'}).count(),0);assert.equal(await save.isVisible(),false);assert.equal(await discard.isVisible(),false);
   assert.deepEqual(errors,[]);console.log('Organizer passed: tree picker/create/cancel/paste, save-as/in-place/rename/copy/delete, draft guards/failures, immutable presets, suffix/name tags, IME protection, bilingual UI, narrow layout, host payload and reload.');
  }finally{await browser.close();}
 }

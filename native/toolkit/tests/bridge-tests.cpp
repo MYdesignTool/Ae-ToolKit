@@ -36,6 +36,9 @@ int main(int argc,char** argv){
         const auto root=(std::filesystem::current_path()/L"extension").generic_wstring();std::ifstream file(std::filesystem::path(L"extension/host/index.jsx"),std::ios::binary);std::string source{std::istreambuf_iterator<char>(file),std::istreambuf_iterator<char>()};
         std::ofstream output(argv[1],std::ios::binary);output<<"{";bool first=true;
         for(const auto method:methods){if(!first)output<<",";first=false;output<<utf8(aelt::native_panel::wire::quote(method))<<":"<<utf8(aelt::native_panel::wire::quote(script(root,wide(source),method,method==L"AELT_setModuleBase"?L"["+aelt::native_panel::wire::quote(root)+L"]":L"[]")));}
+        output<<",\"nativeReload\":"<<utf8(aelt::native_panel::wire::quote(script(root,wide(source),L"AELT_setModuleBase",L"["+aelt::native_panel::wire::quote(root)+L",true]")));
+        output<<",\"foreignRoot\":"<<utf8(aelt::native_panel::wire::quote(script(root,wide(source),L"AELT_setModuleBase",L"[\"C:/not-the-native-root\",true]")));
+        output<<",\"invalidReload\":"<<utf8(aelt::native_panel::wire::quote(script(root,wide(source),L"AELT_setModuleBase",L"["+aelt::native_panel::wire::quote(root)+L",\"true\"]")));
         output<<",\"invalidArguments\":"<<utf8(aelt::native_panel::wire::quote(script(root,wide(source),L"AELT_ping",L"not valid \" JSON\n")))<<"}";
     }
     std::cout<<checks<<" bridge checks, "<<failures<<" failures\n";return failures?1:0;

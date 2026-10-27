@@ -13,6 +13,9 @@ const cepState={marker:'CEP unchanged'},cepPing=()=> 'CEP ping';env.context.AELo
 function run(name){return JSON.parse(vm.runInContext(scripts[name],env.context));}
 assert.equal(run('AELT_setModuleBase').ok,true);
 assert.equal(run('AELT_ping').appVersion,'23.5');
+assert.equal(run('nativeReload').ok,true,'panel reload accepts the same root and an explicit boolean reload flag');
+assert.equal(run('foreignRoot').ok,false,'reload cannot change the native module root');
+assert.equal(run('invalidReload').ok,false,'reload flag must be a boolean');
 assert.equal(run('AELT_bootstrap').ok,true);
 assert.equal(run('AELT_loadSettings').ok,true);
 assert.equal(run('AELT_loadOrganizerSchemes').ok,true);

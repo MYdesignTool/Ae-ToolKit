@@ -16,13 +16,13 @@ AELocalToolkit.returnResult = function (result) {
 AELocalToolkit.error = function (error) {
   return AELocalToolkit.returnResult({ ok: false, messages: [String(error)] });
 };
-function AELT_setModuleBase(path) {
+function AELT_setModuleBase(path, reload) {
   var root, file = null;
   AELocalToolkit.loadErrors = [];
   try {
     root = new Folder(path);
     if (!new File(root.fullName + '/CSXS/manifest.xml').exists) throw new Error('扩展根目录无效');
-    if (AELocalToolkit.moduleBase === root.fullName && AELocalToolkit.ready) {
+    if (!reload && AELocalToolkit.moduleBase === root.fullName && AELocalToolkit.ready) {
       return AELocalToolkit.returnResult({ ok: true, moduleBase: root.fullName });
     }
     AELocalToolkit.moduleBase = root.fullName;
@@ -82,9 +82,9 @@ function AELT_organizeProjectWithScheme(scheme) {
   try { return AELocalToolkit.returnResult(AELocalToolkit.organizer.organizeProjectWithScheme(scheme)); }
   catch (e) { return AELocalToolkit.error(e); }
 }
-function AELT_getSelectedPropertySummary() { return AELocalToolkit.returnResult(AELocalToolkit.expressions.getSelectedPropertySummary()); }
-function AELT_applyExpression(expression, overwriteExisting, expectedSelection) { return AELocalToolkit.returnResult(AELocalToolkit.expressions.applyExpression(expression, overwriteExisting, expectedSelection)); }
-function AELT_removeExpressions(expectedSelection) { return AELocalToolkit.returnResult(AELocalToolkit.expressions.removeExpressions(expectedSelection)); }
+function AELT_getSelectedPropertySummary(targets) { return AELocalToolkit.returnResult(AELocalToolkit.expressions.getSelectedPropertySummary(targets)); }
+function AELT_applyExpression(expression, overwriteExisting, expectedSelection, targets) { return AELocalToolkit.returnResult(AELocalToolkit.expressions.applyExpression(expression, overwriteExisting, expectedSelection, targets)); }
+function AELT_removeExpressions(expectedSelection, targets) { return AELocalToolkit.returnResult(AELocalToolkit.expressions.removeExpressions(expectedSelection, targets)); }
 function AELT_selectScriptFolder(language) {
   var folder = Folder.selectDialog(language === 'en' ? 'Choose script folder' : '选择脚本文件夹');
   return AELocalToolkit.returnResult({ ok: true, path: folder ? folder.fsName : '' });

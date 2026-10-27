@@ -22,6 +22,6 @@ node --test tests/*.test.cjs
 
 ## 开发版本与正式版本
 
-`main` 中可能包含尚未发布的功能。对已发布安装包做兼容修改时，先切换到对应 Release 标签，再核对该版本源码。当前正式版为 0.5.1，平台构建与发布约定见[自动构建说明](https://github.com/MYdesignTool/Ae-ToolKit/blob/main/docs/release-automation.md)。
+`main` 中可能包含尚未发布的功能。对已发布安装包做兼容修改时，先切换到对应 Release 标签，再核对该版本源码。当前正式版为 0.6.1，平台构建与发布约定见[自动构建说明](https://github.com/MYdesignTool/Ae-ToolKit/blob/main/docs/release-automation.md)。
 
 项目采用 [GPL v3.0](https://github.com/MYdesignTool/Ae-ToolKit/blob/main/License.md)。复用和分发时请阅读许可证，并保留第三方依赖的许可说明。

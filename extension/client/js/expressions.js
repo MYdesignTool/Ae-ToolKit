@@ -1,4 +1,71 @@
 /* Preserve the original search + dropdown + editor workflow. */
+var expressionSelectionRequest = 0, expressionSelectionPending = 0;
+var expressionTagSelection = [];
+var expressionTransformSelection = [], expressionTargetsOpen = false, expressionTargetsCloseTimer = null;
+var expressionTransformTargets = [
+  {id:'anchorPoint', label:'锚点'}, {id:'position', label:'位置'}, {id:'scale', label:'缩放'},
+  {id:'rotation', label:'旋转 / Z 旋转'}, {id:'opacity', label:'不透明度'},
+  {id:'orientation', label:'方向（3D）'}, {id:'xRotation', label:'X 旋转（3D）'}, {id:'yRotation', label:'Y 旋转（3D）'}
+];
+function getExpressionTransformTargets() {
+  return expressionTransformSelection.slice();
+}
+function cancelExpressionTargetsClose() {
+  clearTimeout(expressionTargetsCloseTimer); expressionTargetsCloseTimer = null;
+}
+function scheduleExpressionTargetsClose() {
+  cancelExpressionTargetsClose();
+  // Allow the pointer to cross the gap between the button and its floating panel.
+  expressionTargetsCloseTimer = setTimeout(function () { closeExpressionTransformTargets(false); }, 160);
+}
+function closeExpressionTransformTargets(restoreFocus) {
+  cancelExpressionTargetsClose();
+  if (!expressionTargetsOpen) return;
+  expressionTargetsOpen = false;
+  var panel = $('transformTargetsPanel'); panel.setAttribute('aria-hidden', 'true'); panel.style.pointerEvents = 'none';
+  els.transformTargetsBtn.setAttribute('aria-expanded', 'false');
+  if (panel.contains(document.activeElement)) document.activeElement.blur();
+  if (restoreFocus && !els.transformTargetsBtn.hidden) els.transformTargetsBtn.focus();
+  animatePopup(panel, false, function () { panel.hidden = true; });
+}
+function positionExpressionTransformTargets() {
+  if (!expressionTargetsOpen) return;
+  var panel = $('transformTargetsPanel'), button = els.transformTargetsBtn;
+  if (button.hidden || !button.closest('.view.active')) { closeExpressionTransformTargets(false); return; }
+  var rect = button.getBoundingClientRect(), width = Math.min(360, window.innerWidth - 24);
+  var below = window.innerHeight - rect.bottom - 8, above = rect.top - 8;
+  if (!panel.dataset.popupSide) panel.dataset.popupSide = below >= 280 || below >= above ? 'below' : 'above';
+  var down = panel.dataset.popupSide === 'below', available = down ? below : above;
+  panel.style.width = width + 'px'; panel.style.left = Math.max(12, Math.min(rect.right - width, window.innerWidth - width - 12)) + 'px';
+  panel.style.maxHeight = Math.max(100, Math.min(440, available - 12)) + 'px';
+  var top = down ? rect.bottom + 8 : rect.top - panel.offsetHeight - 8;
+  panel.style.top = Math.max(12, Math.min(top, window.innerHeight - panel.offsetHeight - 12)) + 'px';
+}
+function changeExpressionTransformTargets() {
+  expressionTransformSelection = Array.from($('transformTargetOptions').querySelectorAll('input:checked')).map(function (input) { return input.value; });
+  if (state.selection) { state.selection.supported = 0; state.selection.existing = 0; }
+  syncExpressionEditor(); refreshSelection();
+}
+function showExpressionTransformTargets(focusOptions) {
+  cancelExpressionTargetsClose();
+  if (expressionTargetsOpen) {
+    if (focusOptions) $('transformTargetOptions').querySelector('input').focus();
+    return;
+  }
+  if (state.expressionBusy || !state.selection || state.selection.mode !== 'layers') return;
+  var panel = $('transformTargetsPanel'), options = $('transformTargetOptions'), selected = getExpressionTransformTargets();
+  options.textContent = '';
+  expressionTransformTargets.forEach(function (target) {
+    var label = document.createElement('label'), checkbox = document.createElement('input'), text = document.createElement('span');
+    checkbox.type = 'checkbox'; checkbox.value = target.id; checkbox.checked = selected.indexOf(target.id) >= 0;
+    text.textContent = t(target.label); label.appendChild(checkbox); label.appendChild(text); options.appendChild(label);
+  });
+  expressionTargetsOpen = true; panel.hidden = false; panel.style.pointerEvents = ''; panel.removeAttribute('aria-hidden'); panel.dataset.popupSide = '';
+  els.transformTargetsBtn.setAttribute('aria-expanded', 'true');
+  positionExpressionTransformTargets();
+  if (focusOptions) options.querySelector('input').focus();
+  animatePopup(panel, true);
+}
 function selectedExpression() { return state.expressions.find(function (item) { return item.id === state.selectedExpressionId; }); }
 function normalizeExpressionTags(value) {
   var tags = Array.isArray(value) ? value : String(value || '').split(/[,，\n]+/);
@@ -10,6 +77,40 @@ function expressionTags(item) {
   return normalizeExpressionTags((item.tags || []).concat(item.category ? [item.category] : []));
 }
 function expressionTagLabel(item, tag) { return item.builtin ? t(tag) : tag; }
+function getExpressionTagOptions() {
+  var tags = new Map();
+  state.expressions.forEach(function (item) {
+    expressionTags(item).forEach(function (tag) { if (!tags.has(tag)) tags.set(tag, expressionTagLabel(item, tag)); });
+  });
+  return Array.from(tags).map(function (tag) { return {value:tag[0], label:tag[1]}; }).sort(function (a, b) { return a.label.localeCompare(b.label); });
+}
+function renderExpressionTagFilter() {
+  var options = getExpressionTagOptions(), tags = $('expressionFilterTags');
+  expressionTagSelection = expressionTagSelection.filter(function (tag) { return options.some(function (option) { return option.value === tag; }); });
+  $('expressionsView').classList.toggle('has-tag-filters', expressionTagSelection.length > 0);
+  els.expressionTagFilter.textContent = '';
+  var placeholder = document.createElement('option'); placeholder.value = '';
+  placeholder.textContent = expressionTagSelection.length ? t('继续选择标签…') : t('全部标签');
+  placeholder.disabled = expressionTagSelection.length > 0; els.expressionTagFilter.appendChild(placeholder);
+  options.forEach(function (tag) {
+    if (expressionTagSelection.indexOf(tag.value) >= 0) return;
+    var option = document.createElement('option'); option.value = tag.value; option.textContent = tag.label; els.expressionTagFilter.appendChild(option);
+  });
+  els.expressionTagFilter.value = ''; tags.textContent = ''; tags.hidden = !expressionTagSelection.length;
+  expressionTagSelection.forEach(function (tag, index) {
+    var chip = document.createElement('span'), name = document.createElement('span'), remove = document.createElement('button');
+    var label = options.find(function (option) { return option.value === tag; }).label;
+    chip.className = 'rule-tag'; name.className = 'rule-tag-name'; name.textContent = label;
+    remove.type = 'button'; remove.className = 'rule-tag-remove'; remove.dataset.filterTagRemove = index;
+    remove.setAttribute('aria-label', t('移除筛选标签 {name}', {name:label}));
+    remove.innerHTML = '<svg viewBox="0 0 12 12" aria-hidden="true" focusable="false"><path d="M3 3l6 6M9 3l-6 6" /></svg>';
+    chip.appendChild(name); chip.appendChild(remove); tags.appendChild(chip);
+  });
+  if (expressionTagSelection.length) {
+    var clear = document.createElement('button'); clear.type = 'button'; clear.className = 'ghost filter-clear'; clear.dataset.filterTagsClear = '';
+    clear.textContent = t('清空'); clear.setAttribute('aria-label', t('清空标签筛选')); tags.appendChild(clear);
+  }
+}
 function expressionDirty() {
   var item = selectedExpression();
   return els.expressionCode.value !== (item ? item.code.replace(/\r\n?/g, '\n') : '');
@@ -26,29 +127,32 @@ function syncExpressionEditor() {
   els.editExpressionTagsBtn.disabled = busy;
   els.expressionTags.textContent = item ? (expressionTags(item).map(function (tag) { return expressionTagLabel(item, tag); }).join(' · ') || t('无标签')) : '';
   els.refreshSelectionBtn.disabled = busy;
-  els.applyExpressionBtn.disabled = busy || !els.expressionCode.value.trim();
+  var layers = state.selection && state.selection.mode === 'layers';
+  els.transformTargetsBtn.hidden = !layers; els.transformTargetsBtn.disabled = busy;
+  els.transformTargetsBtn.textContent = t('变换目标（{count}）', {count:getExpressionTransformTargets().length});
+  els.transformTargetsBtn.title = expressionTransformTargets.filter(function (target) { return getExpressionTransformTargets().indexOf(target.id) >= 0; }).map(function (target) { return t(target.label); }).join(' · ');
+  if (expressionTargetsOpen) {
+    if (busy || !layers) closeExpressionTransformTargets(false);
+    else {
+      $('transformTargetOptions').querySelectorAll('label').forEach(function (label, index) { label.querySelector('span').textContent = t(expressionTransformTargets[index].label); });
+      positionExpressionTransformTargets();
+    }
+  }
+  els.applyExpressionBtn.disabled = busy || !els.expressionCode.value.trim() || layers && !state.selection.supported;
   els.removeExpressionBtn.disabled = busy || !(state.selection && state.selection.existing);
-  els.applyExpressionBtn.textContent = busy && state.expressionOperation === 'apply' ? t('应用中…') : t('应用到选中属性');
+  els.applyExpressionBtn.textContent = busy && state.expressionOperation === 'apply' ? t('应用中…') : layers ? t('应用到图层变换') : t('应用到选中属性');
   els.removeExpressionBtn.textContent = busy && state.expressionOperation === 'remove' ? t('移除中…') : t('移除表达式');
   AELT.editor.sync();
 }
 function renderExpressions() {
   var query = els.expressionSearch.value.trim().toLowerCase();
-  var tagFilter = els.expressionTagFilter.value, tags = new Map();
-  state.expressions.forEach(function (item) {
-    expressionTags(item).forEach(function (tag) { if (!tags.has(tag)) tags.set(tag, expressionTagLabel(item, tag)); });
-  });
-  els.expressionTagFilter.innerHTML = '<option value="">' + escapeHtml(t('全部标签')) + '</option>' + Array.from(tags).sort(function (a, b) { return a[1].localeCompare(b[1]); }).map(function (tag) {
-    return '<option value="' + escapeHtml(tag[0]) + '">' + escapeHtml(tag[1]) + '</option>';
-  }).join('');
-  els.expressionTagFilter.value = tags.has(tagFilter) ? tagFilter : '';
-  tagFilter = els.expressionTagFilter.value;
+  renderExpressionTagFilter();
   var items = state.expressions.filter(function (item) {
-    return [item.name, AELT.i18n.builtin(item, 'name')].join(' ').toLowerCase().indexOf(query) >= 0 && (!tagFilter || expressionTags(item).indexOf(tagFilter) >= 0);
+    return [item.name, AELT.i18n.builtin(item, 'name')].join(' ').toLowerCase().indexOf(query) >= 0 && expressionTagSelection.every(function (tag) { return expressionTags(item).indexOf(tag) >= 0; });
   });
-  els.expressionList.innerHTML = "<select class=\"expression-select\" aria-label=\"" + escapeHtml(t("选择表达式")) + "\"><option value=\"\">" + (items.length ? t('选择表达式…') : t('没有匹配的表达式')) + '</option>' + items.map(function (item) {
+  els.expressionList.innerHTML = "<select id=\"expressionPresetSelect\" class=\"expression-select\" aria-label=\"" + escapeHtml(t("选择表达式")) + "\"><option value=\"\">" + (items.length ? t('选择表达式…') : t('没有匹配的表达式')) + '</option>' + items.map(function (item) {
     var labels = expressionTags(item).map(function (tag) { return expressionTagLabel(item, tag); });
-    return '<option value="' + escapeHtml(item.id) + '"' + (item.id === state.selectedExpressionId ? ' selected' : '') + '>' + escapeHtml(AELT.i18n.builtin(item, 'name') + (labels.length ? ' · ' + labels.join(' / ') : '')) + '</option>';
+    return '<option value="' + escapeHtml(item.id) + '" data-tags="' + escapeHtml(JSON.stringify(labels)) + '"' + (item.id === state.selectedExpressionId ? ' selected' : '') + '>' + escapeHtml(AELT.i18n.builtin(item, 'name')) + '</option>';
   }).join('') + '</select>';
   syncExpressionEditor();
 }
@@ -66,9 +170,17 @@ function selectExpression(id) {
 }
 function refreshSelection(callback) {
   if (!state.ready) { if (callback) callback({ok:false}); return; }
-  callHost('AELT_getSelectedPropertySummary', [], function (result) {
+  if (state.expressionBusy && !callback) return;
+  var request = ++expressionSelectionRequest;
+  expressionSelectionPending++;
+  callHost('AELT_getSelectedPropertySummary', [getExpressionTransformTargets()], function (result) {
+    expressionSelectionPending--;
+    if (request !== expressionSelectionRequest) return;
     state.selection = result.ok ? result : null;
-    els.selectionStatus.textContent = result.ok ? t('已选 {count} 个属性 · 已有表达式 {existing} 个', {count:result.supported, existing:result.existing}) + (result.skipped ? t(' · 不支持 {count} 个', {count:result.skipped}) : '') : result.messages.join(' ');
+    els.selectionStatus.textContent = result.ok ? (result.mode === 'layers' ?
+      t('已选 {layers} 个图层 · 目标 {count} 个属性 · 已有表达式 {existing} 个', {layers:result.layers, count:result.supported, existing:result.existing}) :
+      t('已选 {count} 个属性 · 已有表达式 {existing} 个', {count:result.supported, existing:result.existing})) +
+      (result.skipped ? t(' · 跳过 {count} 个不可用目标', {count:result.skipped}) : '') : result.messages.join(' ');
     els.selectionStatus.title = result.ok ? [result.comp].concat(result.names || []).join('\n') : result.messages.join(' ');
     syncExpressionEditor();
     if (callback) callback(result);
@@ -93,16 +205,19 @@ function runExpressionBatch(removing) {
   refreshSelection(function (summary) {
     if (!summary.ok || !summary.supported || (removing && !summary.existing)) {
       state.expressionBusy = false; syncExpressionEditor();
-      setStatus(summary.messages ? summary.messages.join(' ') : removing ? t('选中属性没有表达式。') : t('请先选择可应用表达式的属性。'));
+      var message = summary.messages && summary.messages.length ? summary.messages.join(' ') : summary.mode === 'layers' ? t('请先勾选可用的图层变换目标。') : removing && summary.supported ? t('选中属性没有表达式。') : t('请先选择可应用表达式的属性。');
+      setStatus(message); showToast(message, 'error');
       return;
     }
     function run() {
       state.expressionOperation = removing ? 'remove' : 'apply'; syncExpressionEditor();
       // Preserve the existing confirmation-before-overwrite policy and quiet-mode setting.
-      callHost(removing ? 'AELT_removeExpressions' : 'AELT_applyExpression', removing ? [summary.selectionKey] : [code, true, summary.selectionKey], function (result) { finishExpressionBatch(result, removing); });
+      callHost(removing ? 'AELT_removeExpressions' : 'AELT_applyExpression', removing ? [summary.selectionKey, summary.targets || getExpressionTransformTargets()] : [code, true, summary.selectionKey, summary.targets || getExpressionTransformTargets()], function (result) { finishExpressionBatch(result, removing); });
     }
     if (removing || summary.existing) {
-      confirmAction(t(removing ? '移除选中属性上的 {count} 个表达式？可在 AE 中撤销。' : '已有 {count} 个属性包含表达式，是否覆盖？', {count:summary.existing}), function (ok) {
+      var prompt = removing && summary.mode === 'layers' ? t('移除图层变换目标上的 {count} 个表达式？可在 AE 中撤销。', {count:summary.existing}) :
+        t(removing ? '移除选中属性上的 {count} 个表达式？可在 AE 中撤销。' : '已有 {count} 个属性包含表达式，是否覆盖？', {count:summary.existing});
+      confirmAction(prompt, function (ok) {
         if (ok) run(); else { state.expressionBusy = false; syncExpressionEditor(); }
       }, {title:removing ? t('移除表达式') : t('覆盖表达式'), confirmLabel:removing ? t('移除') : t('覆盖'), destructive:removing});
     } else run();
@@ -149,8 +264,24 @@ function deleteExpression() {
   }, {title:t('删除表达式'),confirmLabel:t('删除'),destructive:true});
 }
 function bindExpressionEvents() {
+  // Docked CEP panels do not always receive window focus when returning from the timeline.
+  // Read selected-property lists only while this view is visible, without overlapping requests.
+  window.setInterval(function () {
+    if (document.hidden || !$('expressionsView').classList.contains('active') || expressionSelectionPending) return;
+    refreshSelection();
+  }, 800);
   els.expressionSearch.addEventListener('input', renderExpressions);
-  els.expressionTagFilter.addEventListener('change', renderExpressions);
+  els.expressionTagFilter.addEventListener('change', function () {
+    var tag = els.expressionTagFilter.value;
+    if (tag && expressionTagSelection.indexOf(tag) < 0) expressionTagSelection.push(tag);
+    renderExpressions();
+  });
+  $('expressionFilterTags').addEventListener('click', function (event) {
+    var remove = event.target.closest('[data-filter-tag-remove]'), clear = event.target.closest('[data-filter-tags-clear]');
+    if (!remove && !clear) return;
+    if (clear) expressionTagSelection = []; else expressionTagSelection.splice(Number(remove.dataset.filterTagRemove), 1);
+    renderExpressions(); AELT.selects.control(els.expressionTagFilter).focus();
+  });
   els.editExpressionTagsBtn.addEventListener('click', function () { saveExpression(true); });
   els.expressionList.addEventListener('change', function (event) { if (event.target.matches('.expression-select')) selectExpression(event.target.value); });
   els.expressionCode.addEventListener('input', syncExpressionEditor);
@@ -159,6 +290,22 @@ function bindExpressionEvents() {
     if (event.key === 'Tab') { event.preventDefault(); event.target.setRangeText('  ', event.target.selectionStart, event.target.selectionEnd, 'end'); syncExpressionEditor(); }
   });
   els.refreshSelectionBtn.addEventListener('click', function () { refreshSelection(); });
+  var targetPanel = $('transformTargetsPanel');
+  els.transformTargetsBtn.addEventListener('mouseenter', function () { showExpressionTransformTargets(false); });
+  els.transformTargetsBtn.addEventListener('mouseleave', scheduleExpressionTargetsClose);
+  targetPanel.addEventListener('mouseenter', cancelExpressionTargetsClose);
+  targetPanel.addEventListener('mouseleave', scheduleExpressionTargetsClose);
+  // Retain button activation for keyboard and touch; hover never takes editor focus.
+  els.transformTargetsBtn.addEventListener('click', function () { showExpressionTransformTargets(true); });
+  $('transformTargetOptions').addEventListener('change', changeExpressionTransformTargets);
+  $('transformTargetsClose').addEventListener('click', function () { closeExpressionTransformTargets(true); });
+  $('transformTargetsAll').addEventListener('click', function () { targetPanel.querySelectorAll('input').forEach(function (input) { input.checked = true; }); changeExpressionTransformTargets(); });
+  $('transformTargetsNone').addEventListener('click', function () { targetPanel.querySelectorAll('input').forEach(function (input) { input.checked = false; }); changeExpressionTransformTargets(); });
+  targetPanel.addEventListener('keydown', function (event) { if (event.key === 'Escape' && !event.isComposing && event.keyCode !== 229) { event.preventDefault(); event.stopPropagation(); closeExpressionTransformTargets(true); } });
+  document.addEventListener('pointerdown', function (event) { if (expressionTargetsOpen && !targetPanel.contains(event.target) && event.target !== els.transformTargetsBtn) closeExpressionTransformTargets(false); });
+  document.addEventListener('focusin', function (event) { if (expressionTargetsOpen && !targetPanel.contains(event.target) && event.target !== els.transformTargetsBtn) closeExpressionTransformTargets(false); });
+  document.addEventListener('scroll', function (event) { if (expressionTargetsOpen && !targetPanel.contains(event.target)) positionExpressionTransformTargets(); }, true);
+  window.addEventListener('resize', positionExpressionTransformTargets);
   els.applyExpressionBtn.addEventListener('click', applyExpression);
   els.removeExpressionBtn.addEventListener('click', removeExpressions);
   els.saveExpressionBtn.addEventListener('click', function () { saveExpression(false); });

@@ -29,7 +29,46 @@ function showDialog(options, callback) {
   var modal = $('inputModal'), previous = document.activeElement;
   var ok = $('inputModalOk'), cancel = $('inputModalCancel'), field = $('inputModalField');
   var tagsField = $('inputModalTagsField'), tags = $('inputModalTags');
-  tagsField.hidden = !options.expression; tags.value = options.tags || '';
+  var tagBox = $('inputModalTagsEditor'), tagList = $('inputModalTagTokens'), tagComposing = false;
+  var tagSelect = $('inputModalTagSelect');
+  var tagTokens = options.expression ? normalizeExpressionTags(options.tags || []) : [];
+  function renderTags() {
+    tagList.textContent = '';
+    tagTokens.forEach(function (token, index) {
+      var chip = document.createElement('span'), name = document.createElement('span'), remove = document.createElement('button');
+      chip.className = 'rule-tag'; name.className = 'rule-tag-name'; name.textContent = token;
+      remove.type = 'button'; remove.className = 'rule-tag-remove'; remove.dataset.expressionTagRemove = index;
+      remove.setAttribute('aria-label', t('移除标签 {name}', {name:token}));
+      remove.innerHTML = '<svg viewBox="0 0 12 12" aria-hidden="true" focusable="false"><path d="M3 3l6 6M9 3l-6 6" /></svg>';
+      chip.appendChild(name); chip.appendChild(remove); tagList.appendChild(chip);
+    });
+    tagSelect.textContent = '';
+    var placeholder = document.createElement('option'); placeholder.value = ''; placeholder.textContent = t('选择已有标签…'); tagSelect.appendChild(placeholder);
+    if (options.expression) getExpressionTagOptions().forEach(function (tag) {
+      if (tagTokens.some(function (token) { return token.toLowerCase() === tag.value.toLowerCase(); })) return;
+      var option = document.createElement('option'); option.value = tag.value; option.textContent = tag.label; tagSelect.appendChild(option);
+    });
+    tagSelect.value = ''; tagSelect.disabled = tagSelect.options.length <= 1;
+  }
+  function commitTags() {
+    if (tagComposing) return;
+    tagTokens = normalizeExpressionTags(tagTokens.concat(normalizeExpressionTags(tags.value)));
+    tags.value = ''; renderTags();
+  }
+  tagsField.hidden = !options.expression; tags.value = ''; renderTags();
+  function startTagComposition() { tagComposing = true; }
+  function endTagComposition() { tagComposing = false; }
+  tags.addEventListener('compositionstart', startTagComposition);
+  tags.addEventListener('compositionend', endTagComposition);
+  tagBox.onclick = function (event) {
+    var remove = event.target.closest('[data-expression-tag-remove]');
+    if (remove) { tagTokens.splice(Number(remove.dataset.expressionTagRemove), 1); renderTags(); tags.focus(); }
+    else if (event.target === tagBox || event.target === tagList) tags.focus();
+  };
+  tagSelect.onchange = function () {
+    if (!tagSelect.value) return;
+    tagTokens = normalizeExpressionTags(tagTokens.concat([tagSelect.value])); renderTags(); tags.focus();
+  };
   $('inputModalTitle').textContent = options.title || t('确认操作');
   $('confirmMessage').textContent = options.message || '';
   $('confirmMessage').hidden = !options.message;
@@ -39,22 +78,28 @@ function showDialog(options, callback) {
   modal.style.display = 'flex';
   if (options.input) { field.focus(); field.select(); } else cancel.focus();
   function done(accepted) {
+    if (AELT.selects) AELT.selects.close(false);
+    if (accepted && options.expression) commitTags();
     modal.style.display = 'none';
     ok.onclick = null; cancel.onclick = null; modal.onclick = null; modal.onkeydown = null;
+    tagBox.onclick = null; tagSelect.onchange = null;
+    tags.removeEventListener('compositionstart', startTagComposition); tags.removeEventListener('compositionend', endTagComposition);
     var value = options.input ? (accepted ? field.value.trim() || null : null) : accepted;
     if (previous && previous.isConnected && !previous.disabled) previous.focus();
-    callback(options.expression && value ? {name:value, tags:tags.value} : value);
+    callback(options.expression && value ? {name:value, tags:tagTokens.slice()} : value);
   }
   ok.onclick = function () { done(true); };
   cancel.onclick = function () { done(false); };
   modal.onclick = function (event) { if (event.target === modal) done(false); };
   modal.onkeydown = function (event) {
-    if (event.isComposing || event.keyCode === 229) return;
+    if (event.isComposing || event.keyCode === 229 || event.target === tags && tagComposing) return;
     if (event.key === 'Escape') { event.preventDefault(); done(false); }
-    if (event.key === 'Enter' && (event.target === field || event.target === tags)) { event.preventDefault(); done(true); }
+    if (event.key === 'Enter' && event.target === tags && options.expression) { event.preventDefault(); commitTags(); return; }
+    if (event.key === 'Enter' && event.target === field) { event.preventDefault(); done(true); }
     if (event.key === 'Tab') {
       event.preventDefault();
-      var controls = options.expression ? [field, tags, cancel, ok] : options.input ? [field, cancel, ok] : [cancel, ok];
+      var controls = options.expression ? [field].concat(Array.from(tagList.querySelectorAll('button')), [tags, tagSelect, cancel, ok]).filter(function (control) { return !control.disabled; }) : options.input ? [field, cancel, ok] : [cancel, ok];
+      if (AELT.selects) controls = controls.map(AELT.selects.control);
       var index = controls.indexOf(document.activeElement);
       controls[(index + (event.shiftKey ? -1 : 1) + controls.length) % controls.length].focus();
     }

@@ -48,6 +48,15 @@
 
   function loadSettings() {
     setAnimationScale(AELT.settings.get('animationScale', 1));
+    var completionEnabled = AELT.settings.get('expressionCompletion', true) === true;
+    els.expressionCompletionToggle.checked = completionEnabled;
+    AELT.editor.setCompletionEnabled(completionEnabled);
+    var completionKey = AELT.settings.get('expressionCompletionKey', 'Enter') === 'Tab' ? 'Tab' : 'Enter';
+    els.expressionCompletionKeySelect.value = completionKey;
+    AELT.editor.setCompletionAcceptKey(completionKey);
+    var helpEnabled = AELT.settings.get('expressionHelp', true) === true;
+    els.expressionHelpToggle.checked = helpEnabled;
+    AELT.editor.setCompletionHelpEnabled(helpEnabled);
     state.quietMode = AELT.settings.get("quietMode", false) === true;
     if (els.quietModeToggle) els.quietModeToggle.checked = state.quietMode;
     state.debugMode = AELT.settings.get("debugMode", false) === true;
@@ -71,6 +80,7 @@
       if (fzLbl) fzLbl.classList.toggle("disabled", fzOff);
     }
     syncDebugTabVisibility();
+    if (AELT.selects) AELT.selects.refresh();
   }
 
   function renderChangelog() {
@@ -167,6 +177,33 @@ function animateMotion(element, frames, options) {
   var animation = element.animate(frames, options);
   animation._aeltMotionScale = state.animationScale;
   return animation;
+}
+// Shared popup motion uses the same speed/reduced-motion policy as the rest of the panel.
+// Interruptions continue from the rendered pose, so a quick reopen cannot hide the new session.
+function animatePopup(element, opening, complete) {
+  var previous = element._popupAnimation, style = getComputedStyle(element);
+  var pose = {opacity:style.opacity, transform:style.transform};
+  if (previous) { previous.onfinish = null; previous.cancel(); element._popupAnimation = null; }
+  element.dataset.popupMotion = opening ? 'opening' : 'closing';
+  if (!allowMotion()) {
+    element.dataset.popupMotion = opening ? 'open' : 'closed';
+    if (complete) complete();
+    return;
+  }
+  var above = element.classList.contains('is-above') || element.dataset.popupSide === 'above';
+  var offset = above ? 6 : -6;
+  var from = opening && !previous ? {opacity:0, transform:'translateY(' + offset + 'px)'} : pose;
+  var to = opening ? {opacity:1, transform:'translateY(0)'} : {opacity:0, transform:'translateY(' + offset + 'px)'};
+  var animation = animateMotion(element, [from, to], {
+    duration:opening ? 280 : 220, easing:opening ? 'cubic-bezier(.2,0,0,1)' : 'cubic-bezier(.4,0,1,1)', fill:'both'
+  });
+  element._popupAnimation = animation;
+  animation.onfinish = function () {
+    if (element._popupAnimation !== animation) return;
+    element._popupAnimation = null; animation.onfinish = null; animation.cancel();
+    element.dataset.popupMotion = opening ? 'open' : 'closed';
+    if (complete) complete();
+  };
 }
 function setAnimationScale(value) {
   state.animationScale = [0, 0.5, 1, 2].indexOf(value) >= 0 ? value : 1;

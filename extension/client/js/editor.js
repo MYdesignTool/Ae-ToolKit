@@ -1,6 +1,6 @@
 /* Offline JavaScript editing. Parsing never evaluates the user's expression. */
 AELT.editor = (function () {
-  var cm = null, diagnostic = null, timer = null;
+  var cm = null, diagnostic = null, timer = null, completion = null;
   function check(code) {
     if (!code.trim()) return null;
     try {
@@ -44,6 +44,7 @@ AELT.editor = (function () {
   }
   function format() {
     if (state.expressionBusy || !cm || !cm.getValue().trim()) return;
+    if (completion) completion.close();
     var source = cm.getValue();
     try {
       var syntaxError = check(source);
@@ -66,6 +67,7 @@ AELT.editor = (function () {
     }
   }
   function refreshLanguage() {
+    if (completion) completion.close();
     if (cm) {
       cm.setOption('screenReaderLabel', t('表达式内容'));
       cm.getInputField().setAttribute('aria-describedby', 'editorStatus');
@@ -89,6 +91,7 @@ AELT.editor = (function () {
         'Ctrl-Enter':function () { applyExpression(); }, 'Cmd-Enter':function () { applyExpression(); }
       }
     });
+    completion = AELT.completion.attach(cm);
     var input = cm.getInputField();
     input.addEventListener('compositionstart', function () { composing = true; compositionCommitted = false; });
     input.addEventListener('compositionend', function () { composing = false; compositionCommitted = true; });
@@ -113,6 +116,7 @@ AELT.editor = (function () {
     new ResizeObserver(function () { clearTimeout(timer); timer = setTimeout(function () { cm.refresh(); }, 0); }).observe(cm.getWrapperElement());
   }
   function setValue(code) {
+    if (completion) completion.close();
     code = String(code || '').replace(/\r\n?/g, '\n');
     if (cm && cm.getValue() !== code) { cm.setValue(code); cm.clearHistory(); }
     els.expressionCode.value = code;
@@ -121,8 +125,12 @@ AELT.editor = (function () {
   function sync() {
     if (!cm) return;
     cm.setOption('readOnly', state.expressionBusy);
+    if (state.expressionBusy && completion) completion.close();
     els.formatExpressionBtn.disabled = state.expressionBusy || !els.expressionCode.value.trim();
   }
   return {init:init, setValue:setValue, sync:sync, format:format, formatCode:formatCode, check:check,
+    setCompletionEnabled:function (enabled) { if (completion) completion.setEnabled(enabled); },
+    setCompletionAcceptKey:function (key) { if (completion) completion.setAcceptKey(key); },
+    setCompletionHelpEnabled:function (enabled) { if (completion) completion.setHelpEnabled(enabled); },
     refreshLanguage:refreshLanguage, getInstance:function () { return cm; }};
 })();

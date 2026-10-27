@@ -29,9 +29,12 @@ function searchRulePathNodes(nodes, query) {
 function closePathPicker(restoreFocus) {
   if (!pathPickerSession) return;
   var input = pathPickerSession.input;
-  pathPickerSession = null; $('pathPicker').hidden = true;
+  var popup = $('pathPicker'); pathPickerSession = null;
+  popup.style.pointerEvents = 'none'; popup.setAttribute('aria-hidden', 'true');
   input.setAttribute('aria-expanded', 'false');
+  if (popup.contains(document.activeElement)) document.activeElement.blur();
   if (restoreFocus && input.isConnected && !input.disabled) input.focus();
+  animatePopup(popup, false, function () { popup.hidden = true; });
 }
 function positionPathPicker() {
   if (!pathPickerSession) return;
@@ -41,6 +44,7 @@ function positionPathPicker() {
   popup.style.width = width + 'px'; popup.style.left = Math.max(12, Math.min(rect.left, window.innerWidth - width - 12)) + 'px';
   if (!pathPickerSession.side) pathPickerSession.side = below >= 360 || below >= above ? 'below' : 'above';
   var useBelow = pathPickerSession.side === 'below', available = useBelow ? below : above;
+  popup.dataset.popupSide = pathPickerSession.side;
   popup.style.maxHeight = Math.min(520, available < 240 ? window.innerHeight - 24 : available - 12) + 'px';
   var height = popup.getBoundingClientRect().height;
   var top = available < 240 ? 12 : useBelow ? rect.bottom + 8 : rect.top - height - 8;
@@ -230,9 +234,11 @@ function createRulePathEditor(container, path) {
     pathPickerSession = {input:input, refresh:refresh, selected:selected, active:selected, expanded:expanded, nodes:nodes, parents:new Set(nodes.map(function (node) { return node.parent; })), composing:false};
     $('pathPickerSearch').value = ''; $('pathPickerNewName').value = ''; $('pathPickerNewForm').hidden = true; $('pathPickerDirectForm').hidden = true;
     $('pathPickerDirectToggle').setAttribute('aria-expanded', 'false'); $('pathPicker').hidden = false; input.setAttribute('aria-expanded', 'true');
+    $('pathPicker').style.pointerEvents = ''; $('pathPicker').removeAttribute('aria-hidden');
     pathPickerError(''); renderPathPicker();
     focusPathPickerRow(Array.from($('pathPickerTree').children).find(function (row) { return row.dataset.pathValue === selected; }), false);
     $('pathPickerSearch').focus({preventScroll:true});
+    animatePopup($('pathPicker'), true);
   }
   input.addEventListener('click', open); container.querySelector('button').addEventListener('click', open);
   input.addEventListener('keydown', function (event) { if (!event.isComposing && event.keyCode !== 229 && ['Enter','ArrowDown',' '].indexOf(event.key) >= 0) { event.preventDefault(); open(); } });

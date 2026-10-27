@@ -1,5 +1,7 @@
 # 架构与加载流程
 
+0.6.1 共享前端新增 `expression-help.js`、`completion.js` 与 `selects.js`：离线词库与帮助使用 CodeMirror 原生输入和撤销历史；所有单选下拉共用带动画的可见控件，原 select 保留值和 change 事件。表达式标签筛选在会话中取全部所选标签的交集；变换目标仅在没有明确属性选择时解析。宿主使用显式 `if / else` 判断属性优先，避免旧 ExtendScript 连续三元表达式的结合顺序差异。详细边界见[共享模块说明](https://github.com/MYdesignTool/Ae-ToolKit/blob/main/extension/docs/architecture.md)。
+
 ## 目录与平台分工
 
 ```text

@@ -42,6 +42,9 @@ test('host loads ordered UTF-8 module text without evalFile path conversion',()=
  const reads=[],read=env.context.File.prototype.read;env.context.File.prototype.read=function(){if(this.fullName.includes('/host/')){assert.equal(this.encoding,'UTF-8');reads.push(this.fullName);}return read.call(this);};
  env.context.$={evalFile:()=>{throw Error('Cannot convert to encoded path');}};env.context.app={version:'24.0'};run(env.context,'extension/host/index.jsx');
  assert.equal(JSON.parse(env.call('AELT_setModuleBase("/extension")')).ok,true);assert.equal(reads.length,5);assert.equal(JSON.parse(env.call('AELT_bootstrap()')).expressions.length,2);assert.equal(JSON.parse(env.call('AELT_setModuleBase("/extension")')).ok,true);assert.equal(reads.length,5);
+ env.context.AELocalToolkit.expressions={stale:true};
+ assert.equal(JSON.parse(env.call('AELT_setModuleBase("/extension",true)')).ok,true);assert.equal(reads.length,10);
+ assert.equal(typeof env.context.AELocalToolkit.expressions.getSelectedPropertySummary,'function','panel reload replaces cached host modules');
  env.context.AELocalToolkit.ready=false;env.files.set('/extension/host/modules/launcher.jsx','AELocalToolkit.launcher = null;');const failed=JSON.parse(env.call('AELT_setModuleBase("/extension")'));assert.equal(failed.ok,false);assert.match(failed.messages[0],/launcher.jsx/);assert.equal(env.context.AELocalToolkit.ready,false);
  env.context.badLoaderMessage="Bad \"quoted\" JSON loader\nline two";env.files.set('/extension/host/lib/json.jsx','throw new Error(badLoaderMessage);');
  const missingJson=JSON.parse(env.call('AELT_setModuleBase("/extension")'));assert.equal(missingJson.ok,false);assert.match(missingJson.messages[0],/lib\/json.jsx/);assert.ok(missingJson.messages[0].includes('quoted'));assert.equal(JSON.parse(env.call('AELT_ping()')).ok,false);

@@ -43,6 +43,11 @@ AELocalToolkit.storage = (function () {
     if (!settings || typeof settings !== 'object' || settings instanceof Array) throw new Error('设置必须是 JSON 对象');
     if (settings.language !== undefined && settings.language !== 'zh-CN' && settings.language !== 'en') throw new Error('不支持的界面语言');
     if (settings.animationScale !== undefined && settings.animationScale !== 0 && settings.animationScale !== 0.5 && settings.animationScale !== 1 && settings.animationScale !== 2) throw new Error('不支持的动画耗时倍率');
+    if (settings.expressionCompletion !== undefined && typeof settings.expressionCompletion !== 'boolean') throw new Error('表达式代码补全设置必须为布尔值');
+    if (settings.expressionCompletionKey !== undefined && settings.expressionCompletionKey !== 'Enter' && settings.expressionCompletionKey !== 'Tab') throw new Error('不支持的补全接受按键');
+    if (settings.expressionHelp !== undefined && typeof settings.expressionHelp !== 'boolean') throw new Error('表达式函数说明设置必须为布尔值');
+    // Transform choices belong to a panel session; discard the old persisted preference.
+    delete settings.expressionTransformTargets;
     var arrays = ['scriptFavorites', 'userExpressions'];
     for (var i = 0; i < arrays.length; i++) if (settings[arrays[i]] !== undefined && !(settings[arrays[i]] instanceof Array)) throw new Error('设置列表格式错误：' + arrays[i]);
     var strings = ['compFolder', 'solidFolder', 'fallbackFolder', 'scriptFolder'];

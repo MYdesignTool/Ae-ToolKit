@@ -1,6 +1,9 @@
 {
   "language": "zh-CN",
   "animationScale": 1,
+  "expressionCompletion": true,
+  "expressionCompletionKey": "Enter",
+  "expressionHelp": true,
   "compFolder": "Comp",
   "solidFolder": "Solids",
   "fallbackFolder": "Footage",

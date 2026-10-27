@@ -75,6 +75,24 @@
       AELT.settings.set("quietMode", state.quietMode);
       syncDebugTabVisibility();
     });
+    els.expressionCompletionToggle.addEventListener('change', function () {
+      var enabled = els.expressionCompletionToggle.checked;
+      AELT.editor.setCompletionEnabled(enabled);
+      AELT.settings.set('expressionCompletion', enabled);
+      AELT.settings.persist();
+    });
+    els.expressionHelpToggle.addEventListener('change', function () {
+      var enabled = els.expressionHelpToggle.checked;
+      AELT.editor.setCompletionHelpEnabled(enabled);
+      AELT.settings.set('expressionHelp', enabled);
+      AELT.settings.persist();
+    });
+    els.expressionCompletionKeySelect.addEventListener('change', function () {
+      var key = els.expressionCompletionKeySelect.value;
+      AELT.editor.setCompletionAcceptKey(key);
+      AELT.settings.set('expressionCompletionKey', key);
+      AELT.settings.persist();
+    });
     els.ignoreMainCompToggle.addEventListener("change", function () {
       state.ignoreMainComp = els.ignoreMainCompToggle.checked;
       AELT.settings.set("ignoreMainComp", state.ignoreMainComp);
@@ -109,6 +127,7 @@
       "schemeSelect",
       "newSchemeBtn",
       "saveSchemeBtn",
+      "discardSchemeBtn",
       "deleteSchemeBtn",
       "schemeMenuBtn", "schemeMenu", "renameSchemeBtn", "copySchemeBtn", "schemeSaveStatus",
       "compFolderInput",
@@ -117,11 +136,12 @@
       "addRuleBtn",
       "refreshSelectionBtn",
       "selectionStatus",
+      "transformTargetsBtn",
       "expressionSearch",
       "expressionTagFilter", "expressionTags", "editExpressionTagsBtn", "animationScaleSelect",
       "expressionList",
       "expressionCode",
-      "formatExpressionBtn", "editorStatus", "languageSelect",
+      "formatExpressionBtn", "expressionCompletionToggle", "expressionHelpToggle", "expressionCompletionKeySelect", "editorStatus", "languageSelect",
       "applyExpressionBtn",
       "removeExpressionBtn",
       "saveExpressionBtn",
@@ -162,7 +182,7 @@
     document.querySelector('.tab[data-view="debug"]').click();
   }
   function init() {
-    cacheEls(); AELT.imeFocus.init(); AELT.i18n.init(); bindEvents(); bindScriptEvents(); bindExpressionEvents(); AELT.editor.init();
+    cacheEls(); AELT.imeFocus.init(); AELT.i18n.init(); bindEvents(); bindScriptEvents(); bindExpressionEvents(); AELT.editor.init(); AELT.selects.init();
     positionTabIndicator(false);
     window.addEventListener('resize', function () { positionTabIndicator(false); });
     window.addEventListener('focus', function () { if ($('expressionsView').classList.contains('active')) refreshSelection(); });
@@ -183,7 +203,7 @@
         state.ready = true; loadOrganizerSchemesFromHost(); restoreScriptFolder(); refreshSelection();
       });
     }
-    callHost('AELT_setModuleBase', [getExtensionRoot()], function (result) {
+    callHost('AELT_setModuleBase', [getExtensionRoot(), true], function (result) {
       if (!result.ok) { reportStartupFailure('host-loader', result); return; }
       AELT.settings.load(function (loaded, settingsResult) {
         if (!loaded) { reportStartupFailure('settings', settingsResult); return; }

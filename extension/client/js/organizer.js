@@ -404,7 +404,8 @@
     els.schemeSaveStatus.textContent = organizerSaving ? t('正在保存…') : organizerSaveError ? t('保存失败，修改仍保留') : scheme.builtin ? t(dirty ? '已修改预设，另存后保留' : '内置预设，可另存为个人方案') : t(fresh ? '新方案 · 尚未保存' : dirty ? '有未保存修改' : '已保存');
     els.schemeSaveStatus.classList.toggle('dirty', dirty); els.schemeSaveStatus.classList.toggle('error', !!organizerSaveError);
     els.saveSchemeBtn.textContent = organizerSaving ? t('正在保存…') : t(scheme.builtin ? '另存为我的方案' : fresh ? '保存方案' : '保存修改');
-    els.saveSchemeBtn.disabled = organizerSaving || !scheme.builtin && !dirty;
+    els.saveSchemeBtn.hidden = !dirty; els.discardSchemeBtn.hidden = !dirty;
+    els.saveSchemeBtn.disabled = organizerSaving || !dirty; els.discardSchemeBtn.disabled = organizerSaving || !dirty;
     els.schemeSelect.disabled = organizerSaving; els.schemeMenuBtn.disabled = organizerSaving;
     els.renameSchemeBtn.hidden = !!scheme.builtin; els.deleteSchemeBtn.hidden = !!scheme.builtin;
     [els.newSchemeBtn,els.renameSchemeBtn,els.copySchemeBtn,els.deleteSchemeBtn,els.addRuleBtn].forEach(function (button) { button.disabled = organizerSaving; });
@@ -418,7 +419,15 @@
       state.organizerSchemes = state.organizerSchemes.filter(function (item) { return item.id !== scheme.id; });
       state.selectedSchemeId = state.organizerSchemes[0].id;
     }
+    else if (organizerSaved[scheme.id]) replaceOrAppendScheme(cloneData(organizerSaved[scheme.id]));
     renderRules();
+  }
+  function restoreOrganizerScheme() {
+    closeSchemeMenu(); if (organizerSaving || !organizerDirty()) return;
+    confirmAction(t('放弃当前方案的未保存修改并还原？'), function (ok) {
+      if (!ok || organizerSaving) return;
+      discardOrganizerDraft(); setStatus(t('已放弃修改并还原方案。')); els.schemeSelect.focus();
+    }, {title:t('放弃修改并还原'),confirmLabel:t('放弃并还原'),destructive:true});
   }
   function guardOrganizerDraft(action) {
     if (organizerSaving) return;
@@ -520,6 +529,7 @@
     document.addEventListener('focusin', function (event) { if (!event.target.closest('.scheme-menu-wrap')) closeSchemeMenu(); });
     els.newSchemeBtn.addEventListener('click', newScheme); els.renameSchemeBtn.addEventListener('click', renameOrganizerScheme);
     els.copySchemeBtn.addEventListener('click', function () { saveScheme(true); }); els.saveSchemeBtn.addEventListener('click', function () { saveScheme(false); });
+    els.discardSchemeBtn.addEventListener('click', restoreOrganizerScheme);
     els.deleteSchemeBtn.addEventListener('click', deleteScheme); els.addRuleBtn.addEventListener('click', addRule);
     els.ruleGrid.addEventListener('input', organizerEdited);
     els.ruleGrid.addEventListener('click', function (event) {

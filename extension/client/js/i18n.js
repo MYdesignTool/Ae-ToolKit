@@ -32,6 +32,7 @@ AELT.i18n = (function () {
     });
     applyLabels(document);
     if (els.languageSelect) els.languageSelect.value = language;
+    if (AELT.selects) AELT.selects.refresh();
   }
   function applyLabels(root) {
     root.querySelectorAll('[data-i18n]').forEach(function (element) { element.textContent = translate(element.dataset.i18n); });

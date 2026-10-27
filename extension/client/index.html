@@ -12,7 +12,7 @@
     <main class="app">
       <header class="topbar">
         <h1 class="brand"><span class="brand-icon" aria-hidden="true"><img class="brand-art" src="images/header-brand.webp" alt="" draggable="false" width="216" height="48" /></span><span class="brand-name">AE工具箱</span></h1>
-        <button type="button" class="version" id="versionLabel" aria-label="查看更新日志" aria-haspopup="dialog" aria-controls="changelogModal">0.5.1</button>
+        <button type="button" class="version" id="versionLabel" aria-label="查看更新日志" aria-haspopup="dialog" aria-controls="changelogModal">0.6.1</button>
       </header>
 
       <nav class="tabs" aria-label="功能导航" role="tablist">
@@ -63,7 +63,7 @@
               </div>
             </div>
           </div>
-          <div class="scheme-save-row"><span id="schemeSaveStatus" role="status" aria-live="polite"></span><button class="primary" id="saveSchemeBtn">另存为我的方案</button></div>
+          <div class="scheme-save-row"><span id="schemeSaveStatus" role="status" aria-live="polite"></span><div class="scheme-save-actions"><button type="button" class="ghost" id="discardSchemeBtn" hidden>放弃修改并还原</button><button class="primary" id="saveSchemeBtn" hidden>另存为我的方案</button></div></div>
         </div>
 
         <div class="section-head">
@@ -85,6 +85,7 @@
           <input id="expressionSearch" type="search" aria-label="按名称过滤表达式" placeholder="按名称过滤..." />
           <select id="expressionTagFilter" aria-label="按标签过滤"><option value="">全部标签</option></select>
         </div>
+        <div class="expression-filter-tags" id="expressionFilterTags" role="group" aria-label="已选筛选标签" hidden></div>
         <div class="expression-preset-row"><div class="expression-list" id="expressionList"></div><button class="ghost" id="editExpressionTagsBtn" hidden>名称和标签</button></div>
         <span id="expressionTags" class="muted expression-tags-summary"></span>
 
@@ -105,6 +106,7 @@
         <div class="button-row expression-actions">
           <button class="primary" id="applyExpressionBtn">应用到选中属性</button>
           <button class="danger" id="removeExpressionBtn">移除表达式</button>
+          <button type="button" class="ghost" id="transformTargetsBtn" aria-haspopup="dialog" aria-controls="transformTargetsPanel" aria-expanded="false" hidden>变换目标</button>
         </div>
       </section>
 
@@ -176,6 +178,36 @@
         </div>
 
         <div class="section-head" style="margin-top:8px">
+          <h2 id="expressionEditorSettingsHeading">表达式编辑设置</h2>
+        </div>
+        <div class="settings-list" id="expressionEditorSettings" role="group" aria-labelledby="expressionEditorSettingsHeading">
+          <div class="settings-item">
+            <div class="settings-item-info">
+              <strong>表达式代码补全</strong>
+              <span class="muted">输入时自动显示匹配的代码候选</span>
+            </div>
+            <label class="switch">
+              <input type="checkbox" id="expressionCompletionToggle" aria-label="表达式代码补全" checked />
+              <span class="slider"></span>
+            </label>
+          </div>
+          <div class="settings-item">
+            <div class="settings-item-info"><strong>接受候选按键</strong><span class="muted">选择用于接受补全候选的按键</span></div>
+            <select id="expressionCompletionKeySelect" class="settings-input" aria-label="接受候选按键"><option value="Enter" selected>Enter</option><option value="Tab">Tab</option></select>
+          </div>
+          <div class="settings-item">
+            <div class="settings-item-info">
+              <strong>表达式函数说明</strong>
+              <span class="muted">选中函数候选时，显示用途与参数用法</span>
+            </div>
+            <label class="switch">
+              <input type="checkbox" id="expressionHelpToggle" aria-label="表达式函数说明" checked />
+              <span class="slider"></span>
+            </label>
+          </div>
+        </div>
+
+        <div class="section-head" style="margin-top:8px">
           <h2>脚本文件夹</h2>
         </div>
         <div class="settings-list">
@@ -197,7 +229,7 @@
             <select id="languageSelect" class="settings-input" aria-label="界面语言"><option value="zh-CN">简体中文</option><option value="en">English</option></select>
           </div>
           <div class="settings-item">
-            <div class="settings-item-info"><strong>动画耗时倍率</strong><span class="muted">数值越小越快，2x 为原版速度；系统减少动态效果时关闭动画</span></div>
+            <div class="settings-item-info"><strong>动画耗时倍率</strong><span class="muted">1x 为默认速度，数值越小越快；系统减少动态效果时关闭动画</span></div>
             <select id="animationScaleSelect" class="settings-input" aria-label="动画耗时倍率"><option value="2">2x</option><option value="1" selected>1x</option><option value="0.5">0.5x</option><option value="0">关闭</option></select>
           </div>
           <div class="settings-item">
@@ -253,9 +285,21 @@
         <h2 id="inputModalTitle">确认操作</h2>
         <p id="confirmMessage"></p>
         <input id="inputModalField" type="text" aria-label="名称" hidden />
-        <label class="field" id="inputModalTagsField" hidden><span>标签（用逗号分隔，可留空）</span><input id="inputModalTags" type="text" aria-label="表达式标签" placeholder="例如：动画, 常用" /></label>
+        <div class="field" id="inputModalTagsField" hidden>
+          <label for="inputModalTags">标签（按 Enter 添加，可留空）</label>
+          <div class="rule-extension-input" id="inputModalTagsEditor"><span class="rule-tag-tokens" id="inputModalTagTokens"></span><input id="inputModalTags" type="text" autocomplete="off" aria-label="表达式标签" placeholder="输入标签，按 Enter 添加…" /></div>
+          <select id="inputModalTagSelect" aria-label="选择已有标签"><option value="">选择已有标签…</option></select>
+        </div>
         <div class="confirm-actions"><button class="ghost" id="inputModalCancel">取消</button><button class="primary" id="inputModalOk">确定</button></div>
       </div>
+    </div>
+
+    <div class="transform-target-panel" id="transformTargetsPanel" role="dialog" aria-labelledby="transformTargetsTitle" aria-describedby="transformTargetsHint" hidden>
+      <div class="transform-target-head"><strong id="transformTargetsTitle">选择图层变换属性</strong><button type="button" class="ghost" id="transformTargetsClose" aria-label="收起变换目标">×</button></div>
+      <p class="muted" id="transformTargetsHint">悬停展开，移开收起并保留勾选。</p>
+      <div class="transform-target-options" id="transformTargetOptions" role="group" aria-label="变换属性"></div>
+      <div class="transform-target-shortcuts"><button type="button" class="ghost" id="transformTargetsAll">全选</button><button type="button" class="ghost" id="transformTargetsNone">清空</button></div>
+      <p class="muted transform-target-note">2D 跳过 3D 专属项，分离位置会处理各轴。</p>
     </div>
 
     <div class="path-picker" id="pathPicker" role="dialog" aria-labelledby="pathPickerTitle" hidden>
@@ -280,6 +324,7 @@
     <script src="./js/util.js"></script>
     <script src="./js/settings.js"></script>
     <script src="./js/ui.js"></script>
+    <script src="./js/selects.js"></script>
     <script src="./js/organizer.js"></script>
     <script src="./js/organizer-paths.js"></script>
     <script src="./vendor/codemirror.js"></script>
@@ -290,6 +335,8 @@
     <script src="./vendor/acorn.js"></script>
     <script src="./vendor/prettier.js"></script>
     <script src="./vendor/parser-babel.js"></script>
+    <script src="./js/expression-help.js"></script>
+    <script src="./js/completion.js"></script>
     <script src="./js/editor.js"></script>
     <script src="./js/expressions.js"></script>
     <script src="./js/scripts.js"></script>

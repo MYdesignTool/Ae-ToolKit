@@ -11,6 +11,20 @@ node tests/startup.cjs
 
 共享面板无需前端打包。浏览器交互测试另需 Playwright 与 Microsoft Edge；例如 `node tests/browser.cjs`、`node tests/editor-browser.cjs`。启用原生传输模拟可设置 `AELT_TEST_NATIVE=1`，并运行相应浏览器脚本。
 
+0.6.1 的专项回归：
+
+```sh
+node tests/completion-browser.cjs
+node tests/expression-transform-browser.cjs
+node tests/preferences-tags-browser.cjs
+node tests/selects-browser.cjs
+node tests/popup-motion-browser.cjs
+node tests/organizer-tags-browser.cjs
+node tests/editor-ime-browser.cjs
+```
+
+补全测试覆盖 Enter/Tab 二选一、旧设置默认值、单步撤销与参数帮助；变换测试覆盖具体属性优先、2D/3D、分离位置和会话空选；标签与下拉测试覆盖交集筛选、已有标签选择、名称/标签分列、焦点、双语、窄面板和动画倍率。`node tests/expression-transform-ae.cjs "完整路径/AfterFX.exe"` 可在运行中的 AE 中验证真实 ExtendScript 引擎的选择优先分支，使用隔离对象与当前选择只读检查，不改动用户工程。
+
 这些检查不能替代真实 AE 的表达式求值、脚本执行、输入法、文件权限和宿主兼容性验证。CEP 宿主加载可显式运行 `node tests/ae-host.cjs "完整路径/AfterFX.exe"`；Windows 原生 AEX 另需在目标 AE 中检查。
 
 ## Windows 原生构建
