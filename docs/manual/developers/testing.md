@@ -11,6 +11,10 @@ node tests/startup.cjs
 
 共享面板无需前端打包。浏览器交互测试另需 Playwright 与 Microsoft Edge；例如 `node tests/browser.cjs`、`node tests/editor-browser.cjs`。启用原生传输模拟可设置 `AELT_TEST_NATIVE=1`，并运行相应浏览器脚本。
 
+0.7.1 的 PSD、PSB 工程整理回归可运行 `node --test tests/integration.test.cjs tests/organizer-tags.test.cjs`，不构建产物。覆盖同源图层归组、不同路径同名文件隔离、重复整理复用目录、Windows 路径大小写与分隔符、中文与字面百分号文件名、自定义及未匹配目录、嵌套规则目录冲突和无法读取源路径时的回退。这些测试使用 AE 工程对象模拟，真实 PSD、PSB 图层导入仍需在 AE 中检查。
+
+0.7.1 的 `node tests/preset-lifecycle-browser.cjs` 覆盖启动等待及确认未执行后的重试、Debug 完整重连防重入、内置表达式修改/删除/保存失败回滚、重载后不复现，以及整理方案仅按已保存项判断最后一项保护。分别以 CEP 和原生传输模拟运行。`preset-lifecycle.test.cjs` 另验证真实存储模块的删除限制、旧备份兼容、删除记录导入导出与非法数据保护；原生 `host-tests.cpp` 验证延长生命周期的请求在宿主恢复后仅执行一次。
+
 0.6.1 的专项回归：
 
 ```sh

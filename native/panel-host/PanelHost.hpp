@@ -2,6 +2,7 @@
 #include "AE_GeneralPlug.h"
 #include "SPBasic.h"
 #include <filesystem>
+#include <chrono>
 #include <cstdint>
 #include <functional>
 #include <string>
@@ -19,6 +20,7 @@ struct Config {
     std::function<std::wstring(std::wstring_view method, std::wstring_view payload)> dispatch;
     std::function<bool()> can_dispatch;
     std::function<bool(std::wstring_view method)> retain_on_close;
+    std::function<std::chrono::seconds(std::wstring_view method)> queue_timeout;
 };
 bool initialize(SPBasicSuite*, AEGP_PluginID, Config) noexcept;
 bool step() noexcept;

@@ -174,12 +174,28 @@
     return url.hostname ? '//' + url.hostname + path : path.replace(/^\/([A-Za-z]:)/, '$1');
   }
   function reportStartupFailure(stage, result) {
-    state.ready = false; state.startupError = true;
+    state.ready = false; state.startupError = true; state.startupPending = false;
     syncDebugTabVisibility();
     addDebug('startup', { stage:stage, extensionRoot:getExtensionRoot(), result:result }, true);
     setStatus(t('扩展启动失败，详细原因见 Debug。'));
     showToast(t('扩展启动失败，详细原因见 Debug'), 'error');
     document.querySelector('.tab[data-view="debug"]').click();
+  }
+  function callStartupHost(name, args, callback) {
+    var retries = 0;
+    function attempt() {
+      var waiting = setTimeout(function () { setStatus(t('正在等待 AE 就绪，其他扩展或面板可能仍在加载…')); }, 1500);
+      callHost(name, args, function (result) {
+        clearTimeout(waiting);
+        // Retry only when the native queue confirms the request never executed.
+        if (!result.ok && result.error && result.error.code === 'host_timeout' && retries++ < 1) {
+          setStatus(t('正在等待 AE 就绪，其他扩展或面板可能仍在加载…'));
+          setTimeout(attempt, 1000); return;
+        }
+        callback(result);
+      });
+    }
+    attempt();
   }
   function init() {
     cacheEls(); AELT.imeFocus.init(); AELT.i18n.init(); bindEvents(); bindScriptEvents(); bindExpressionEvents(); AELT.editor.init(); AELT.selects.init();
@@ -194,23 +210,32 @@
       event.preventDefault(); tabs[index].click(); tabs[index].focus();
     });
     function bootstrap() {
-      callHost('AELT_bootstrap', [], function (result) {
+      callStartupHost('AELT_bootstrap', [], function (result) {
         if (!result.ok) { reportStartupFailure('bootstrap', result); return; }
         state.rules = normalizeScheme(result.rules);
         state.organizerSchemes = [cloneData(state.rules)]; state.selectedSchemeId = state.rules.id;
-        state.expressions = result.expressions.concat(getUserExpressions()); state.changelog = result.changelog;
+        state.defaultExpressions = result.expressions;
+        state.expressions = visibleExpressions(); state.changelog = result.changelog;
         renderRules(); renderExpressions(); loadSettings(); renderChangelog();
-        state.ready = true; loadOrganizerSchemesFromHost(); restoreScriptFolder(); refreshSelection();
+        state.ready = true; state.startupPending = false; state.startupError = false; syncDebugTabVisibility();
+        loadOrganizerSchemesFromHost(); restoreScriptFolder(); refreshSelection();
       });
     }
-    callHost('AELT_setModuleBase', [getExtensionRoot(), true], function (result) {
-      if (!result.ok) { reportStartupFailure('host-loader', result); return; }
-      AELT.settings.load(function (loaded, settingsResult) {
-        if (!loaded) { reportStartupFailure('settings', settingsResult); return; }
-        AELT.i18n.setLanguage(AELT.settings.get('language', 'zh-CN'), false);
-        bootstrap();
+    function startHost() {
+      if (state.startupPending) return;
+      state.startupPending = true;
+      setStatus(t('正在连接 AE…'));
+      callStartupHost('AELT_setModuleBase', [getExtensionRoot(), true], function (result) {
+        if (!result.ok) { reportStartupFailure('host-loader', result); return; }
+        AELT.settings.load(function (loaded, settingsResult) {
+          if (!loaded) { reportStartupFailure('settings', settingsResult); return; }
+          AELT.i18n.setLanguage(AELT.settings.get('language', 'zh-CN'), false);
+          bootstrap();
+        });
       });
-    });
+    }
+    AELT.app.retryStartup = startHost;
+    startHost();
     els.exportDataBtn.addEventListener('click', function () {
       AELT.settings.persist(function (saved) {
         if (!saved.ok) return;

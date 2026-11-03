@@ -1,6 +1,21 @@
 /* Preserve the original search + dropdown + editor workflow. */
 var expressionSelectionRequest = 0, expressionSelectionPending = 0;
 var expressionTagSelection = [];
+function visibleExpressions() {
+  var hidden = AELT.settings.get('hiddenBuiltinExpressions', []);
+  return (state.defaultExpressions || []).filter(function (item) { return hidden.indexOf(item.id) < 0; }).concat(getUserExpressions());
+}
+function persistExpressionLibrary(items, hidden, callback) {
+  var before = cloneData(getUserExpressions()), beforeHidden = cloneData(AELT.settings.get('hiddenBuiltinExpressions', []));
+  AELT.settings.set('hiddenBuiltinExpressions', hidden);
+  setUserExpressions(items, function (result) {
+    if (!result.ok) {
+      AELT.settings.set('userExpressions', before);
+      AELT.settings.set('hiddenBuiltinExpressions', beforeHidden);
+    }
+    callback(result);
+  });
+}
 var expressionTransformSelection = [], expressionTargetsOpen = false, expressionTargetsCloseTimer = null;
 var expressionTransformTargets = [
   {id:'anchorPoint', label:'锚点'}, {id:'position', label:'位置'}, {id:'scale', label:'缩放'},
@@ -119,11 +134,11 @@ function syncExpressionEditor() {
   var item = selectedExpression(), busy = state.expressionBusy;
   els.expressionCode.readOnly = busy;
   els.saveExpressionBtn.disabled = busy || !els.expressionCode.value.trim();
-  els.updateExpressionBtn.hidden = !item || item.builtin;
+  els.updateExpressionBtn.hidden = !item;
   els.updateExpressionBtn.disabled = busy || !expressionDirty();
-  els.deleteExpressionBtn.hidden = !item || item.builtin;
+  els.deleteExpressionBtn.hidden = !item;
   els.deleteExpressionBtn.disabled = busy;
-  els.editExpressionTagsBtn.hidden = !item || item.builtin;
+  els.editExpressionTagsBtn.hidden = !item;
   els.editExpressionTagsBtn.disabled = busy;
   els.expressionTags.textContent = item ? (expressionTags(item).map(function (tag) { return expressionTagLabel(item, tag); }).join(' · ') || t('无标签')) : '';
   els.refreshSelectionBtn.disabled = busy;
@@ -228,20 +243,25 @@ function removeExpressions() { runExpressionBatch(true); }
 function saveExpression(update) {
   if (state.expressionBusy) return;
   var selected = selectedExpression(), code = els.expressionCode.value.trim();
-  if (!code || (update && (!selected || selected.builtin))) return;
+  if (!code || (update && !selected)) return;
   showDialog({title:update ? t('编辑表达式') : t('保存为自定义表达式'), input:true, expression:true, value:update ? selected.name : t('自定义表达式'), tags:selected ? expressionTags(selected).join(', ') : '', confirmLabel:t('保存')}, function (value) {
     if (!value) return;
     var item = update ? cloneData(selected) : {id:createId('user'), description:'用户保存的本地表达式。'};
+    var hidden = cloneData(AELT.settings.get('hiddenBuiltinExpressions', []));
+    if (update && selected.builtin) {
+      item.id = createId('user');
+      if (hidden.indexOf(selected.id) < 0) hidden.push(selected.id);
+    }
     item.name = value.name; item.code = code; item.builtin = false; item.tags = normalizeExpressionTags(value.tags);
     delete item.category;
     var before = cloneData(getUserExpressions()), items = cloneData(before);
     var index = items.findIndex(function (entry) { return entry.id === item.id; });
     if (index < 0) items.push(item); else items[index] = item;
     state.expressionOperation = 'save'; state.expressionBusy = true; syncExpressionEditor();
-    setUserExpressions(items, function (result) {
+    persistExpressionLibrary(items, hidden, function (result) {
       state.expressionBusy = false;
-      if (!result.ok) { AELT.settings.set('userExpressions', before); syncExpressionEditor(); return; }
-      state.expressions = state.expressions.filter(function (entry) { return entry.builtin; }).concat(items);
+      if (!result.ok) { syncExpressionEditor(); return; }
+      state.expressions = visibleExpressions();
       state.selectedExpressionId = item.id; AELT.editor.setValue(code);
       renderExpressions(); setStatus(update ? t('表达式已更新。') : t('已保存到自定义表达式。'));
     });
@@ -249,17 +269,19 @@ function saveExpression(update) {
 }
 function deleteExpression() {
   var selected = selectedExpression();
-  if (state.expressionBusy || !selected || selected.builtin) return;
-  confirmAction(t('删除自定义表达式“{name}”？', {name:selected.name}), function (ok) {
+  if (state.expressionBusy || !selected) return;
+  confirmAction(t('删除表达式“{name}”？', {name:AELT.i18n.builtin(selected, 'name')}), function (ok) {
     if (!ok) return;
     var before = cloneData(getUserExpressions()), next = before.filter(function (item) { return item.id !== selected.id; });
+    var hidden = cloneData(AELT.settings.get('hiddenBuiltinExpressions', []));
+    if (selected.builtin && hidden.indexOf(selected.id) < 0) hidden.push(selected.id);
     state.expressionOperation = 'save'; state.expressionBusy = true; syncExpressionEditor();
-    setUserExpressions(next, function (result) {
+    persistExpressionLibrary(next, hidden, function (result) {
       state.expressionBusy = false;
-      if (!result.ok) { AELT.settings.set('userExpressions', before); syncExpressionEditor(); return; }
-      state.expressions = state.expressions.filter(function (item) { return item.id !== selected.id; });
+      if (!result.ok) { syncExpressionEditor(); return; }
+      state.expressions = visibleExpressions();
       state.selectedExpressionId = null; AELT.editor.setValue('');
-      renderExpressions(); setStatus(t('自定义表达式已删除。'));
+      renderExpressions(); setStatus(t('表达式已删除。'));
     });
   }, {title:t('删除表达式'),confirmLabel:t('删除'),destructive:true});
 }

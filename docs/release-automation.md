@@ -57,8 +57,8 @@ ZIP、校验文件和双语说明。PDB、对象文件、SDK、用户数据和�
 ## 发布新版本
 
 1. 更新 changelog 的版本、日期及中英文 `changes`，保留历史条目。执行
-   `node scripts/sync-release.cjs` 同步运行时与清单；开发期可用 `--site-release-tag`
-   让官网保持上一正式版本。
+   `node scripts/sync-release.cjs` 同步官网、运行时与清单；开发期可用
+   `node scripts/sync-release.cjs --release-tag v<上一正式版本>` 让官网保持上一正式版本。
 2. 审查源码和锁文件并合入 main。先手动运行完整工作流，核对 `verified-release` 与 SHA-256。
 3. 为该提交创建新的 `v<版本>` 标签并推送。工作流从标签源码编译 AEX，完成全部构建、
    测试和打包后创建草稿，上传完整附件并验证服务端摘要，最后公开。

@@ -29,7 +29,7 @@ function bridge(fault){
    for(const line of fault.message.split('\n'))assert.ok((await p.locator('#debugLog').textContent()).includes(line));assert.ok((await p.locator('#debugLog').textContent()).includes(fault.stage));
    assert.equal(await p.locator('#debugLog img').count(),0);assert.equal(await p.evaluate(()=>AELT.state.debugMode),false);assert.equal(await p.evaluate(()=>AELT.state.ready),false);
    assert.ok(!(await p.evaluate(()=>__calls)).includes('AELT_saveSettings'),'diagnostics do not modify settings');
-   await p.locator('#clearDebugBtn').click();await p.locator('#pingHostBtn').click();await p.waitForFunction(()=>document.getElementById('debugLog').textContent.includes('connection'));for(const line of fault.message.split('\n'))assert.ok((await p.locator('#debugLog').textContent()).includes(line));
+   await p.locator('#clearDebugBtn').click();await p.locator('#pingHostBtn').click();await p.waitForFunction(()=>!AELT.state.startupPending&&document.getElementById('debugLog').textContent.includes('connection'));for(const line of fault.message.split('\n'))assert.ok((await p.locator('#debugLog').textContent()).includes(line));
    if(fault.stage==='host-loader'&&!fault.raw)await p.screenshot({path:path.join(root,'.artifacts/host-compat/startup-failure.png')});assert.deepEqual(errors,[]);await c.close();
   }
   console.log('Startup UI passed: host/bridge, settings and defaults failures expose full diagnostics without saved Debug preferences or writes.');

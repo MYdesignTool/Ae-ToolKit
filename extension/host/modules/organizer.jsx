@@ -73,6 +73,74 @@ AELocalToolkit.organizer = (function () {
     }
   }
 
+  function getPhotoshopSource(item) {
+    var ext = getFileExtension(item);
+    if (ext !== "PSD" && ext !== "PSB") return null;
+    try {
+      // 用磁盘源路径识别同一文件，不能使用可重命名的图层素材名称。
+      var path = String(item.file.fsName || "").replace(/\\/g, "/");
+      if (!path) return null;
+      var name = path.slice(path.lastIndexOf("/") + 1);
+      var key = path;
+      if (/^[a-z]:\//i.test(path) || /^\/\//.test(path) || (typeof $ !== "undefined" && /windows/i.test($.os))) {
+        key = key.toLowerCase();
+      }
+      return { key: key, name: name };
+    } catch (e) {
+      return null;
+    }
+  }
+
+  function isRuleFolder(folder, folders) {
+    for (var key in folders) {
+      if (Object.prototype.hasOwnProperty.call(folders, key) && folders[key] === folder) return true;
+    }
+    return false;
+  }
+
+  function containsOnlyPhotoshopSource(folder, sourceKey) {
+    if (!folder.numItems) return false;
+    for (var i = 1; i <= folder.numItems; i++) {
+      var source = getPhotoshopSource(folder.item(i));
+      if (!source || source.key !== sourceKey) return false;
+    }
+    return true;
+  }
+
+  function getPhotoshopFolder(item, targetPath, folders, grouping) {
+    var source = getPhotoshopSource(item);
+    if (!source) return null;
+    var key = "$" + targetPath + "/" + source.key;
+    if (Object.prototype.hasOwnProperty.call(grouping.cache, key)) return grouping.cache[key];
+    var parent = folders["$" + targetPath];
+    var folder = null;
+    // 优先复用已经属于该源文件的目录；重复整理或删掉其他同名文件后仍保持目录稳定。
+    for (var i = 1; i <= parent.numItems; i++) {
+      var child = parent.item(i);
+      if (child instanceof FolderItem && !isRuleFolder(child, folders) && containsOnlyPhotoshopSource(child, source.key)) {
+        folder = child;
+        break;
+      }
+    }
+    if (!folder) {
+      var name = source.name;
+      var suffix = 2;
+      folder = findChildFolder(parent, name);
+      // 不同路径的同名源文件、已有其他内容的目录及方案目录不能混入同一分组。
+      while (folder && (folder.numItems > 0 || isRuleFolder(folder, folders))) {
+        name = source.name + " (" + suffix++ + ")";
+        folder = findChildFolder(parent, name);
+      }
+      if (!folder) {
+        folder = grouping.project.items.addFolder(name);
+        folder.parentFolder = parent;
+      }
+    }
+    var result = {folder: folder, path: targetPath + "/" + folder.name};
+    grouping.cache[key] = result;
+    return result;
+  }
+
   // 预建「扩展名 → 目标文件夹路径」查表，分类时 O(1) 命中，避免逐规则遍历。
   // 同名扩展名以首个匹配规则为准。
   function buildExtensionMap(scheme) {
@@ -143,7 +211,7 @@ AELocalToolkit.organizer = (function () {
     summary.moved++;
   }
 
-  function classifyItem(item, scheme, extMap, folders, summary, rootFolder, ignoreConfig) {
+  function classifyItem(item, scheme, extMap, folders, summary, rootFolder, ignoreConfig, grouping) {
     try {
       if (item instanceof CompItem) {
         // 忽略主合成：命中名称名单的合成留在工程根目录，不进入 Comp 文件夹。
@@ -167,6 +235,13 @@ AELocalToolkit.organizer = (function () {
 
       var ext = getFileExtension(item);
       var targetPath = (ext && extMap[ext]) ? extMap[ext] : scheme.fallbackPath;
+      if (ext === "PSD" || ext === "PSB") {
+        var group = getPhotoshopFolder(item, targetPath, folders, grouping);
+        if (group) {
+          moveToFolder(item, group.folder, group.path, summary);
+          return;
+        }
+      }
       moveToFolder(item, folders["$" + targetPath], targetPath, summary);
     } catch (e) {
       summary.errors++;
@@ -292,8 +367,9 @@ AELocalToolkit.organizer = (function () {
       // 单遍整理：直接把每个素材移到其目标文件夹（已在目标则跳过），
       // 省去“先全部移到根再分类”的二次重挂载，重挂载次数减半。
       var extMap = buildExtensionMap(scheme);
+      var grouping = {project: project, cache: {}};
       for (var k = 0; k < allItems.length; k++) {
-        classifyItem(allItems[k], scheme, extMap, folders, summary, rootFolder, ignoreConfig);
+        classifyItem(allItems[k], scheme, extMap, folders, summary, rootFolder, ignoreConfig, grouping);
       }
 
       purgeEmptyFolders(rootFolder, rootFolder, summary);

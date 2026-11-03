@@ -79,7 +79,8 @@ struct View:std::enable_shared_from_this<View> {
         const auto size=message.payload.size()*sizeof(wchar_t);
         if(requests.size()>=wire::max_requests||size>wire::max_queued_bytes-queued_bytes){reply(message.id,failure(L"host_busy",L"The native panel queue is full."));return;}
         const bool retain=config.retain_on_close&&config.retain_on_close(message.method);
-        requests.push_back({weak_from_this(),epoch,std::move(message),std::chrono::steady_clock::now()+std::chrono::seconds(7),retain});queued_bytes+=size;
+        const auto timeout=config.queue_timeout?std::clamp(config.queue_timeout(message.method),std::chrono::seconds(1),std::chrono::seconds(240)):std::chrono::seconds(7);
+        requests.push_back({weak_from_this(),epoch,std::move(message),std::chrono::steady_clock::now()+timeout,retain});queued_bytes+=size;
     }
     void configure(){
         ComPtr<ICoreWebView2Settings> settings;

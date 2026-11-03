@@ -327,7 +327,7 @@
   }
 
   function loadOrganizerSchemesFromHost() {
-      callHost('AELT_loadOrganizerSchemes', [], function (result) {
+      callStartupHost('AELT_loadOrganizerSchemes', [], function (result) {
         if (result.ok && result.schemes && result.schemes.length) {
           state.organizerSchemes = result.schemes.map(normalizeScheme);
           if (!state.organizerSchemes.some(function (scheme) { return scheme.id === state.selectedSchemeId; })) {
@@ -407,8 +407,10 @@
     els.saveSchemeBtn.hidden = !dirty; els.discardSchemeBtn.hidden = !dirty;
     els.saveSchemeBtn.disabled = organizerSaving || !dirty; els.discardSchemeBtn.disabled = organizerSaving || !dirty;
     els.schemeSelect.disabled = organizerSaving; els.schemeMenuBtn.disabled = organizerSaving;
-    els.renameSchemeBtn.hidden = !!scheme.builtin; els.deleteSchemeBtn.hidden = !!scheme.builtin;
+    els.renameSchemeBtn.hidden = !!scheme.builtin; els.deleteSchemeBtn.hidden = false;
     [els.newSchemeBtn,els.renameSchemeBtn,els.copySchemeBtn,els.deleteSchemeBtn,els.addRuleBtn].forEach(function (button) { button.disabled = organizerSaving; });
+    els.deleteSchemeBtn.disabled = organizerSaving || !canDeleteScheme(scheme);
+    els.deleteSchemeBtn.title = canDeleteScheme(scheme) ? '' : t('至少保留一个已保存的整理方案。');
     els.ruleGrid.querySelectorAll('input,button').forEach(function (input) { input.disabled = organizerSaving; });
   }
   function organizerEdited() { organizerSaveError = ''; syncOrganizerSaveUI(); }
@@ -496,14 +498,15 @@
   }
   function deleteScheme() {
     closeSchemeMenu(); if (organizerSaving) return;
-    var scheme = getSelectedScheme(); if (scheme.builtin) return;
+    var scheme = getSelectedScheme();
+    if (!canDeleteScheme(scheme)) { showToast(t('至少保留一个已保存的整理方案。'), 'error'); return; }
     showConfirmDialog(t('确认删除整理方案“{name}”？', {name:organizerName}), function (ok) {
       if (!ok) return;
       function removed() {
         delete organizerSaved[scheme.id]; state.organizerSchemes = state.organizerSchemes.filter(function (item) { return item.id !== scheme.id; });
         state.selectedSchemeId = state.organizerSchemes[0].id; renderRules(); setStatus(t('方案已删除。'));
       }
-      if (!organizerSaved[scheme.id]) { removed(); return; }
+      if (!scheme.builtin && !organizerSaved[scheme.id]) { removed(); return; }
       organizerSaving = true; syncOrganizerSaveUI();
       callHost('AELT_deleteOrganizerScheme', [scheme.id], function (result) {
         organizerSaving = false;
@@ -511,6 +514,9 @@
         removed();
       });
     }, {title:t('删除方案'),confirmLabel:t('删除'),destructive:true});
+  }
+  function canDeleteScheme(scheme) {
+    return state.organizerSchemes.some(function (item) { return item.id !== scheme.id && (item.builtin || !!organizerSaved[item.id]); });
   }
   function addRule() {
     if (organizerSaving) return;

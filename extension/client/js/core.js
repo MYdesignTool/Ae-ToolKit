@@ -1,8 +1,8 @@
 /* Shared panel state. Shipped defaults are read once from data/ by the host. */
 window.AELT = {};
 var state = {
-  ready: false, startupError: false, rules: null, organizerSchemes: [], selectedSchemeId: 'preset-default',
-  changelog: null, expressions: [], selectedExpressionId: null, selection: null,
+  ready: false, startupError: false, startupPending: false, rules: null, organizerSchemes: [], selectedSchemeId: 'preset-default',
+  changelog: null, defaultExpressions: [], expressions: [], selectedExpressionId: null, selection: null,
   expressionBusy: false, debugEntries: [], quietMode: false, debugMode: false, animationScale: 1,
   scriptFolder: '', scripts: [], favFilterOn: false, selectedScriptFsName: null, scriptBusy: false
 };

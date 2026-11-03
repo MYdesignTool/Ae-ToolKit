@@ -48,7 +48,7 @@ AELocalToolkit.storage = (function () {
     if (settings.expressionHelp !== undefined && typeof settings.expressionHelp !== 'boolean') throw new Error('表达式函数说明设置必须为布尔值');
     // Transform choices belong to a panel session; discard the old persisted preference.
     delete settings.expressionTransformTargets;
-    var arrays = ['scriptFavorites', 'userExpressions'];
+    var arrays = ['scriptFavorites', 'userExpressions', 'hiddenBuiltinExpressions'];
     for (var i = 0; i < arrays.length; i++) if (settings[arrays[i]] !== undefined && !(settings[arrays[i]] instanceof Array)) throw new Error('设置列表格式错误：' + arrays[i]);
     var strings = ['compFolder', 'solidFolder', 'fallbackFolder', 'scriptFolder'];
     for (i = 0; i < strings.length; i++) if (settings[strings[i]] !== undefined && typeof settings[strings[i]] !== 'string') throw new Error('设置文本格式错误：' + strings[i]);
@@ -75,6 +75,8 @@ AELocalToolkit.storage = (function () {
     }
     var favorites = settings.scriptFavorites || [];
     for (i = 0; i < favorites.length; i++) if (typeof favorites[i] !== 'string') throw new Error('脚本收藏格式错误');
+    var hidden = settings.hiddenBuiltinExpressions || [];
+    for (i = 0; i < hidden.length; i++) if (typeof hidden[i] !== 'string') throw new Error('内置表达式删除记录格式错误');
     return settings;
   }
   function validateScheme(scheme) {
@@ -94,6 +96,8 @@ AELocalToolkit.storage = (function () {
       if (seen[key]) throw new Error('整理方案 ID 重复：' + scheme.id);
       seen[key] = true;
     }
+    if (data.defaultSchemeDeleted !== undefined && typeof data.defaultSchemeDeleted !== 'boolean') throw new Error('内置方案删除记录格式错误');
+    if (data.defaultSchemeDeleted && !data.schemes.length) throw new Error('至少保留一个已保存的整理方案。');
     return data;
   }
   function portablePath(value, restore, folder) {
@@ -160,12 +164,14 @@ AELocalToolkit.storage = (function () {
     validateSettings(settings);
     var data = loadDocument(); data.settings = settingsPaths(settings, false); write(dataFile(), data);
   }
-  function listSchemes() { return [readData('organizer-rules.json')].concat(loadDocument().schemes); }
+  function listSchemes() { var data = loadDocument(); return (data.defaultSchemeDeleted ? [] : [readData('organizer-rules.json')]).concat(data.schemes); }
   function saveScheme(scheme) { var data = loadDocument(); putScheme(data.schemes, scheme); write(dataFile(), data); }
   function deleteScheme(id) {
-    if (!/^[a-zA-Z0-9_-]+$/.test(id) || id === 'preset-default') throw new Error('无效方案 ID');
+    if (!/^[a-zA-Z0-9_-]+$/.test(id)) throw new Error('无效方案 ID');
     var data = loadDocument(), remaining = [];
     for (var i = 0; i < data.schemes.length; i++) if (data.schemes[i].id !== id) remaining.push(data.schemes[i]);
+    if (id === 'preset-default') data.defaultSchemeDeleted = true;
+    if (data.defaultSchemeDeleted && !remaining.length) throw new Error('至少保留一个已保存的整理方案。');
     data.schemes = remaining; write(dataFile(), data);
   }
   function exportData(language) {
@@ -192,6 +198,7 @@ AELocalToolkit.storage = (function () {
       if (current) write(new File(dataRoot.fullName + '/before-import.json'), current);
       else current = { format: 'ae-local-toolkit', version: 1, settings: {}, schemes: [] };
       for (var i = 0; i < imported.schemes.length; i++) putScheme(current.schemes, imported.schemes[i]);
+      current.defaultSchemeDeleted = imported.defaultSchemeDeleted === true;
       current.settings = settingsPaths(imported.settings, false);
       write(dataFile(), current);
       return AELocalToolkit.returnResult({ ok: true });

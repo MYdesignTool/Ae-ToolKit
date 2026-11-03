@@ -30,5 +30,7 @@ extern "C" __declspec(dllexport) A_Err AeltToolkitEntry(SPBasicSuite* basic,A_lo
     options.profile_root=std::filesystem::path(local_data)/L"AE Local Toolkit"/L"WebView2"/L"profile";CoTaskMemFree(local_data);
     options.bootstrap_script=L"window.__aeltToolkitNative=Object.freeze({channel:"+aelt::native_panel::wire::quote(options.channel)+L",extensionRoot:"+aelt::native_panel::wire::quote(root.generic_wstring())+L"});";
     options.dispatch=[](std::wstring_view method,std::wstring_view payload){return bridge->call(method,payload);};options.retain_on_close=[](std::wstring_view method){return method==L"AELT_saveSettings";};
+    // AE may not deliver an idle hook until other startup panels finish loading.
+    options.queue_timeout=[](std::wstring_view method){return std::chrono::seconds(method==L"AELT_setModuleBase"||method==L"AELT_loadSettings"||method==L"AELT_bootstrap"||method==L"AELT_loadOrganizerSchemes"?240:7);};
     (void)aelt::native_panel::initialize(basic,id,std::move(options));return A_Err_NONE;
 }catch(...){return A_Err_NONE;}

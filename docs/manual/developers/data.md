@@ -1,5 +1,7 @@
 # 数据与扩展约定
 
+0.7.1 新增 `settings.hiddenBuiltinExpressions`（字符串数组），记录不再显示的内置表达式 ID。修改内置表达式时，在同一次设置保存中隐藏原项并新增 `user-` ID 的个人表达式；失败时回滚缓存并保留编辑草稿。文档顶层 `defaultSchemeDeleted`（可选布尔值，缺省 false）记录默认整理方案删除状态，为 true 时 `schemes` 至少有一项。列表读取、删除、校验与备份导入统一保持这一限制；导入旧备份则恢复默认方案可见性。
+
 0.6.1 设置新增 `expressionCompletion`（布尔，默认 true）、`expressionHelp`（布尔，默认 true）和 `expressionCompletionKey`（Enter / Tab，默认 Enter）。旧数据缺少字段时使用上述默认值，保存与备份沿用原流程；无效字段类型或按键值拒绝写入。变换目标勾选、多标签过滤是前端会话状态，不进入备份；自定义表达式标签仍使用原 `tags` 字符串数组。
 
 ## 默认数据与个人数据

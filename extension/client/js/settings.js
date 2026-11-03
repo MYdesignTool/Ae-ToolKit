@@ -2,7 +2,7 @@
 AELT.settings = (function () {
   var cache = {}, loaded = false, timer = null, saving = false, revision = 0, savedRevision = 0, waiting = [];
   function load(callback) {
-    callHost('AELT_loadSettings', [], function (result) {
+    (typeof callStartupHost === 'function' ? callStartupHost : callHost)('AELT_loadSettings', [], function (result) {
       loaded = result.ok;
       if (loaded) { cache = result.settings; savedRevision = revision = 0; }
       else { setStatus(result.messages.join(' ')); showToast(t('设置加载失败，已停止写入以保护原数据'), 'error'); }

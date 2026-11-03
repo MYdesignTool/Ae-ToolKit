@@ -1,5 +1,9 @@
 # 架构与维护
 
+0.7.1 的内置表达式修改通过同一次设置保存写入 `hiddenBuiltinExpressions` 与个人表达式，避免重复项；失败则回滚缓存。整理方案删除记录在个人文档的 `defaultSchemeDeleted`，宿主和界面同时保证至少保留一个已保存方案，未保存草稿不计数。
+
+原生连接曾因队列统一的 7 秒有效期，在 AE 启动被其他面板阻塞时提前失效。工具箱现在将初始化的模块加载、设置、默认数据与方案列表请求的排队时间设为 240 秒（前端传输等待仍为 300 秒），普通操作沿用 7 秒。`callStartupHost` 在 1.5 秒后显示等待 AE 提示，仅收到原生 `host_timeout`（确认未执行）时串行重试一次；解析错误、模块错误及传输超时直接保留诊断。Debug 检测连接在启动失败时重新执行完整初始化，并用 `startupPending` 防止重复连接；业务写入不自动重试。
+
 Windows 使用 AEGP + WebView2 原生宿主，macOS 保持 CEP；两平台共用前端与 ExtendScript 业务模块。`native-bridge.js` 在 core 之前加载，仅在原生配置与 WebView2 同时存在时启用。界面调用集中于 `callHost`；CEP 走 `evalScript`，原生走有界消息队列和 AE idle。原生入口在独立 JSX 词法闭包中执行，不替换 CEP 全局对象。构建、安装与回退见[原生工具箱](../../native/toolkit/README.md)。
 
 前端无框架、无构建步骤，按依赖顺序加载脚本。`callHost(name, args, callback)` 是唯一桥接入口，参数统一用 JSON 字面量编码，不混用 escape、URI 编码和字符串拼接。路径以原生路径传输；图片从 File.fsName 转换为浏览器 file URL，不把 ExtendScript 的 absoluteURI 路径直接当作网页地址。

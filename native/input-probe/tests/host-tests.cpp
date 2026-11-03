@@ -64,6 +64,13 @@ int main(){
     config.retain_on_close=[](std::wstring_view method){return method==L"probe.ping";};
     auto saving=std::make_shared<View>();saving->epoch=1;views.push_back(saving);event->json=message(L"wv-1",L"admitted save");saving->receive(event.Get());saving->close();saving.reset();step();
     check(executions==66&&requests.empty()&&dispatched.back()==L"admitted save","explicitly retained immutable save survives closed document");
+    config.queue_timeout=[](std::wstring_view){return std::chrono::seconds(240);};
+    auto startup=std::make_shared<View>();startup->epoch=1;views.push_back(startup);event->json=message(L"wv-1",L"delayed startup");startup->receive(event.Get());
+    check(requests.front().expires>std::chrono::steady_clock::now()+std::chrono::seconds(230),"caller can extend startup queue lifetime beyond seven seconds");
+    // Simulate ten seconds of other panels loading without sleeping or running AE.
+    requests.front().expires-=std::chrono::seconds(10);scripting=false;step();
+    check(executions==66&&requests.size()==1,"extended startup request survives blocked scripting");scripting=true;step();
+    check(executions==67&&requests.empty()&&dispatched.back()==L"delayed startup","startup resumes once when scripting becomes available");
     check(acquisitions==releases,"all acquired fake suites released");stop();check(views.empty()&&requests.empty()&&!environment,"shutdown clears owned state");DestroyWindow(main_window);
     check(GetForegroundWindow()==foreground,"tests preserve the user's foreground window");
     std::cout<<checks<<" checks, "<<failures<<" failures; extracted production host, no AE or browser\n";return failures?1:0;

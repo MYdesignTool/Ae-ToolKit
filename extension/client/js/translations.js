@@ -1,5 +1,9 @@
 /* UI copy only. Keep paths, user names and expression code in their original language. */
 AELT.translations = {en: {
+  "删除表达式“{name}”？":"Delete expression “{name}”?", "表达式已删除。":"Expression deleted.",
+  "至少保留一个已保存的整理方案。":"Keep at least one saved organizer scheme.",
+  "正在连接 AE…":"Connecting to AE…", "正在重新连接 AE…":"Reconnecting to AE…",
+  "正在等待 AE 就绪，其他扩展或面板可能仍在加载…":"Waiting for AE; other extensions or panels may still be loading…",
   "变换目标":"Transform targets", "变换目标（{count}）":"Targets ({count})", "选择图层变换属性":"Choose layer transform properties", "变换属性":"Transform properties",
   "收起变换目标":"Close transform targets", "悬停展开，移开收起并保留勾选。":"Hover to open. Move away to close and keep your choices.",
   "2D 跳过 3D 专属项，分离位置会处理各轴。":"Skip 3D-only targets on 2D layers; handle each separated Position axis.",

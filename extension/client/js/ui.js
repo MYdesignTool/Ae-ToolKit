@@ -143,6 +143,10 @@
  }
 
   function pingHost() {
+    if (state.startupError && !state.ready && AELT.app && AELT.app.retryStartup) {
+      addDebug('connection', t('正在重新连接 AE…'), true);
+      AELT.app.retryStartup(); return;
+    }
     callHost('AELT_ping', [], function (result) {
       addDebug('connection', result, true);
       if (result.loadErrors && result.loadErrors.length) {

@@ -116,7 +116,7 @@ async function main(){
     await tagInput.fill('常用, wiggle, 抖动, 随机');await tagInput.press('Enter');assert.equal(await page.locator('#inputModal').isVisible(),true);
     await page.screenshot({path:path.join(output,'expression-tag-dialog-zh-360.png'),animations:'disabled'});await page.keyboard.press('Escape');
     await view('settings');await page.locator('#languageSelect').selectOption('en');await view('expressions');
-    await select.selectOption('wiggle-basic');assert.equal(await page.locator('#editExpressionTagsBtn').isVisible(),false);
+    await select.selectOption('wiggle-basic');assert.equal(await page.locator('#editExpressionTagsBtn').isVisible(),true);
     await setFilters(['常用','wiggle','抖动','随机']);assert.deepEqual(await page.evaluate(()=>expressionTagSelection),['常用','wiggle','抖动','随机']);
     assert.equal(await select.locator('option').count(),2);assert.equal(await select.inputValue(),'wiggle-basic','filter updates preserve selected expression');
     await page.setViewportSize({width:360,height:520});await page.screenshot({path:path.join(output,'expressions-en-360.png'),animations:'disabled'});

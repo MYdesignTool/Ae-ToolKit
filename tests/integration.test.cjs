@@ -25,6 +25,77 @@ test('organizer matches complete ignored names with spaces, fuzzy mode, old list
   assert.equal(result.ok,true);assert.equal(result.ignoredMainComp||0,expected);assert.equal(comps.filter(comp=>comp.parentFolder===env.root).length,expected);
  }
 });
+function photoshopFootage(env,name,fsName){
+ const item=new env.Base(name);item.file={name:fsName.replace(/\\/g,'/').split('/').pop(),fsName};return item;
+}
+function organizePhotoshop(env,rules=[{path:'PSD',extensions:['PSD','PSB']}]){
+ env.ctx.schemeText=JSON.stringify({name:'Photoshop',fallbackPath:'Footage',rules});
+ return require('node:vm').runInContext('AELocalToolkit.organizer.organizeProjectWithScheme(JSON.parse(schemeText))',env.ctx);
+}
+
+test('organizer groups PSD and PSB layers by source file, preserving compositions and other footage rules',()=>{
+ const env=projectFixture(),oldFolder=new env.FolderItem('Imported Layers');
+ const a=photoshopFootage(env,'renamed background','D:/Art/海报 100%20.psd');
+ const b=photoshopFootage(env,'Foreground/海报','D:/Art/海报 100%20.psd');b.parentFolder=oldFolder;
+ const c=photoshopFootage(env,'large layer','D:/Art/海报 100%20.psb');
+ const d=photoshopFootage(env,'large layer 2','D:/Art/海报 100%20.psb');
+ const image=photoshopFootage(env,'photo','D:/Art/photo.png'),comp=new env.CompItem('海报');
+ const rules=[{path:'Assets/Photoshop',extensions:['PSD','PSB']},{path:'Images',extensions:['PNG']}];
+ const result=organizePhotoshop(env,rules);
+ assert.equal(result.ok,true);assert.equal(result.moved,6);assert.equal(result.errors,0);
+ assert.equal(a.parentFolder,b.parentFolder);assert.equal(c.parentFolder,d.parentFolder);assert.notEqual(a.parentFolder,c.parentFolder);
+ assert.equal(a.parentFolder.name,'海报 100%20.psd');assert.equal(c.parentFolder.name,'海报 100%20.psb');
+ assert.equal(a.parentFolder.parentFolder.name,'Photoshop');assert.equal(a.parentFolder.parentFolder.parentFolder.name,'Assets');
+ assert.equal(image.parentFolder.name,'Images');assert.equal(comp.parentFolder.name,'Comp');assert.ok(!env.all.includes(oldFolder));
+ assert.equal(result.folders.find(folder=>folder.path==='Assets/Photoshop/海报 100%20.psd').count,2);
+ const folders=env.all.filter(item=>item instanceof env.FolderItem),again=organizePhotoshop(env,rules);
+ assert.equal(again.ok,true);assert.equal(again.moved,0);assert.equal(again.skipped,6);assert.deepEqual(env.all.filter(item=>item instanceof env.FolderItem),folders);
+});
+
+test('same-named Photoshop files at different paths stay separate and reuse their folders on subsequent runs',()=>{
+ const env=projectFixture();
+ const a=photoshopFootage(env,'A','D:/One/Design.psd'),b=photoshopFootage(env,'B','D:/Two/Design.psd');
+ const a2=photoshopFootage(env,'A2','D:/One/Design.psd'),b2=photoshopFootage(env,'B2','D:/Two/Design.psd');
+ assert.equal(organizePhotoshop(env).ok,true);
+ assert.equal(a.parentFolder,a2.parentFolder);assert.equal(b.parentFolder,b2.parentFolder);assert.notEqual(a.parentFolder,b.parentFolder);
+ assert.equal(a.parentFolder.name,'Design.psd');assert.equal(b.parentFolder.name,'Design.psd (2)');
+ const original=b.parentFolder;
+ // Removing the earlier source must not renumber the remaining group.
+ env.all.splice(env.all.indexOf(a),1);env.all.splice(env.all.indexOf(a2),1);
+ assert.equal(organizePhotoshop(env).moved,0);assert.equal(b.parentFolder,original);
+ const b3=photoshopFootage(env,'new import','D:/Two/Design.psd');
+ assert.equal(organizePhotoshop(env).moved,1);assert.equal(b3.parentFolder,original);
+});
+
+test('Photoshop source identity normalizes Windows paths but preserves macOS case and literal percent names',()=>{
+ const env=projectFixture();env.ctx.$={os:'Windows 11'};
+ const a=photoshopFootage(env,'A','D:\\Art\\Design.PSD'),b=photoshopFootage(env,'B','d:/art/design.psd');
+ const percent=photoshopFootage(env,'literal','D:/Art/Design%20.psd'),space=photoshopFootage(env,'space','D:/Art/Design .psd');
+ assert.equal(organizePhotoshop(env).ok,true);assert.equal(a.parentFolder,b.parentFolder);assert.notEqual(percent.parentFolder,space.parentFolder);
+ const mac=projectFixture();mac.ctx.$={os:'Macintosh'};
+ const upper=photoshopFootage(mac,'upper','/Art/Design.psb'),lower=photoshopFootage(mac,'lower','/art/Design.psb');
+ assert.equal(organizePhotoshop(mac).ok,true);assert.notEqual(upper.parentFolder,lower.parentFolder);
+});
+
+test('Photoshop grouping respects fallback paths and protects reserved nested rule folders',()=>{
+ const env=projectFixture(),a=photoshopFootage(env,'A','/Art/Design.psd'),b=photoshopFootage(env,'B','/Art/Design.psd');
+ const image=photoshopFootage(env,'PNG','/Art/picture.png'),rules=[{path:'Footage/Design.psd',extensions:['PNG']}];
+ const result=organizePhotoshop(env,rules);
+ assert.equal(result.ok,true);assert.equal(a.parentFolder,b.parentFolder);assert.equal(a.parentFolder.name,'Design.psd (2)');
+ assert.equal(a.parentFolder.parentFolder.name,'Footage');assert.equal(image.parentFolder.name,'Design.psd');assert.notEqual(a.parentFolder,image.parentFolder);
+ assert.equal(organizePhotoshop(env,rules).moved,0);
+});
+
+test('Photoshop grouping avoids unrelated existing folder contents and safely falls back without a source path',()=>{
+ const env=projectFixture(),item=photoshopFootage(env,'layer','/Art/Design.psd');
+ const parent=new env.FolderItem('PSD'),existing=new env.FolderItem('Design.psd');existing.parentFolder=parent;
+ const comp=new env.CompItem('nested composition');comp.parentFolder=existing;
+ const unavailable=new env.Base('no source path');unavailable.file={name:'unknown.psb'};
+ const result=organizePhotoshop(env);
+ assert.equal(result.ok,true);assert.equal(item.parentFolder.name,'Design.psd (2)');assert.equal(unavailable.parentFolder,parent);assert.equal(comp.parentFolder.name,'Comp');
+ assert.equal(organizePhotoshop(env).moved,0);
+});
+
 test('launcher accepts uppercase extensions, nested matching images and literal percent paths',()=>{
  const env=storage({decodeFilePaths:true});env.folders.add('/scripts');env.folders.add('/scripts/Sub');env.folders.add('/scripts/(ignore)');
  env.files.set('/scripts/Sub/Tool.JSX','');env.files.set('/scripts/Sub/Tool.jpg','image');env.files.set('/scripts/percent%20.jsx','');env.files.set('/scripts/(ignore)/hidden.jsx','');

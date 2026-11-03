@@ -1,6 +1,38 @@
 {
-  "version": "0.6.1",
+  "version": "0.7.1",
   "entries": [
+    {
+      "version": "0.7.1",
+      "date": "2026-11-03",
+      "changes": [
+        "工程整理针对 PSD、PSB 素材按完整源文件路径归组，将同一文件的图层素材集中到规则目录下的独立文件夹。",
+        "不同路径的同名 Photoshop 文件使用编号区分，重复整理复用已有分组，并兼容自定义规则与未匹配素材目录。",
+        "内置的两条表达式支持修改名称、代码和标签，也可删除；更改随个人数据保存，重启和更新后不会恢复。",
+        "整理方案至少保留一个已保存方案；保存个人方案后可删除内置方案，未保存草稿不计入保留数量。",
+        "优化 AE 启动连接：为初始化请求延长等待时间，加载受阻时显示等待提示；仅在确认请求未执行的队列超时后重试，并支持在 Debug 中重新连接。"
+      ],
+      "changesEn": [
+        "Group PSD and PSB footage by full source file path, collecting layers from the same file into a dedicated subfolder under the rule destination.",
+        "Keep same-named Photoshop files from different paths in numbered folders, reuse existing groups on repeated runs, and respect custom rules and the fallback destination.",
+        "Allow editing the names, code and tags of both built-in expressions, or deleting them. Preserve changes in personal data across restarts and updates.",
+        "Keep at least one saved organizer scheme. Delete the built-in scheme after saving a personal scheme; unsaved drafts do not count.",
+        "Improve AE startup connections with longer initialization waits and a waiting status when loading is blocked. Retry only queue timeouts that confirm non-execution, and allow reconnecting from Debug."
+      ],
+      "highlights": [
+        {
+          "title": "PSD、PSB，同源归组",
+          "description": "同一源文件的图层素材集中存放，同名文件按路径区分，重复整理复用目录。"
+        },
+        {
+          "title": "表达式与方案，按需保留",
+          "description": "内置表达式可修改或删除；保存个人整理方案后可删除内置方案，始终保留一个已保存方案。"
+        },
+        {
+          "title": "启动连接，更从容",
+          "description": "等待 AE 加载时显示连接提示，安全重试未执行的请求，并支持从 Debug 重新连接。"
+        }
+      ]
+    },
     {
       "version": "0.6.1",
       "date": "2026-10-28",
