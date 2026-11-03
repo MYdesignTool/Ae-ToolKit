@@ -73,15 +73,15 @@
     return Promise.all(animations.map(function (a) { return a.finished.catch(function () {}); }));
   }
   function cancel() { animations.forEach(function (a) { a.cancel(); }); animations = []; }
-  var assetsResolved = false;
-  function resolveAssets() {
-    if (assetsResolved) return;
-    // Freeze asset URLs before history changes the base directory from / to /en/.
-    document.querySelectorAll('[src], head link[href]').forEach(function (el) {
+  var urlsResolved = false;
+  function resolveURLs() {
+    if (urlsResolved) return;
+    // Keep resources and shared documentation links stable when history changes / to /en/.
+    document.querySelectorAll('[src], head link[href], a[data-docs-link]').forEach(function (el) {
       var attr = el.hasAttribute('src') ? 'src' : 'href';
       el.setAttribute(attr, new URL(el.getAttribute(attr), location.href).href);
     });
-    assetsResolved = true;
+    urlsResolved = true;
   }
   async function switchTo(url, push) {
     var toward = url.pathname === base.pathname + 'en/' || url.pathname === base.pathname + 'en/index.html' ? 'en' : 'zh';
@@ -109,7 +109,7 @@
         var name = query.startsWith('meta') ? 'content' : 'href';
         document.querySelector(query).setAttribute(name, doc.querySelector(query).getAttribute(name));
       });
-      resolveAssets();
+      resolveURLs();
       if (push) history.pushState(null, '', url.href);
       try { localStorage.setItem('site-language', toward); } catch (e) {}
       document.dispatchEvent(new CustomEvent('site-language-change', {detail:{language:toward}}));

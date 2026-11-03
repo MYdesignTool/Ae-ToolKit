@@ -46,4 +46,6 @@ npm run docs:preview
 
 GitHub Pages 项目路径是 `/Ae-ToolKit/`，因此文档配置的 `base` 为 `/Ae-ToolKit/docs/`。迁移域名或仓库名时，应同步更新 `base`、返回官网链接和官网 canonical / alternate 地址。
 
+官网通过 `data-docs-link` 标记共享文档入口。中英文原地切换会修改浏览器地址，切换前须将这些入口解析为绝对 URL，保证两种语言始终访问同一个 `/Ae-ToolKit/docs/`，避免相对链接被解析到 `/en/docs/`。修改语言切换脚本时同步更新首页中的脚本版本参数并重新生成英文首页。
+
 搜索索引随文档构建生成，浏览时无需外部搜索服务。Markdown 内容预渲染为 HTML，基础阅读与链接在禁用 JavaScript 时也能使用；搜索和主题切换需要 JavaScript。
